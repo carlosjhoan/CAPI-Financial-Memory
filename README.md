@@ -1,6 +1,8 @@
-# Personal Finance Manager (PFM)
+<picture align="center">
+  <img alt="CAPI" src="frontend/public/assets/CAPI_logo_2.png" width="96" height="96">
+</picture>
 
-## 1. Contexto del Proyecto
+# CAPI — Control de Administración Personal de Ingresos
 
 Sistema de gestión de finanzas personales con persistencia configurable (PostgreSQL por defecto, con soporte para MySQL y MongoDB mediante arquitectura hexagonal).
 
