@@ -1,8 +1,8 @@
 <div align="center">
   <img alt="CAPI" src="frontend/public/assets/CAPI_logo.png" width="240">
-
-# CAPI
-<p align="center"><i><font color="#6b7280">Goodbye Financial Amnesia!</font></i></p>
+  <h1 style="margin: 0 0 -0.5rem 0;">CAPI</h1>
+  <p><i><font color="#6b7280">Goodbye Financial Amnesia!</font></i></p>
+</div>
 
 Sistema de gestión de finanzas personales con persistencia configurable (PostgreSQL por defecto, con soporte para MySQL y MongoDB mediante arquitectura hexagonal).
 
