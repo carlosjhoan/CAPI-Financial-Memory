@@ -68,10 +68,8 @@ Images/
 # SDD artifacts (tracked in engram)
 openspec/
 
-# Compiled/generated docs
-docs/*.pdf
-docs/*.json
-docs/*.py
+# Project docs (agent-generated proposals, research, etc.)
+docs/
 
 # Personal IDE config
 opencode.json
