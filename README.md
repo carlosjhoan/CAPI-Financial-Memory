@@ -1,5 +1,5 @@
 <div align="center">
-  <img alt="CAPI" src="frontend/public/assets/CAPI_logo_ring.png" width="340">
+  <img alt="CAPI" src="frontend/public/assets/CAPI_glow.png" width="360">
 </div>
 
 <h1 align="center">CAPI</h1>
