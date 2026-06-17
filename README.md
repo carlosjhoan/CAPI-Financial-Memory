@@ -1,8 +1,7 @@
 <div align="center">
-  <img alt="CAPI" src="frontend/public/assets/CAPI_logo.png" width="160">
-</div>
+  <img alt="CAPI" src="frontend/public/assets/CAPI_logo.png" width="240">
 
-# CAPI — Control de Administración Personal de Ingresos
+# CAPI
 
 Sistema de gestión de finanzas personales con persistencia configurable (PostgreSQL por defecto, con soporte para MySQL y MongoDB mediante arquitectura hexagonal).
 
