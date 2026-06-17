@@ -1,6 +1,6 @@
 <div align="center">
   <img alt="CAPI" src="frontend/public/assets/CAPI_logo.png" width="320" style="border-radius: 50%; aspect-ratio: 1/1; object-fit: cover; display: block;">
-  <div style="font-size: 2em; font-weight: bold; margin: 0.75rem 0 0 0; border-bottom: none;">CAPI</div>
+  <div style="font-size: 3em; font-weight: bold; margin: 0.75rem 0 0 0;">CAPI</div>
   <p style="margin: 0 0 1rem 0;"><i><font color="#6b7280">Goodbye Financial Amnesia!</font></i></p>
   <hr style="width: 40%; height: 1px; background: #d0d7de; border: none; margin: 0 auto;">
 </div>
