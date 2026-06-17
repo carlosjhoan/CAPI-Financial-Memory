@@ -1,5 +1,7 @@
 <div align="center">
-  <img alt="CAPI" src="frontend/public/assets/CAPI_glow.png" width="300" style="border-radius: 50%;">
+  <div style="display: inline-block; border-radius: 50%; overflow: hidden; line-height: 0;">
+    <img alt="CAPI" src="frontend/public/assets/CAPI_glow.png" width="300">
+  </div>
 </div>
 
 <h1 align="center">CAPI</h1>
