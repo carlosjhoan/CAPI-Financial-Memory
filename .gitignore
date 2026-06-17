@@ -82,6 +82,9 @@ nul
 # OpenCode editor config (project-specific)
 .opencode/
 
+# Agent instructions (local tooling, not for collaborators)
+AGENTS.md
+
 # Python bytecode
 __pycache__/
 *.pyc
