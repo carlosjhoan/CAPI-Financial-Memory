@@ -83,6 +83,9 @@ nul
 # Agent instructions (local tooling, not for collaborators)
 AGENTS.md
 
+# Redundant with Swagger docs
+API_CONTRACT.md
+
 # Python bytecode
 __pycache__/
 *.pyc
