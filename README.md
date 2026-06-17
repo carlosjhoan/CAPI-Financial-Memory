@@ -1,5 +1,5 @@
 <div align="center">
-  <img alt="CAPI" src="frontend/public/assets/CAPI_logo_2.png" width="160">
+  <img alt="CAPI" src="https://raw.githubusercontent.com/carlosjhoan/CAPI-Financial-Memory/master/frontend/public/assets/CAPI_logo_2.png" width="160">
 </div>
 
 # CAPI — Control de Administración Personal de Ingresos
