@@ -1,5 +1,7 @@
 <div align="center">
-  <img alt="CAPI" src="frontend/public/assets/CAPI_logo.png" width="320" style="border-radius: 50%; aspect-ratio: 1/1; object-fit: cover; display: block;">
+  <div style="display: inline-block; padding: 8px; border-radius: 50%; background: conic-gradient(#eab308 0deg 180deg, #22c55e 180deg 360deg);">
+    <img alt="CAPI" src="frontend/public/assets/CAPI_logo.png" width="320" style="border-radius: 50%; aspect-ratio: 1/1; object-fit: cover; display: block;">
+  </div>
 </div>
 
 <h1 align="center">CAPI</h1>
