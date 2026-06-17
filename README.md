@@ -1,7 +1,13 @@
 <div align="center">
-  <div style="display: inline-block; padding: 8px; border-radius: 50%; background: conic-gradient(#eab308 0deg 180deg, #22c55e 180deg 360deg);">
-    <img alt="CAPI" src="frontend/public/assets/CAPI_logo.png" width="320" style="border-radius: 50%; aspect-ratio: 1/1; object-fit: cover; display: block;">
-  </div>
+  <svg width="340" height="340" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg">
+    <!-- Conic ring: top half yellow, bottom half green -->
+    <path d="M 10 170 A 160 160 0 0 0 330 170" fill="none" stroke="#eab308" stroke-width="24"/>
+    <path d="M 330 170 A 160 160 0 0 0 10 170" fill="none" stroke="#22c55e" stroke-width="24"/>
+    <defs>
+      <clipPath id="c"><circle cx="170" cy="170" r="148"/></clipPath>
+    </defs>
+    <image href="frontend/public/assets/CAPI_logo.png" x="22" y="22" width="296" height="296" clip-path="url(#c)" preserveAspectRatio="xMidYMid slice"/>
+  </svg>
 </div>
 
 <h1 align="center">CAPI</h1>
