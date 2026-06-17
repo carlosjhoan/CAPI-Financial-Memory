@@ -1,5 +1,5 @@
 <div align="center">
-  <img alt="CAPI" src="frontend/public/assets/CAPI_glow.png" width="300">
+  <img alt="CAPI" src="frontend/public/assets/CAPI_glow.png" width="300" style="border-radius: 50%;">
 </div>
 
 <h1 align="center">CAPI</h1>
