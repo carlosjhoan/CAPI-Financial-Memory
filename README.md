@@ -4,14 +4,14 @@
   <p><i><font color="#6b7280">Goodbye Financial Amnesia!</font></i></p>
 </div>
 
+---
+
 Sistema de gestión de finanzas personales con persistencia configurable (PostgreSQL por defecto, con soporte para MySQL y MongoDB mediante arquitectura hexagonal).
 
 - **Backend**: NestJS + TypeORM (o Mongoose para Mongo)
 - **Frontend**: React + TypeScript + TailwindCSS
 - **Arquitectura Backend**: Hexagonal (Puertos y Adaptadores)
 - **Arquitectura Frontend**: Basada en features con capas internas
-
----
 
 ## 2. Modelos de Datos
 
