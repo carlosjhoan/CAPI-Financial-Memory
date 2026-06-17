@@ -86,6 +86,9 @@ AGENTS.md
 # Redundant with Swagger docs
 API_CONTRACT.md
 
+# Auto-generated changelog (not maintained manually)
+CHANGELOG.md
+
 # Python bytecode
 __pycache__/
 *.pyc
