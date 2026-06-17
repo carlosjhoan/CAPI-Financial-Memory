@@ -1,5 +1,5 @@
 <div align="center">
-  <img alt="CAPI" src="frontend/public/assets/CAPI_logo.png" width="240">
+  <img alt="CAPI" src="frontend/public/assets/CAPI_logo.png" width="320">
   <h1 style="margin: 0 0 -0.5rem 0;">CAPI</h1>
   <p><i><font color="#6b7280">Goodbye Financial Amnesia!</font></i></p>
 </div>
