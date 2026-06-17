@@ -1,0 +1,151 @@
+/* ============================================================
+   RecordFocusCard.css — Glassmorphism overlay card
+   Entry/exit keyframes for record focus display
+   ============================================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---- Entry: scale from dot (left center) + fade in ---- */
+  @keyframes focus-card-in {
+    0%   { opacity: 0; transform: scale(0.3); }
+    60%  { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* ---- Exit: scale back to dot + fade out ---- */
+  @keyframes focus-card-out {
+    0%   { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.3); }
+  }
+
+  .record-focus-card .focus-card-enter {
+    transform-origin: left center;
+    animation: focus-card-in 250ms ease-out forwards;
+  }
+
+  .record-focus-card .focus-card-exit {
+    transform-origin: left center;
+    animation: focus-card-out 300ms ease-in forwards;
+  }
+}
+
+/* ---- Base card styles — positioned by parent wrapper, not self ---- */
+.record-focus-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  pointer-events: auto;
+
+  /* Glassmorphism background */
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  /* Soft shadow */
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 10px 15px -3px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  /* ── White-edge glow: espesor de vidrio en bordes ── */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: 0;
+    /* farthest-corner evita forma reconocible — el gradiente se adapta al card */
+    background: radial-gradient(
+      ellipse farthest-corner at 50% 50%,
+      transparent 30%,
+      rgba(255, 255, 255, 0.10) 100%
+    );
+  }
+
+  /* Accent top border via pseudo-element */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--focus-card-accent, rgba(96, 165, 250, 0.3));
+    z-index: 1;
+  }
+}
+
+/* ---- Dark mode overrides ---- */
+@media (prefers-color-scheme: dark) {
+  .record-focus-card {
+    background: rgba(15, 23, 42, 0.75);
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.3),
+      0 10px 15px -3px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.03);
+
+    /* White-edge glow más sutil en dark mode */
+    &::after {
+      background: radial-gradient(
+        ellipse farthest-corner at 50% 50%,
+        transparent 30%,
+        rgba(255, 255, 255, 0.06) 100%
+      );
+    }
+  }
+}
+
+/* ---- Content padding ---- */
+.record-focus-card .focus-card-body {
+  position: relative;
+  z-index: 2;
+  padding: 0 14px 14px;
+}
+
+/* ---- Mini-header: mes · año contextual en el card ---- */
+.record-focus-card .focus-card-month {
+  position: relative;
+  z-index: 2;
+  padding: 10px 14px 4px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+  margin-bottom: 6px;
+}
+
+.record-focus-card .focus-card-month-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(148, 163, 184, 0.7);
+  letter-spacing: 0.1em;
+  user-select: none;
+}
+
+/* ---- Glow wrapper: posiciona el BeamSvg sobre la card ---- */
+.focus-card-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ---- Reduced motion: instant opacity toggle ---- */
+@media (prefers-reduced-motion: reduce) {
+  .record-focus-card {
+    transition: opacity 0ms;
+  }
+
+  .record-focus-card .focus-card-enter,
+  .record-focus-card .focus-card-exit {
+    animation: none;
+  }
+
+  .record-focus-card .focus-card-exit {
+    opacity: 0;
+  }
+
+  /* BeamSvg maneja reduced-motion via @media en su style injectado */
+  .focus-card-glow {
+    display: block;
+  }
+}

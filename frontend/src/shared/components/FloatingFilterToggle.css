@@ -1,0 +1,64 @@
+/* ============================================================
+   FloatingFilterToggle.css — Bottom sheet + popover animations
+   ============================================================ */
+
+/* ---- Bottom sheet slide-up ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .filter-bottom-sheet {
+    animation: sheet-slide-up 0.3s ease-out;
+  }
+
+  @keyframes sheet-slide-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /* Backdrop fade */
+  .filter-mobile-overlay {
+    animation: overlay-fade-in 0.2s ease-out;
+  }
+
+  @keyframes overlay-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* ---- Desktop popover ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .filter-popover {
+    animation: popover-fade-in 0.2s ease-out;
+  }
+
+  @keyframes popover-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* ---- Reduce motion overrides ---- */
+@media (prefers-reduced-motion: reduce) {
+  .filter-bottom-sheet {
+    animation: none;
+  }
+  .filter-mobile-overlay {
+    animation: none;
+  }
+  .filter-popover {
+    animation: none;
+  }
+}

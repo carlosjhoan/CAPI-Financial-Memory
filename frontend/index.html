@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; object-src 'none'" />
+    <title>Personal Finance Manager</title>
+    
+    <!-- Anti-FOUC: Apply theme before render to prevent flash -->
+    <script>
+      (function() {
+        try {
+          var storedTheme = localStorage.getItem('theme');
+          var html = document.documentElement;
+          
+          var theme = storedTheme || 'dark';
+          html.setAttribute('data-theme', theme);
+          
+          if (theme === 'dark') {
+            html.classList.add('dark');
+          } else {
+            html.classList.remove('dark');
+          }
+          
+          if (theme === 'dim') {
+            html.classList.add('dim');
+          }
+        } catch (e) {
+          console.warn('Theme initialization error:', e);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

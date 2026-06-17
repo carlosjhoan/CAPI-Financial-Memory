@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Sistema de Temas (Light / Dark / Dim)
+ * 
+ * Las variables CSS están en formato RGB (espaciado) para soportar
+ * los modificadores de opacidad de Tailwind: bg-gray-800/50
+ *
+ * - :root / [data-theme="light"]: paleta clara por defecto
+ * - [data-theme="dark"]: paleta oscura fría
+ * - [data-theme="dim"]: paleta sepia-clara (variante de light mode)
+ */
+
+:root {
+  /* ===== White & Black overridables ===== */
+  --color-white: 255 255 255;
+  --color-black: 0 0 0;
+
+  /* ===== Gray scale (estándar Tailwind) ===== */
+  --color-gray-50: 249 250 251;
+  --color-gray-100: 243 244 246;
+  --color-gray-200: 229 231 235;
+  --color-gray-300: 209 213 219;
+  --color-gray-400: 156 163 175;
+  --color-gray-500: 107 114 128;
+  --color-gray-600: 75 85 99;
+  --color-gray-700: 55 65 81;
+  --color-gray-800: 31 41 55;
+  --color-gray-900: 17 24 39;
+
+  /* ===== Primary (azul acento) ===== */
+  --color-primary-50: 239 246 255;
+  --color-primary-100: 219 234 254;
+  --color-primary-200: 191 219 254;
+  --color-primary-300: 147 197 253;
+  --color-primary-400: 96 165 250;
+  --color-primary-500: 59 130 246;
+  --color-primary-600: 37 99 235;
+  --color-primary-700: 29 78 216;
+  --color-primary-800: 30 64 175;
+  --color-primary-900: 30 58 138;
+
+  /* ===== Secondary (gris pizarra) ===== */
+  --color-secondary-50: 248 250 252;
+  --color-secondary-100: 241 245 249;
+  --color-secondary-200: 226 232 240;
+  --color-secondary-300: 203 213 225;
+  --color-secondary-400: 148 163 184;
+  --color-secondary-500: 100 116 139;
+  --color-secondary-600: 71 85 105;
+  --color-secondary-700: 51 65 85;
+  --color-secondary-800: 30 41 59;
+  --color-secondary-900: 15 23 42;
+
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* Dark mode usa los mismos valores que :root (compatibilidad hacia atrás) */
+[data-theme="dark"] {
+  /* Hereda todos los valores de :root */
+}
+
+/* 
+ * DIM MODE — Paleta Sepia Cálida (variante WARM de light mode)
+ * 
+ * Reemplaza los grises fríos de light mode por tonos crema/sepia.
+ * Fondos: #F5E8D8 y variantes (más claro/más oscuro)
+ * Texto: marrón oscuro
+ *
+ * Es un "warm light" — misma estructura que light pero cálido.
+ */
+[data-theme="dim"] {
+  /* ===== White & Black ===== */
+  --color-white: 252 240 225;        /* #fcf0e1 - crema claro (reemplaza blanco puro) */
+  --color-black: 15 10 5;            /* #0f0a05 - marrón casi negro */
+
+  /* ===== Gray scale - sepia/crema (reemplaza grises fríos) ===== */
+  --color-gray-50: 248 233 216;      /* #f8e9d8 - fondo de página (más oscuro que F5E8D8) */
+  --color-gray-100: 245 228 208;     /* #f5e4d0 - fondo de cards */
+  --color-gray-200: 230 210 190;     /* #e6d2be - bordes */
+  --color-gray-300: 210 190 170;     /* #d2beaa - bordes input */
+  --color-gray-400: 180 158 138;     /* #b49e8a - texto muted */
+  --color-gray-500: 150 125 105;     /* #967d69 - texto secundario */
+  --color-gray-600: 120 95 75;       /* #785f4b - texto */
+  --color-gray-700: 88 68 52;        /* #584434 - texto fuerte */
+  --color-gray-800: 58 42 30;        /* #3a2a1e - texto oscuro */
+  --color-gray-900: 35 22 14;        /* #23160e - texto más oscuro */
+
+  /* ===== Primary - violeta cálido ===== */
+  --color-primary-50: 245 242 250;
+  --color-primary-100: 238 232 245;
+  --color-primary-200: 225 215 235;
+  --color-primary-300: 200 185 220;
+  --color-primary-400: 170 150 200;
+  --color-primary-500: 140 115 180;
+  --color-primary-600: 110 90 150;
+  --color-primary-700: 85 65 115;
+  --color-primary-800: 60 45 80;
+  --color-primary-900: 40 30 55;
+
+  /* ===== Secondary - sepia/terreos ===== */
+  --color-secondary-50: 248 233 216;
+  --color-secondary-100: 245 228 208;
+  --color-secondary-200: 230 210 190;
+  --color-secondary-300: 210 190 170;
+  --color-secondary-400: 180 158 138;
+  --color-secondary-500: 150 125 105;
+  --color-secondary-600: 120 95 75;
+  --color-secondary-700: 88 68 52;
+  --color-secondary-800: 58 42 30;
+  --color-secondary-900: 35 22 14;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* 
+ * Accesibilidad: preferences for reduced motion
+ * 
+ * Desactiva animaciones para usuarios con trastornos vestibulares.
+ * Instead of hiding content, makes it appear instantly.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

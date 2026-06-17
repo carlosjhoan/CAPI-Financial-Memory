@@ -1,0 +1,88 @@
+/* ============================================================
+   FloatingActionButton.css — Vitral FAB Styles
+   All keyframes gated by prefers-reduced-motion
+   ============================================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes pulse-glow {
+    0%   { opacity: 0.4; }
+    50%  { opacity: 0.85; }
+    100% { opacity: 0.4; }
+  }
+
+  /* Connection line draws from right (FAB side, x=36) toward left (tooltip side, x=4) */
+  @keyframes conn-line-draw {
+    0%   { stroke-dashoffset: 32; }
+    100% { stroke-dashoffset: 0; }
+  }
+}
+
+/* ---- Glow pseudo-element on the button ---- */
+.fab-btn::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+  box-shadow:
+    0 0 3px var(--glow-color),
+    0 0 8px var(--glow-color),
+    0 0 15px var(--glow-color);
+}
+
+.group:hover .fab-btn::after {
+  opacity: 1;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ---- Connection line (between FAB and tooltip) ---- */
+.conn-line {
+  stroke-dasharray: 32;
+  stroke-dashoffset: 32;
+  transition: stroke-dashoffset 0.3s ease-in;
+}
+
+.group:hover .conn-line {
+  animation: conn-line-draw 0.3s ease-out forwards;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+/* ---- Dots ---- */
+.dot-fab {
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+.group:hover .dot-fab {
+  opacity: 1;
+}
+
+.dot-tooltip {
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+/* Tooltip dot appears after line has mostly drawn (300ms draw + small delay) */
+.group:hover .dot-tooltip {
+  opacity: 1;
+  transition-delay: 0.25s;
+}
+
+/* ---- Badge neon glow (light reaches badge after line draws) ---- */
+.fab-badge {
+  transition: box-shadow 0.3s ease-out;
+}
+
+.group:hover .fab-badge {
+  transition-delay: 0.25s;
+  box-shadow: 0 0 8px var(--badge-glow-color);
+}
+
+/* ---- Touch devices: hide tooltip entirely ---- */
+@media (hover: none) {
+  .fab-tooltip {
+    display: none;
+  }
+}

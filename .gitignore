@@ -1,0 +1,87 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+out/
+
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# Logs
+logs
+*.log
+
+# Coverage directory used by tools like istanbul
+coverage/
+.nyc_output
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+docker-compose.override.yml
+
+# OAuth credentials
+oauth_client/
+
+# Environment files — exclude .env.example so docs stay tracked
+*.env
+!backend/.env.example
+!frontend/.env.example
+
+# SDD init artifacts
+.atl/
+
+# Temporary files
+tmp/
+temp/
+
+# Project documentation images (screenshots, mockups)
+Images/
+
+# SDD artifacts (tracked in engram)
+openspec/
+
+# Compiled/generated docs
+docs/*.pdf
+docs/*.json
+docs/*.py
+
+# Personal IDE config
+opencode.json
+
+# Terminal artifacts
+nul
+
+# OpenCode editor config (project-specific)
+.opencode/
+
+# Python bytecode
+__pycache__/
+*.pyc
