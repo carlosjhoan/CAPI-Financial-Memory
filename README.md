@@ -1,6 +1,6 @@
 <div align="center">
   <div style="display: inline-block; border-radius: 50%; overflow: hidden; line-height: 0;">
-    <img alt="CAPI" src="frontend/public/assets/CAPI_glow.png" width="380">
+    <img alt="CAPI" src="frontend/public/assets/CAPI_glow.png" width="320">
   </div>
 </div>
 
