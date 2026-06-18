@@ -1,4 +1,12 @@
-import { IsNumber, IsDateString, IsString, Min, MaxLength, MinLength, IsOptional } from "class-validator";
+import {
+  IsNumber,
+  IsDateString,
+  IsString,
+  Min,
+  MaxLength,
+  MinLength,
+  IsOptional,
+} from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class RegisterDepositDto {

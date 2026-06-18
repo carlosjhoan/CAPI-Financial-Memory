@@ -4,7 +4,11 @@ import { IncomeRepository } from "../../domain/repositories/income.repository";
 export class RegisterIncomePaymentUseCase {
   constructor(private readonly incomeRepository: IncomeRepository) {}
 
-  async execute(userId: string, incomeId: string, amount: number): Promise<Income> {
+  async execute(
+    userId: string,
+    incomeId: string,
+    amount: number,
+  ): Promise<Income> {
     if (amount <= 0) {
       throw new Error("Payment amount must be greater than 0");
     }

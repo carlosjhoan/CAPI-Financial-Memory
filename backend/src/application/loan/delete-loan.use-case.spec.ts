@@ -1,7 +1,7 @@
-import { DeleteLoanUseCase } from './delete-loan.use-case';
-import { LoanService } from '../../domain/services/loan.service';
+import { DeleteLoanUseCase } from "./delete-loan.use-case";
+import { LoanService } from "../../domain/services/loan.service";
 
-describe('DeleteLoanUseCase', () => {
+describe("DeleteLoanUseCase", () => {
   let useCase: DeleteLoanUseCase;
   let mockService: jest.Mocked<LoanService>;
 
@@ -12,21 +12,23 @@ describe('DeleteLoanUseCase', () => {
     useCase = new DeleteLoanUseCase(mockService);
   });
 
-  it('should call loanService.deleteLoan with the correct id', async () => {
+  it("should call loanService.deleteLoan with the correct id", async () => {
     mockService.deleteLoan.mockResolvedValue();
 
-    await useCase.execute('user-1', '1');
+    await useCase.execute("user-1", "1");
 
-    expect(mockService.deleteLoan).toHaveBeenCalledWith('user-1', '1');
+    expect(mockService.deleteLoan).toHaveBeenCalledWith("user-1", "1");
   });
 
-  it('should propagate errors from the service', async () => {
-    mockService.deleteLoan.mockRejectedValue(new Error('Cannot delete'));
+  it("should propagate errors from the service", async () => {
+    mockService.deleteLoan.mockRejectedValue(new Error("Cannot delete"));
 
-    await expect(useCase.execute('user-1', '1')).rejects.toThrow('Cannot delete');
+    await expect(useCase.execute("user-1", "1")).rejects.toThrow(
+      "Cannot delete",
+    );
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(useCase).toBeDefined();
   });
 });

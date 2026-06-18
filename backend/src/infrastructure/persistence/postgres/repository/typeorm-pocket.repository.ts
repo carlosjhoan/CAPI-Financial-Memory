@@ -203,7 +203,9 @@ export class TypeOrmPocketRepository implements PocketRepository {
     await this.pocketRepository.delete(where);
   }
 
-  async getSummary(userId: string): Promise<{ totalAccumulated: number; totalGoal: number; count: number }> {
+  async getSummary(
+    userId: string,
+  ): Promise<{ totalAccumulated: number; totalGoal: number; count: number }> {
     const result = await this.pocketRepository
       .createQueryBuilder("pocket")
       .select("SUM(pocket.accumulatedAmount)", "totalAccumulated")
@@ -245,7 +247,9 @@ export class TypeOrmPocketRepository implements PocketRepository {
       relations: ["expense"],
     });
 
-    return allocations.map((allocation) => this.expenseToDomain(allocation.expense));
+    return allocations.map((allocation) =>
+      this.expenseToDomain(allocation.expense),
+    );
   }
 
   private expenseToDomain(entity: ExpenseEntity): Expense {
@@ -294,10 +298,7 @@ export class TypeOrmPocketRepository implements PocketRepository {
 
   async findTransfersByPocketId(pocketId: string): Promise<PocketTransfer[]> {
     const entities = await this.pocketTransferRepository.find({
-      where: [
-        { sourcePocketId: pocketId },
-        { targetPocketId: pocketId },
-      ],
+      where: [{ sourcePocketId: pocketId }, { targetPocketId: pocketId }],
       order: { date: "DESC" },
     });
     return entities.map((e) => this.transferToDomain(e));
@@ -381,9 +382,15 @@ export class TypeOrmPocketRepository implements PocketRepository {
       ) all_ids
     `;
 
-    const items = await this.pocketRepository.query(unionQuery, [pocketId, limit, offset]);
-    const countResult = await this.pocketRepository.query(countQuery, [pocketId]);
-    const total = parseInt(countResult[0]?.total || '0', 10);
+    const items = await this.pocketRepository.query(unionQuery, [
+      pocketId,
+      limit,
+      offset,
+    ]);
+    const countResult = await this.pocketRepository.query(countQuery, [
+      pocketId,
+    ]);
+    const total = parseInt(countResult[0]?.total || "0", 10);
 
     return { items, total };
   }

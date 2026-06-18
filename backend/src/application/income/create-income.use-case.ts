@@ -26,27 +26,34 @@ export class CreateIncomeUseCase {
       throw new Error("Reason is required");
     }
 
-    return await this.dataSource.transaction(async (transactionalEntityManager) => {
-      // 1. Save income using TypeORM entity directly to have transactional control
-      const incomeEntity = transactionalEntityManager.create(IncomeEntity, {
-        amount,
-        reason,
-        date,
-        userId,
-      });
-      const savedIncome = await transactionalEntityManager.save(incomeEntity);
+    return await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        // 1. Save income using TypeORM entity directly to have transactional control
+        const incomeEntity = transactionalEntityManager.create(IncomeEntity, {
+          amount,
+          reason,
+          date,
+          userId,
+        });
+        const savedIncome = await transactionalEntityManager.save(incomeEntity);
 
-      // 2. Save allocations
-      const allocationEntities = allocations.map((alloc) =>
-        transactionalEntityManager.create(IncomeAllocationEntity, {
-          incomeId: savedIncome.id,
-          pocketId: alloc.pocketId,
-          amount: alloc.amount,
-        }),
-      );
-      await transactionalEntityManager.save(allocationEntities);
+        // 2. Save allocations
+        const allocationEntities = allocations.map((alloc) =>
+          transactionalEntityManager.create(IncomeAllocationEntity, {
+            incomeId: savedIncome.id,
+            pocketId: alloc.pocketId,
+            amount: alloc.amount,
+          }),
+        );
+        await transactionalEntityManager.save(allocationEntities);
 
-      return new Income(savedIncome.amount, savedIncome.reason, savedIncome.date, savedIncome.id);
-    });
+        return new Income(
+          savedIncome.amount,
+          savedIncome.reason,
+          savedIncome.date,
+          savedIncome.id,
+        );
+      },
+    );
   }
 }

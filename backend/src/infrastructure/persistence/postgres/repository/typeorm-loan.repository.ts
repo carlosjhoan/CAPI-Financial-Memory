@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, Between, LessThanOrEqual } from "typeorm";
+import { Repository, Between } from "typeorm";
 import { Loan } from "../../../../domain/entities/loan.entity";
 import { LoanRepository } from "../../../../domain/repositories/loan.repository";
 import { LoanEntity } from "../entities/loan.entity";
@@ -228,7 +228,11 @@ export class TypeOrmLoanRepository implements LoanRepository {
     return entities.map((entity) => this.toDomain(entity));
   }
 
-  async getLoansByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<Loan[]> {
+  async getLoansByDateRange(
+    startDate: Date,
+    endDate: Date,
+    userId?: string,
+  ): Promise<Loan[]> {
     const where: any = {
       date: Between(startDate, endDate),
     };

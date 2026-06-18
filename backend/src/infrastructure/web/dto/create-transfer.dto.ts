@@ -19,7 +19,8 @@ export class CreateTransferDto {
   sourcePocketId: string;
 
   @ApiProperty({
-    description: "ID del bolsillo de destino (UUID). Debe ser diferente al de origen.",
+    description:
+      "ID del bolsillo de destino (UUID). Debe ser diferente al de origen.",
     example: "223e4567-e89b-12d3-a456-426614174001",
   })
   @IsUUID("4", { message: "targetPocketId must be a valid UUID" })
@@ -53,7 +54,8 @@ export class CreateTransferDto {
   date: string;
 
   @ApiPropertyOptional({
-    description: "Nuevo goal para el bolsillo de destino si es tipo goal y el monto excede el restante",
+    description:
+      "Nuevo goal para el bolsillo de destino si es tipo goal y el monto excede el restante",
     example: 1500.0,
   })
   @IsOptional()

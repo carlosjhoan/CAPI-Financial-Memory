@@ -8,7 +8,7 @@ export interface TableProps extends React.TableHTMLAttributes<HTMLTableElement> 
 }
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
-  ({ className, striped = true, hover = true, compact = false, ...props }, ref) => {
+  ({ className, striped: _striped = true, hover: _hover = true, compact = false, ...props }, ref) => {
     return (
       <div className="overflow-x-auto rounded-lg border border-secondary-200 dark:border-secondary-700">
         <table

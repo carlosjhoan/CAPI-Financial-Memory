@@ -62,7 +62,8 @@ const LoanForm: React.FC<LoanFormProps> = ({
 
   const validateStep = async (): Promise<boolean> => {
     const stepFields = STEPS[currentStep].fields;
-    return trigger(stepFields as unknown as any[]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return trigger(stepFields as any);
   };
 
   const handleContinue = async () => {

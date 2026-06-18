@@ -13,13 +13,22 @@ export class Deposit {
   @ApiProperty({ description: "Fecha del depósito", example: "2024-01-15" })
   date: Date;
 
-  @ApiProperty({ description: "Razón/descripción del depósito", required: false })
+  @ApiProperty({
+    description: "Razón/descripción del depósito",
+    required: false,
+  })
   reason?: string;
 
   @ApiProperty({ description: "Fecha de creación" })
   createdAt: Date;
 
-  constructor(pocketId: string, amount: number, date: Date, reason?: string, id?: string) {
+  constructor(
+    pocketId: string,
+    amount: number,
+    date: Date,
+    reason?: string,
+    id?: string,
+  ) {
     this.id = id!;
     this.pocketId = pocketId;
     this.amount = amount;

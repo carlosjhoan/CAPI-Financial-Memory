@@ -39,9 +39,10 @@ export class CreateDebtUseCase {
       throw new Error("Lender is required");
     }
 
-    const finalReason = reason && reason.trim().length > 0
-      ? reason.trim()
-      : 'Me endeudé y no sé ni para qué';
+    const finalReason =
+      reason && reason.trim().length > 0
+        ? reason.trim()
+        : "Me endeudé y no sé ni para qué";
 
     const debt = new Debt(
       initialAmount,

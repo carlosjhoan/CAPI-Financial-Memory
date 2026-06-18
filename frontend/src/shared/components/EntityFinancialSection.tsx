@@ -174,7 +174,6 @@ function EntityFinancialSection<T>({
     onPageChange?.(page);
   }, [onPageChange]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleMonthClick = useCallback((_month: string) => {
     // Fallback: no-op si monthlyBreakdown.onMonthSelect no está disponible
   }, []);
@@ -203,7 +202,6 @@ function EntityFinancialSection<T>({
     return spanishMonths.slice(currentMonthIndex + 1);
   }, [viewMode, summary?.yearly]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSelectedMonthPageChange = useCallback((_page: number) => {
     // Fallback: no-op si monthlyBreakdown.onSelectedPageChange no está disponible
   }, []);
@@ -322,6 +320,7 @@ function EntityFinancialSection<T>({
       default:
         return `Total en ${section}`;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, summary, layout?.sectionName, dateRangeContext]);
 
   // Hero Card content — total + narrative heading + secondary metrics (sin wrapper, se usa desde el band)

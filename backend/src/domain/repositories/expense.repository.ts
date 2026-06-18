@@ -9,7 +9,11 @@ export interface ExpenseRepository {
     limit: number,
     userId?: string,
   ): Promise<{ data: Expense[]; total: number }>;
-  findByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<Expense[]>;
+  findByDateRange(
+    startDate: Date,
+    endDate: Date,
+    userId?: string,
+  ): Promise<Expense[]>;
   findByDateRangePaginated(
     startDate: Date,
     endDate: Date,
@@ -28,7 +32,10 @@ export interface ExpenseRepository {
     count: number;
     averageAmount: number;
   }>;
-  getYearlySummary(year: number, userId?: string): Promise<{
+  getYearlySummary(
+    year: number,
+    userId?: string,
+  ): Promise<{
     totalAmount: number;
     count: number;
     monthlyBreakdown: Record<string, number>;

@@ -26,7 +26,6 @@ import {
   ApiNoContentResponse,
 } from "@nestjs/swagger";
 import { CreateIncomeUseCase } from "../../../application/income/create-income.use-case";
-import { GetAllIncomesUseCase } from "../../../application/income/get-all-incomes.use-case";
 import { GetIncomeByIdUseCase } from "../../../application/income/get-income-by-id.use-case";
 import { UpdateIncomeUseCase } from "../../../application/income/update-income.use-case";
 import { DeleteIncomeUseCase } from "../../../application/income/delete-income.use-case";
@@ -362,7 +361,11 @@ export class IncomeController {
         updateData.date = new Date(dateStr);
       }
 
-      const income = await this.updateIncomeUseCase.execute(req.user.id, id, updateData);
+      const income = await this.updateIncomeUseCase.execute(
+        req.user.id,
+        id,
+        updateData,
+      );
 
       return {
         statusCode: HttpStatus.OK,
@@ -523,7 +526,10 @@ export class IncomeController {
     const now = new Date();
     const yearNum = year ? parseInt(year) : now.getUTCFullYear();
 
-    const summary = await this.getYearlySummaryUseCase.execute(req.user.id, yearNum);
+    const summary = await this.getYearlySummaryUseCase.execute(
+      req.user.id,
+      yearNum,
+    );
 
     return {
       statusCode: HttpStatus.OK,

@@ -9,7 +9,11 @@ export interface DebtRepository {
     query: DebtQueryDto,
     userId?: string,
   ): Promise<{ data: Debt[]; total: number }>;
-  findByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<Debt[]>;
+  findByDateRange(
+    startDate: Date,
+    endDate: Date,
+    userId?: string,
+  ): Promise<Debt[]>;
   getMonthlySummary(
     year: number,
     month: number,
@@ -19,7 +23,10 @@ export interface DebtRepository {
     count: number;
     byLender: Record<string, number>;
   }>;
-  getYearlySummary(year: number, userId?: string): Promise<{
+  getYearlySummary(
+    year: number,
+    userId?: string,
+  ): Promise<{
     monthlyBreakdown: { month: number; total: number; count: number }[];
   }>;
   update(debt: Debt): Promise<Debt>;

@@ -30,40 +30,51 @@ export class CreateExpenseUseCase {
 
     // Golden Rule: validate that every pocket has sufficient funds BEFORE the transaction
     for (const alloc of allocations) {
-      const pocket = await this.pocketRepository.findById(alloc.pocketId, userId);
+      const pocket = await this.pocketRepository.findById(
+        alloc.pocketId,
+        userId,
+      );
       if (!pocket) {
         throw new Error(`El bolsillo con ID ${alloc.pocketId} no existe`);
       }
       if (pocket.accumulatedAmount < alloc.amount) {
         throw new Error(
           `Fondos insuficientes en el bolsillo "${pocket.name}". ` +
-          `Disponible: $${pocket.accumulatedAmount.toFixed(2)}, ` +
-          `Solicitado: $${alloc.amount.toFixed(2)}`,
+            `Disponible: $${pocket.accumulatedAmount.toFixed(2)}, ` +
+            `Solicitado: $${alloc.amount.toFixed(2)}`,
         );
       }
     }
 
-    return await this.dataSource.transaction(async (transactionalEntityManager) => {
-      // 1. Save expense
-      const expenseEntity = transactionalEntityManager.create(ExpenseEntity, {
-        amount,
-        reason,
-        date,
-        userId,
-      });
-      const savedExpense = await transactionalEntityManager.save(expenseEntity);
+    return await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        // 1. Save expense
+        const expenseEntity = transactionalEntityManager.create(ExpenseEntity, {
+          amount,
+          reason,
+          date,
+          userId,
+        });
+        const savedExpense =
+          await transactionalEntityManager.save(expenseEntity);
 
-      // 2. Save allocations
-      const allocationEntities = allocations.map((alloc) =>
-        transactionalEntityManager.create(ExpenseAllocationEntity, {
-          expenseId: savedExpense.id,
-          pocketId: alloc.pocketId,
-          amount: alloc.amount,
-        }),
-      );
-      await transactionalEntityManager.save(allocationEntities);
+        // 2. Save allocations
+        const allocationEntities = allocations.map((alloc) =>
+          transactionalEntityManager.create(ExpenseAllocationEntity, {
+            expenseId: savedExpense.id,
+            pocketId: alloc.pocketId,
+            amount: alloc.amount,
+          }),
+        );
+        await transactionalEntityManager.save(allocationEntities);
 
-      return new Expense(savedExpense.amount, savedExpense.reason, savedExpense.date, savedExpense.id);
-    });
+        return new Expense(
+          savedExpense.amount,
+          savedExpense.reason,
+          savedExpense.date,
+          savedExpense.id,
+        );
+      },
+    );
   }
 }

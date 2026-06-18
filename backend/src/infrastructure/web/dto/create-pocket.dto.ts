@@ -1,4 +1,12 @@
-import { IsString, IsNumber, IsIn, Min, MinLength, MaxLength, IsOptional } from "class-validator";
+import {
+  IsString,
+  IsNumber,
+  IsIn,
+  Min,
+  MinLength,
+  MaxLength,
+  IsOptional,
+} from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class CreatePocketDto {
@@ -22,7 +30,8 @@ export class CreatePocketDto {
   type: string;
 
   @ApiProperty({
-    description: "Meta/objetivo de ahorro (requerido si type='goal', 0 si type='deposit')",
+    description:
+      "Meta/objetivo de ahorro (requerido si type='goal', 0 si type='deposit')",
     example: 5000000,
     minimum: 0,
     type: "number",
@@ -34,7 +43,8 @@ export class CreatePocketDto {
   goal?: number;
 
   @ApiPropertyOptional({
-    description: "Motivación del bolsillo (opcional, valor por defecto si no se envía)",
+    description:
+      "Motivación del bolsillo (opcional, valor por defecto si no se envía)",
     example: "Para ahorrar para un viaje",
     minLength: 1,
     maxLength: 100,
@@ -42,7 +52,9 @@ export class CreatePocketDto {
   @IsOptional()
   @IsString()
   @MinLength(1, { message: "Motivation is required" })
-  @MaxLength(100, { message: "Motivation cannot be longer than 100 characters" })
+  @MaxLength(100, {
+    message: "Motivation cannot be longer than 100 characters",
+  })
   motivation?: string;
 
   @ApiProperty({

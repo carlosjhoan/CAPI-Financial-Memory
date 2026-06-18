@@ -223,7 +223,10 @@ export class LoanController {
           filterQuery.page = page;
           filterQuery.limit = limit;
 
-          result = await this.getAllLoansPaginatedUseCase.execute(req.user.id, filterQuery);
+          result = await this.getAllLoansPaginatedUseCase.execute(
+            req.user.id,
+            filterQuery,
+          );
         } else if (query.year) {
           const year = parseInt(query.year);
           if (isNaN(year)) {
@@ -243,7 +246,10 @@ export class LoanController {
             limit,
           };
 
-          result = await this.getAllLoansPaginatedUseCase.execute(req.user.id, filterQuery);
+          result = await this.getAllLoansPaginatedUseCase.execute(
+            req.user.id,
+            filterQuery,
+          );
         } else if (query.startDate && query.endDate) {
           const startDate = new Date(query.startDate + "T00:00:00.000Z");
           const endDate = new Date(query.endDate + "T23:59:59.999Z");
@@ -270,7 +276,10 @@ export class LoanController {
             limit,
           };
 
-          result = await this.getAllLoansPaginatedUseCase.execute(req.user.id, filterQuery);
+          result = await this.getAllLoansPaginatedUseCase.execute(
+            req.user.id,
+            filterQuery,
+          );
         } else {
           // Pagination only or debtor/status filter
           result = await this.getAllLoansPaginatedUseCase.execute(req.user.id, {
@@ -390,7 +399,11 @@ export class LoanController {
       if (updateLoanDto.debtor !== undefined)
         updateData.debtor = updateLoanDto.debtor;
 
-      const loan = await this.updateLoanUseCase.execute(req.user.id, id, updateData);
+      const loan = await this.updateLoanUseCase.execute(
+        req.user.id,
+        id,
+        updateData,
+      );
 
       return {
         statusCode: HttpStatus.OK,
@@ -461,7 +474,8 @@ export class LoanController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: "Eliminar un préstamo",
-    description: "Elimina un préstamo específico por ID (solo si está totalmente pagado)",
+    description:
+      "Elimina un préstamo específico por ID (solo si está totalmente pagado)",
   })
   @ApiParam({
     name: "id",
@@ -557,7 +571,11 @@ export class LoanController {
     // month es 1-indexed (1-12), convert to 0-indexed (0-11)
     const monthNum = month ? parseInt(month) - 1 : now.getUTCMonth();
 
-    const summary = await this.getMonthlySummaryUseCase.execute(req.user.id, yearNum, monthNum);
+    const summary = await this.getMonthlySummaryUseCase.execute(
+      req.user.id,
+      yearNum,
+      monthNum,
+    );
 
     return {
       statusCode: HttpStatus.OK,
@@ -589,7 +607,10 @@ export class LoanController {
     const now = new Date();
     const yearNum = year ? parseInt(year) : now.getUTCFullYear();
 
-    const summary = await this.getYearlySummaryUseCase.execute(req.user.id, yearNum);
+    const summary = await this.getYearlySummaryUseCase.execute(
+      req.user.id,
+      yearNum,
+    );
 
     return {
       statusCode: HttpStatus.OK,
@@ -644,7 +665,10 @@ export class LoanController {
     @Req() req: RequestWithUser,
     @Param("loanId", ParseUUIDPipe) loanId: string,
   ): Promise<ApiResponseDto<any>> {
-    const performance = await this.getLoanPerformanceUseCase.execute(req.user.id, loanId);
+    const performance = await this.getLoanPerformanceUseCase.execute(
+      req.user.id,
+      loanId,
+    );
 
     return {
       statusCode: HttpStatus.OK,

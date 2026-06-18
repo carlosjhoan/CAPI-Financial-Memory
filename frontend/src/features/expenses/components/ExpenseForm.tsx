@@ -57,7 +57,8 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
   const { data: pockets } = usePockets();
   const amount = watch('amount') || 0;
-  const allocations = watch('allocations') || [];
+  const rawAllocations = watch('allocations');
+  const allocations = useMemo(() => rawAllocations ?? [], [rawAllocations]);
   const totalAllocated = allocations.reduce((sum, alloc) => sum + (alloc.amount || 0), 0);
   const remaining = amount - totalAllocated;
 
@@ -84,7 +85,8 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
   const validateStep = async (): Promise<boolean> => {
     const fields = STEPS[currentStep].fields;
     if (fields.length === 0) return true;
-    return trigger(fields as any[]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return trigger(fields as any);
   };
 
   const handleContinue = async () => {

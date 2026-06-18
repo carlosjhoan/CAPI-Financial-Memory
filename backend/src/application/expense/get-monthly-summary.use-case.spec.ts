@@ -21,9 +21,13 @@ describe("GetMonthlySummaryUseCase", () => {
     };
     mockService.getMonthlySummary.mockResolvedValue(mockSummary);
 
-    const result = await useCase.execute('user-1', 2024, 0);
+    const result = await useCase.execute("user-1", 2024, 0);
 
-    expect(mockService.getMonthlySummary).toHaveBeenCalledWith('user-1', 2024, 0);
+    expect(mockService.getMonthlySummary).toHaveBeenCalledWith(
+      "user-1",
+      2024,
+      0,
+    );
     expect(result).toEqual(mockSummary);
   });
 
@@ -32,7 +36,9 @@ describe("GetMonthlySummaryUseCase", () => {
       new Error("Database error"),
     );
 
-    await expect(useCase.execute('user-1', 2024, 0)).rejects.toThrow("Database error");
+    await expect(useCase.execute("user-1", 2024, 0)).rejects.toThrow(
+      "Database error",
+    );
   });
 
   it("should be defined", () => {

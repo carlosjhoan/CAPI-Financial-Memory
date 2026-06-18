@@ -22,9 +22,10 @@ describe("GetExpensesByDateRangePaginatedUseCase", () => {
     };
     mockService.getExpensesByDateRangePaginated.mockResolvedValue(mockResult);
 
-    const result = await useCase.execute('user-1', startDate, endDate, 0, 10);
+    const result = await useCase.execute("user-1", startDate, endDate, 0, 10);
 
-    expect(mockService.getExpensesByDateRangePaginated).toHaveBeenCalledWith('user-1', 
+    expect(mockService.getExpensesByDateRangePaginated).toHaveBeenCalledWith(
+      "user-1",
       startDate,
       endDate,
       0,
@@ -39,7 +40,7 @@ describe("GetExpensesByDateRangePaginatedUseCase", () => {
     );
 
     await expect(
-      useCase.execute('user-1', new Date(), new Date(), 0, 10),
+      useCase.execute("user-1", new Date(), new Date(), 0, 10),
     ).rejects.toThrow("Database error");
   });
 

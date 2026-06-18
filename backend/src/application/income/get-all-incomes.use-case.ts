@@ -8,7 +8,11 @@ export class GetAllIncomesUseCase {
     return await this.incomeService.getAllIncomes(userId);
   }
 
-  async executePaginated(userId: string, skip: number, limit: number): Promise<{ data: Income[]; total: number }> {
+  async executePaginated(
+    userId: string,
+    skip: number,
+    limit: number,
+  ): Promise<{ data: Income[]; total: number }> {
     return await this.incomeService.getAllIncomesPaginated(userId, skip, limit);
   }
 }

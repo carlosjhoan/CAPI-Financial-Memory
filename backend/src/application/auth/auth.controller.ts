@@ -29,12 +29,7 @@ export class AuthController {
   @ApiOperation({ summary: "Registrar nuevo usuario" })
   @ApiResponse({ status: 201, description: "Usuario registrado exitosamente" })
   @ApiResponse({ status: 409, description: "El correo ya está registrado" })
-  async register(
-    @Body() registerDto: RegisterDto,
-    @Headers("x-forwarded-for") forwardedFor?: string,
-    @Headers("x-real-ip") realIp?: string,
-  ) {
-    const ip = forwardedFor || realIp || "";
+  async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
@@ -68,7 +63,10 @@ export class AuthController {
   @Post("refresh")
   @ApiOperation({ summary: "Renovar access token con refresh token" })
   @ApiResponse({ status: 200, description: "Token renovado exitosamente" })
-  @ApiResponse({ status: 401, description: "Refresh token inválido o expirado" })
+  @ApiResponse({
+    status: 401,
+    description: "Refresh token inválido o expirado",
+  })
   async refresh(
     @Body("refreshToken") refreshToken: string,
     @Headers("x-forwarded-for") forwardedFor?: string,

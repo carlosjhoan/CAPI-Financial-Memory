@@ -19,10 +19,7 @@ import { PocketRepository } from "../../../domain/repositories/pocket.repository
 import { PocketModule } from "./pocket.module";
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ExpenseEntity]),
-    PocketModule,
-  ],
+  imports: [TypeOrmModule.forFeature([ExpenseEntity]), PocketModule],
   controllers: [ExpenseController],
   providers: [
     {
@@ -36,7 +33,11 @@ import { PocketModule } from "./pocket.module";
         dataSource: DataSource,
         pocketRepository: PocketRepository,
       ) => {
-        return new CreateExpenseUseCase(expenseRepository, dataSource, pocketRepository);
+        return new CreateExpenseUseCase(
+          expenseRepository,
+          dataSource,
+          pocketRepository,
+        );
       },
       inject: ["ExpenseRepository", DataSource, "PocketRepository"],
     },

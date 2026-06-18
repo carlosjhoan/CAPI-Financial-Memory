@@ -48,8 +48,7 @@ export class Debt {
   date: Date;
 
   @ApiProperty({
-    description:
-      "Fecha del último pago registrado",
+    description: "Fecha del último pago registrado",
     example: "2024-06-15T00:00:00.000Z",
     required: false,
   })
@@ -80,7 +79,7 @@ export class Debt {
   ) {
     this.id = id!;
     this.userId = userId!;
-    this.reason = reason ?? 'Me endeudé y no sé ni para qué';
+    this.reason = reason ?? "Me endeudé y no sé ni para qué";
     this.initialAmount = initialAmount;
     this.lender = lender;
     this.months = months;
@@ -90,7 +89,7 @@ export class Debt {
     this.paidAmount = 0;
     this.remainingAmount = finalAmount;
     this.date = date;
-    this.reason = reason || 'Me endeudé y no sé ni para qué';
+    this.reason = reason || "Me endeudé y no sé ni para qué";
     this.lastPaymentDate = undefined;
     this.createdAt = new Date();
     this.updatedAt = new Date();

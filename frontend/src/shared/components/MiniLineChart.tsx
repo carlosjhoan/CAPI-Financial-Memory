@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 
 interface DepositItem {
   amount: number;
@@ -28,15 +28,6 @@ function parseDate(dateStr: string): Date {
   }
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d);
-}
-
-/** Format a date as "DD-MON-YY" (e.g., "09-MAY-26") */
-function formatDate(date: Date): string {
-  const day = String(date.getDate()).padStart(2, '0');
-  const months = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
-  const month = months[date.getMonth()];
-  const year = String(date.getFullYear()).slice(-2);
-  return `${day}-${month}-${year}`;
 }
 
 // ==========================================
@@ -121,12 +112,7 @@ const CHART_H = HEIGHT - PADDING.top - PADDING.bottom;
 // ==========================================
 
 const MiniLineChart: React.FC<MiniLineChartProps> = (props) => {
-  const dataPoints = useMemo(() => buildDataPoints(props), [
-    props.initialAmount,
-    props.deposits,
-    props.createdAt,
-    props.currentAccumulated,
-  ]);
+  const dataPoints = useMemo(() => buildDataPoints(props), [props]);
 
   if (dataPoints.length < 2) return null;
 

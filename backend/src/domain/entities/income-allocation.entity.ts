@@ -10,7 +10,7 @@ export class IncomeAllocation {
   @ApiProperty({ description: "ID del bolsillo" })
   pocketId: string;
 
-  @ApiProperty({ description: "Monto asignado", example: 100.00 })
+  @ApiProperty({ description: "Monto asignado", example: 100.0 })
   amount: number;
 
   constructor(incomeId: string, pocketId: string, amount: number, id?: string) {

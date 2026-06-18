@@ -1,7 +1,7 @@
-import { GetYearlySummaryUseCase } from './get-yearly-summary.use-case';
-import { DebtService } from '../../domain/services/debt.service';
+import { GetYearlySummaryUseCase } from "./get-yearly-summary.use-case";
+import { DebtService } from "../../domain/services/debt.service";
 
-describe('GetYearlySummaryUseCase', () => {
+describe("GetYearlySummaryUseCase", () => {
   let useCase: GetYearlySummaryUseCase;
   let mockService: jest.Mocked<DebtService>;
 
@@ -19,8 +19,8 @@ describe('GetYearlySummaryUseCase', () => {
     useCase = new GetYearlySummaryUseCase(mockService);
   });
 
-  describe('execute', () => {
-    it('should call debtService.getYearlySummary with year', async () => {
+  describe("execute", () => {
+    it("should call debtService.getYearlySummary with year", async () => {
       const mockSummary = {
         year: 2024,
         totalAmount: 50000,
@@ -46,20 +46,24 @@ describe('GetYearlySummaryUseCase', () => {
       };
       mockService.getYearlySummary.mockResolvedValue(mockSummary);
 
-      const result = await useCase.execute('user-1', 2024);
+      const result = await useCase.execute("user-1", 2024);
 
-      expect(mockService.getYearlySummary).toHaveBeenCalledWith('user-1', 2024);
+      expect(mockService.getYearlySummary).toHaveBeenCalledWith("user-1", 2024);
       expect(result).toEqual(mockSummary);
     });
 
-    it('should propagate errors from getYearlySummary', async () => {
-      mockService.getYearlySummary.mockRejectedValue(new Error('Database error'));
+    it("should propagate errors from getYearlySummary", async () => {
+      mockService.getYearlySummary.mockRejectedValue(
+        new Error("Database error"),
+      );
 
-      await expect(useCase.execute('user-1', 2024)).rejects.toThrow('Database error');
+      await expect(useCase.execute("user-1", 2024)).rejects.toThrow(
+        "Database error",
+      );
     });
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(useCase).toBeDefined();
   });
 });

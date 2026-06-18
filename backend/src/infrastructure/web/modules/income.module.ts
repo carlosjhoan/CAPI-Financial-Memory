@@ -19,9 +19,7 @@ import { GetIncomesByDateRangePaginatedUseCase } from "../../../application/inco
 import { GetIncomesByDateRangeUseCase } from "../../../application/income/get-incomes-by-date-range.use-case";
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([IncomeEntity]),
-  ],
+  imports: [TypeOrmModule.forFeature([IncomeEntity])],
   controllers: [IncomeController],
   providers: [
     {
@@ -30,7 +28,10 @@ import { GetIncomesByDateRangeUseCase } from "../../../application/income/get-in
     },
     {
       provide: CreateIncomeUseCase,
-      useFactory: (incomeRepository: TypeOrmIncomeRepository, dataSource: DataSource) => {
+      useFactory: (
+        incomeRepository: TypeOrmIncomeRepository,
+        dataSource: DataSource,
+      ) => {
         return new CreateIncomeUseCase(incomeRepository, dataSource);
       },
       inject: ["IncomeRepository", DataSource],

@@ -44,14 +44,22 @@ export function parseCurrencyCOP(formattedValue: string): number {
   }
 
   // Remover símbolo de peso y espacios
-  const cleanValue = formattedValue.replace(/[$\s]/g, '');
+  let cleanValue = formattedValue.replace(/[$\s]/g, '');
 
-  // Reemplazar separadores de miles y decimales
-  const normalizedValue = cleanValue
-    .replace(/\./g, '')  // Eliminar puntos (separadores de miles)
-    .replace(/,/g, '.'); // Reemplazar coma decimal por punto
+  // Si contiene caracteres no numéricos (excepto .,), no es un monto válido
+  if (!/^[\d.,]+$/.test(cleanValue)) {
+    return NaN;
+  }
 
-  const parsed = parseFloat(normalizedValue);
+  // Si tiene múltiples puntos o una coma, los puntos son separadores de miles
+  const dotCount = (cleanValue.match(/\./g) || []).length;
+  if (dotCount > 1 || cleanValue.includes(',')) {
+    cleanValue = cleanValue.replace(/\./g, '');
+  }
+  // Reemplazar coma decimal por punto estándar
+  cleanValue = cleanValue.replace(/,/g, '.');
+
+  const parsed = parseFloat(cleanValue);
   return isNaN(parsed) ? 0 : parsed;
 }
 

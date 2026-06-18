@@ -9,7 +9,11 @@ export interface IncomeRepository {
     limit: number,
     userId?: string,
   ): Promise<{ data: Income[]; total: number }>;
-  findByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<Income[]>;
+  findByDateRange(
+    startDate: Date,
+    endDate: Date,
+    userId?: string,
+  ): Promise<Income[]>;
   findByDateRangePaginated(
     startDate: Date,
     endDate: Date,

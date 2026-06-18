@@ -71,7 +71,8 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
   const validateStep = async (): Promise<boolean> => {
     const fields = STEPS[currentStep].fields;
     if (fields.length === 0) return true;
-    return trigger(fields as any[]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return trigger(fields as any);
   };
 
   const handleContinue = async () => {

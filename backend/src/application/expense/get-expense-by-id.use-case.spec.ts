@@ -17,16 +17,16 @@ describe("GetExpenseByIdUseCase", () => {
     const mockExpense = new Expense(100, "Food", new Date(), "1");
     mockService.getExpenseById.mockResolvedValue(mockExpense);
 
-    const result = await useCase.execute('user-1', "1");
+    const result = await useCase.execute("user-1", "1");
 
-    expect(mockService.getExpenseById).toHaveBeenCalledWith('user-1', "1");
+    expect(mockService.getExpenseById).toHaveBeenCalledWith("user-1", "1");
     expect(result).toEqual(mockExpense);
   });
 
   it("should propagate errors from the service", async () => {
     mockService.getExpenseById.mockRejectedValue(new Error("Not found"));
 
-    await expect(useCase.execute('user-1', "999")).rejects.toThrow("Not found");
+    await expect(useCase.execute("user-1", "999")).rejects.toThrow("Not found");
   });
 
   it("should be defined", () => {

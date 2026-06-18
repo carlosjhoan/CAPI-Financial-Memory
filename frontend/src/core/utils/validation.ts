@@ -49,7 +49,7 @@ export const validationSchemas = {
   // Validación para números de teléfono
   phone: z
     .string({ required_error: 'El teléfono es requerido' })
-    .regex(/^\+?[\d\s\-\(\)]+$/, 'Número de teléfono inválido'),
+    .regex(/^\+?[\d\s\-()]+$/, 'Número de teléfono inválido'),
 };
 
 // Función para validar un objeto contra un schema

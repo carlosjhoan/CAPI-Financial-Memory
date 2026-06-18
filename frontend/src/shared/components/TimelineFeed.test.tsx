@@ -11,7 +11,7 @@ beforeAll(() => {
       constructor(private callback: IntersectionObserverCallback) {}
       observe(el: Element) {
         this.callback(
-          [{ isIntersecting: true, target: el, intersectionRatio: 1, boundingClientRect: {} as DOMRectReadOnly, intersectionRect: {} as DOMRectReadOnly, rootBounds: null, isVisible: true }] as IntersectionObserverEntry[],
+          [{ isIntersecting: true, target: el, intersectionRatio: 1, boundingClientRect: {} as DOMRectReadOnly, intersectionRect: {} as DOMRectReadOnly, rootBounds: null }] as IntersectionObserverEntry[],
           {} as IntersectionObserver,
         );
       }
@@ -201,7 +201,7 @@ describe('TimelineFeed', () => {
   });
 
   it('should accept renderFocusCard prop without affecting basic rendering', () => {
-    const { container } = render(
+    const { container: _container } = render(
       <TimelineFeed
         items={TEST_ITEMS}
         renderRow={(item) => <span>{item.label}</span>}

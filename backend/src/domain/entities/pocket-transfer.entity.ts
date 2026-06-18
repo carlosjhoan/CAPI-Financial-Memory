@@ -10,10 +10,13 @@ export class PocketTransfer {
   @ApiProperty({ description: "ID del bolsillo de destino" })
   targetPocketId: string;
 
-  @ApiProperty({ description: "Monto transferido", example: 50.00 })
+  @ApiProperty({ description: "Monto transferido", example: 50.0 })
   amount: number;
 
-  @ApiProperty({ description: "Razón de la transferencia", example: "Ajuste de presupuesto" })
+  @ApiProperty({
+    description: "Razón de la transferencia",
+    example: "Ajuste de presupuesto",
+  })
   reason: string;
 
   @ApiProperty({ description: "Fecha de la transferencia" })

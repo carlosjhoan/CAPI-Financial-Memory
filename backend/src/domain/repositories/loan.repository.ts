@@ -23,7 +23,11 @@ export interface LoanRepository {
     activeLoansCount: number;
   }>;
   getOverdueLoans(userId?: string): Promise<Loan[]>;
-  getLoansByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<Loan[]>;
+  getLoansByDateRange(
+    startDate: Date,
+    endDate: Date,
+    userId?: string,
+  ): Promise<Loan[]>;
   update(loan: Loan): Promise<Loan>;
   delete(id: string, userId?: string): Promise<void>;
 }

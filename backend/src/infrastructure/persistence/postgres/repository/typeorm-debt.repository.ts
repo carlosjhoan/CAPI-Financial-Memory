@@ -112,10 +112,10 @@ export class TypeOrmDebtRepository implements DebtRepository {
     }
 
     // Apply status filter if present
-    if (query.status === 'active') {
-      queryBuilder.andWhere('debt.paidAmount < debt.finalAmount');
-    } else if (query.status === 'paid') {
-      queryBuilder.andWhere('debt.paidAmount >= debt.finalAmount');
+    if (query.status === "active") {
+      queryBuilder.andWhere("debt.paidAmount < debt.finalAmount");
+    } else if (query.status === "paid") {
+      queryBuilder.andWhere("debt.paidAmount >= debt.finalAmount");
     }
 
     const page = query?.page || 1;
@@ -133,7 +133,11 @@ export class TypeOrmDebtRepository implements DebtRepository {
     };
   }
 
-  async findByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<Debt[]> {
+  async findByDateRange(
+    startDate: Date,
+    endDate: Date,
+    userId?: string,
+  ): Promise<Debt[]> {
     const where: any = {
       date: Between(startDate, endDate),
     };
@@ -195,7 +199,10 @@ export class TypeOrmDebtRepository implements DebtRepository {
     };
   }
 
-  async getYearlySummary(year: number, userId?: string): Promise<{
+  async getYearlySummary(
+    year: number,
+    userId?: string,
+  ): Promise<{
     monthlyBreakdown: { month: number; total: number; count: number }[];
   }> {
     const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));

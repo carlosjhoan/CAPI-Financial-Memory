@@ -93,7 +93,8 @@ export class PocketController {
         createPocketDto.type as "goal" | "deposit",
         createPocketDto.goal ?? 0,
         createPocketDto.accumulatedAmount,
-        createPocketDto.motivation ?? 'Quiero ahorrar para algo que aún no sé qué es',
+        createPocketDto.motivation ??
+          "Quiero ahorrar para algo que aún no sé qué es",
         createPocketDto.initialAmount,
       );
 
@@ -123,9 +124,7 @@ export class PocketController {
     description: "Lista de bolsillos obtenida exitosamente",
     type: ApiResponseDto,
   })
-  async findAll(
-    @Req() req: RequestWithUser,
-  ): Promise<ApiResponseDto<any>> {
+  async findAll(@Req() req: RequestWithUser): Promise<ApiResponseDto<any>> {
     const pockets = await this.getAllPocketsUseCase.execute(req.user.id);
 
     return {
@@ -146,9 +145,7 @@ export class PocketController {
     description: "Resumen obtenido exitosamente",
     type: ApiResponseDto,
   })
-  async getSummary(
-    @Req() req: RequestWithUser,
-  ): Promise<ApiResponseDto<any>> {
+  async getSummary(@Req() req: RequestWithUser): Promise<ApiResponseDto<any>> {
     const summary = await this.getPocketsSummaryUseCase.execute(req.user.id);
 
     return {
@@ -185,10 +182,14 @@ export class PocketController {
     @Query("limit") limit?: number,
   ): Promise<ApiResponseDto<any> | ErrorResponse> {
     try {
-      const deposits = await this.getDepositsByPocketIdUseCase.execute(req.user.id, id, {
-        offset: offset ? Number(offset) : undefined,
-        limit: limit ? Number(limit) : undefined,
-      });
+      const deposits = await this.getDepositsByPocketIdUseCase.execute(
+        req.user.id,
+        id,
+        {
+          offset: offset ? Number(offset) : undefined,
+          limit: limit ? Number(limit) : undefined,
+        },
+      );
 
       return {
         statusCode: HttpStatus.OK,
@@ -247,10 +248,14 @@ export class PocketController {
       const pageNum = page ? Number(page) : 1;
       const limitNum = limit ? Number(limit) : 20;
 
-      const { items, total } = await this.pocketService.getHistoryByPocketId(req.user.id, id, {
-        page: pageNum,
-        limit: limitNum,
-      });
+      const { items, total } = await this.pocketService.getHistoryByPocketId(
+        req.user.id,
+        id,
+        {
+          page: pageNum,
+          limit: limitNum,
+        },
+      );
 
       const totalPages = Math.ceil(total / limitNum);
 
@@ -385,7 +390,11 @@ export class PocketController {
       if (updatePocketDto.motivation !== undefined)
         updateData.motivation = updatePocketDto.motivation;
 
-      const pocket = await this.updatePocketUseCase.execute(req.user.id, id, updateData);
+      const pocket = await this.updatePocketUseCase.execute(
+        req.user.id,
+        id,
+        updateData,
+      );
 
       return {
         statusCode: HttpStatus.OK,
@@ -433,9 +442,7 @@ export class PocketController {
     @Body() registerDepositDto: RegisterDepositDto,
   ): Promise<ApiResponseDto<any> | ErrorResponse> {
     try {
-      const depositDate = new Date(
-        registerDepositDto.date + "T12:00:00.000Z",
-      );
+      const depositDate = new Date(registerDepositDto.date + "T12:00:00.000Z");
 
       const result = await this.registerDepositUseCase.execute(
         req.user.id,
@@ -499,7 +506,8 @@ export class PocketController {
     type: ApiResponseDto,
   })
   @ApiBadRequestResponse({
-    description: "Datos inválidos, bolsillo no encontrado o fondos insuficientes",
+    description:
+      "Datos inválidos, bolsillo no encontrado o fondos insuficientes",
     type: ErrorResponse,
   })
   async transfer(
@@ -555,7 +563,8 @@ export class PocketController {
     type: ApiResponseDto,
   })
   @ApiBadRequestResponse({
-    description: "Distribuciones inválidas, fondos insuficientes o meta excedida",
+    description:
+      "Distribuciones inválidas, fondos insuficientes o meta excedida",
     type: ErrorResponse,
   })
   @ApiNotFoundResponse({
@@ -584,7 +593,13 @@ export class PocketController {
       };
     } catch (error) {
       const msg = error.message || "";
-      if (msg.startsWith("CANNOT_DELETE_WITH_FUNDS") || msg.startsWith("DISTRIBUTION_SUM_MISMATCH") || msg.startsWith("SOURCE_IS_TARGET") || msg.startsWith("TRANSFER_EXCEEDS_GOAL") || msg.startsWith("INSUFFICIENT_FUNDS")) {
+      if (
+        msg.startsWith("CANNOT_DELETE_WITH_FUNDS") ||
+        msg.startsWith("DISTRIBUTION_SUM_MISMATCH") ||
+        msg.startsWith("SOURCE_IS_TARGET") ||
+        msg.startsWith("TRANSFER_EXCEEDS_GOAL") ||
+        msg.startsWith("INSUFFICIENT_FUNDS")
+      ) {
         throw new BadRequestException({
           statusCode: HttpStatus.BAD_REQUEST,
           error: "Bad Request",

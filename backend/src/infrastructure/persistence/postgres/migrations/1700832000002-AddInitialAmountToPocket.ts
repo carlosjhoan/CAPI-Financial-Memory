@@ -6,7 +6,8 @@ export class AddInitialAmountToPocket1700832000002
   public async up(queryRunner: QueryRunner): Promise<void> {
     const pocketsTable = await queryRunner.getTable("pockets");
     if (pocketsTable) {
-      const initialAmountColumn = pocketsTable.findColumnByName("initialAmount");
+      const initialAmountColumn =
+        pocketsTable.findColumnByName("initialAmount");
       if (!initialAmountColumn) {
         await queryRunner.addColumn(
           "pockets",
@@ -25,7 +26,8 @@ export class AddInitialAmountToPocket1700832000002
   public async down(queryRunner: QueryRunner): Promise<void> {
     const pocketsTable = await queryRunner.getTable("pockets");
     if (pocketsTable) {
-      const initialAmountColumn = pocketsTable.findColumnByName("initialAmount");
+      const initialAmountColumn =
+        pocketsTable.findColumnByName("initialAmount");
       if (initialAmountColumn) {
         await queryRunner.dropColumn("pockets", "initialAmount");
       }

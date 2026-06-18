@@ -14,7 +14,6 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');

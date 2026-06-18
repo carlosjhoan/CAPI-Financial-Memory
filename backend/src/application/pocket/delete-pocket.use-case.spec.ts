@@ -1,7 +1,7 @@
-import { DeletePocketUseCase } from './delete-pocket.use-case';
-import { PocketService } from '../../domain/services/pocket.service';
+import { DeletePocketUseCase } from "./delete-pocket.use-case";
+import { PocketService } from "../../domain/services/pocket.service";
 
-describe('DeletePocketUseCase', () => {
+describe("DeletePocketUseCase", () => {
   let useCase: DeletePocketUseCase;
   let mockService: jest.Mocked<PocketService>;
 
@@ -12,23 +12,28 @@ describe('DeletePocketUseCase', () => {
     useCase = new DeletePocketUseCase(mockService);
   });
 
-  describe('execute', () => {
-    it('should call pocketService.deletePocket with correct id', async () => {
+  describe("execute", () => {
+    it("should call pocketService.deletePocket with correct id", async () => {
       mockService.deletePocket.mockResolvedValue();
 
-      await useCase.execute('user-1', 'pocket-1');
+      await useCase.execute("user-1", "pocket-1");
 
-      expect(mockService.deletePocket).toHaveBeenCalledWith('user-1', 'pocket-1');
+      expect(mockService.deletePocket).toHaveBeenCalledWith(
+        "user-1",
+        "pocket-1",
+      );
     });
 
-    it('should propagate errors from deletePocket', async () => {
-      mockService.deletePocket.mockRejectedValue(new Error('Pocket not found'));
+    it("should propagate errors from deletePocket", async () => {
+      mockService.deletePocket.mockRejectedValue(new Error("Pocket not found"));
 
-      await expect(useCase.execute('user-1', 'invalid-id')).rejects.toThrow('Pocket not found');
+      await expect(useCase.execute("user-1", "invalid-id")).rejects.toThrow(
+        "Pocket not found",
+      );
     });
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(useCase).toBeDefined();
   });
 });

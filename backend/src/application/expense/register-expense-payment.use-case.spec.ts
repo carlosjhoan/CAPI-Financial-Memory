@@ -20,22 +20,22 @@ describe("RegisterExpensePaymentUseCase", () => {
     mockRepo.findById.mockResolvedValue(mockExpense);
     mockRepo.update.mockResolvedValue(mockExpense);
 
-    const result = await useCase.execute('user-1', "1", 50);
+    const result = await useCase.execute("user-1", "1", 50);
 
-    expect(mockRepo.findById).toHaveBeenCalledWith('user-1', "1");
+    expect(mockRepo.findById).toHaveBeenCalledWith("1", "user-1");
     expect(mockRepo.update).toHaveBeenCalled();
     expect(result).toEqual(mockExpense);
   });
 
   it("should throw if amount is 0", async () => {
-    await expect(useCase.execute('user-1', "1", 0)).rejects.toThrow(
+    await expect(useCase.execute("user-1", "1", 0)).rejects.toThrow(
       "Payment amount must be greater than 0",
     );
     expect(mockRepo.findById).not.toHaveBeenCalled();
   });
 
   it("should throw if amount is negative", async () => {
-    await expect(useCase.execute('user-1', "1", -50)).rejects.toThrow(
+    await expect(useCase.execute("user-1", "1", -50)).rejects.toThrow(
       "Payment amount must be greater than 0",
     );
     expect(mockRepo.findById).not.toHaveBeenCalled();
@@ -44,7 +44,7 @@ describe("RegisterExpensePaymentUseCase", () => {
   it("should throw if expense not found", async () => {
     mockRepo.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('user-1', "999", 50)).rejects.toThrow(
+    await expect(useCase.execute("user-1", "999", 50)).rejects.toThrow(
       "Expense not found",
     );
     expect(mockRepo.update).not.toHaveBeenCalled();

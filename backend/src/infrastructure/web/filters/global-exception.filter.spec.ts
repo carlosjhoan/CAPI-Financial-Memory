@@ -93,7 +93,9 @@ describe("GlobalExceptionFilter", () => {
     });
 
     it("should not leak internal error details in response", () => {
-      const exception = new Error("SENSITIVE_INTERNAL_DETAILS: password_hash=abc123");
+      const exception = new Error(
+        "SENSITIVE_INTERNAL_DETAILS: password_hash=abc123",
+      );
 
       filter.catch(exception, mockArgumentsHost);
 

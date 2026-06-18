@@ -18,11 +18,25 @@ export class IncomeService {
     date: Date,
     allocations: AllocationDto[],
   ): Promise<Income> {
-    return await this.createIncomeUseCase.execute(userId, amount, reason, date, allocations);
+    return await this.createIncomeUseCase.execute(
+      userId,
+      amount,
+      reason,
+      date,
+      allocations,
+    );
   }
 
-  async registerPayment(userId: string, incomeId: string, amount: number): Promise<Income> {
-    return await this.registerIncomePaymentUseCase.execute(userId, incomeId, amount);
+  async registerPayment(
+    userId: string,
+    incomeId: string,
+    amount: number,
+  ): Promise<Income> {
+    return await this.registerIncomePaymentUseCase.execute(
+      userId,
+      incomeId,
+      amount,
+    );
   }
 
   async getAllIncomes(userId: string): Promise<Income[]> {
@@ -98,7 +112,11 @@ export class IncomeService {
     startDate: Date,
     endDate: Date,
   ): Promise<Income[]> {
-    return await this.incomeRepository.findByDateRange(startDate, endDate, userId);
+    return await this.incomeRepository.findByDateRange(
+      startDate,
+      endDate,
+      userId,
+    );
   }
 
   async getIncomesByDateRangePaginated(
@@ -248,7 +266,10 @@ export class IncomeService {
     };
   }
 
-  async getYearlySummary(userId: string, year: number): Promise<{
+  async getYearlySummary(
+    userId: string,
+    year: number,
+  ): Promise<{
     year: number;
     totalAmount: number;
     monthlyBreakdown: Record<string, number>;

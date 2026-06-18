@@ -14,7 +14,6 @@ import { LoginAttemptEntity } from "../../infrastructure/persistence/postgres/en
 import { TypeOrmUserRepository } from "../../infrastructure/persistence/postgres/repository/typeorm-user.repository";
 import { TypeOrmRefreshTokenRepository } from "../../infrastructure/persistence/postgres/repository/typeorm-refresh-token.repository";
 import { TypeOrmLoginAttemptRepository } from "../../infrastructure/persistence/postgres/repository/typeorm-login-attempt.repository";
-import { UserRepository } from "../../domain/repositories/user.repository";
 
 @Module({
   imports: [
