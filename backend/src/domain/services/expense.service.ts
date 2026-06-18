@@ -18,11 +18,25 @@ export class ExpenseService {
     date: Date,
     allocations: AllocationDto[],
   ): Promise<Expense> {
-    return await this.createExpenseUseCase.execute(userId, amount, reason, date, allocations);
+    return await this.createExpenseUseCase.execute(
+      userId,
+      amount,
+      reason,
+      date,
+      allocations,
+    );
   }
 
-  async registerPayment(userId: string, expenseId: string, amount: number): Promise<Expense> {
-    return await this.registerExpensePaymentUseCase.execute(userId, expenseId, amount);
+  async registerPayment(
+    userId: string,
+    expenseId: string,
+    amount: number,
+  ): Promise<Expense> {
+    return await this.registerExpensePaymentUseCase.execute(
+      userId,
+      expenseId,
+      amount,
+    );
   }
 
   async getAllExpenses(userId: string): Promise<Expense[]> {
@@ -242,7 +256,10 @@ export class ExpenseService {
     };
   }
 
-  async getYearlySummary(userId: string, year: number): Promise<{
+  async getYearlySummary(
+    userId: string,
+    year: number,
+  ): Promise<{
     year: number;
     totalAmount: number;
     monthlyBreakdown: Record<string, number>;

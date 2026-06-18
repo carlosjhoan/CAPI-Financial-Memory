@@ -29,11 +29,20 @@ export class CreatePocketUseCase {
       throw new Error("Accumulated amount cannot be negative");
     }
 
-    const finalMotivation = motivation && motivation.trim().length > 0
-      ? motivation.trim()
-      : 'Quiero ahorrar para algo que aún no sé qué es';
+    const finalMotivation =
+      motivation && motivation.trim().length > 0
+        ? motivation.trim()
+        : "Quiero ahorrar para algo que aún no sé qué es";
 
-    const pocket = new Pocket(name, type, goal, accumulatedAmount, finalMotivation, undefined, userId);
+    const pocket = new Pocket(
+      name,
+      type,
+      goal,
+      accumulatedAmount,
+      finalMotivation,
+      undefined,
+      userId,
+    );
     pocket.initialAmount = initialAmount ?? accumulatedAmount;
     return await this.pocketRepository.save(pocket);
   }

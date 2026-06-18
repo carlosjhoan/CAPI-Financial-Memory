@@ -1,7 +1,7 @@
-import { GetDebtsSummaryUseCase } from './get-debts-summary.use-case';
-import { DebtService } from '../../domain/services/debt.service';
+import { GetDebtsSummaryUseCase } from "./get-debts-summary.use-case";
+import { DebtService } from "../../domain/services/debt.service";
 
-describe('GetDebtsSummaryUseCase', () => {
+describe("GetDebtsSummaryUseCase", () => {
   let useCase: GetDebtsSummaryUseCase;
   let mockService: jest.Mocked<DebtService>;
 
@@ -19,8 +19,8 @@ describe('GetDebtsSummaryUseCase', () => {
     useCase = new GetDebtsSummaryUseCase(mockService);
   });
 
-  describe('execute', () => {
-    it('should call debtService.getDebtsSummary and return summary', async () => {
+  describe("execute", () => {
+    it("should call debtService.getDebtsSummary and return summary", async () => {
       const mockSummary = {
         totalDebts: 5,
         totalAmount: 10000,
@@ -31,20 +31,22 @@ describe('GetDebtsSummaryUseCase', () => {
       };
       mockService.getDebtsSummary.mockResolvedValue(mockSummary);
 
-      const result = await useCase.execute('user-1');
+      const result = await useCase.execute("user-1");
 
       expect(mockService.getDebtsSummary).toHaveBeenCalled();
       expect(result).toEqual(mockSummary);
     });
 
-    it('should propagate errors from getDebtsSummary', async () => {
-      mockService.getDebtsSummary.mockRejectedValue(new Error('Database error'));
+    it("should propagate errors from getDebtsSummary", async () => {
+      mockService.getDebtsSummary.mockRejectedValue(
+        new Error("Database error"),
+      );
 
-      await expect(useCase.execute('user-1')).rejects.toThrow('Database error');
+      await expect(useCase.execute("user-1")).rejects.toThrow("Database error");
     });
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(useCase).toBeDefined();
   });
 });

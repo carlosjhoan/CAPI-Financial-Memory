@@ -56,7 +56,7 @@ export function useCreateIncome() {
 
       success('Ingreso creado', `El ingreso de $${newIncome.amount.toFixed(2)} ha sido creado exitosamente`);
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error al crear ingreso', err.message || 'No se pudo crear el ingreso');
     },
   });
@@ -78,7 +78,7 @@ export function useUpdateIncome() {
 
       success('Ingreso actualizado', `El ingreso ha sido actualizado exitosamente`);
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error al actualizar ingreso', err.message || 'No se pudo actualizar el ingreso');
     },
   });
@@ -99,7 +99,7 @@ export function useDeleteIncome() {
 
       success('Ingreso eliminado', 'El ingreso ha sido eliminado exitosamente');
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       showError('Error al eliminar ingreso', err.message || 'No se pudo eliminar el ingreso');
     },
   });

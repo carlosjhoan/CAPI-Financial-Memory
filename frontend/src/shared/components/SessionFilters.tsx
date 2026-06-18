@@ -122,14 +122,15 @@ const SessionFilters: React.FC<SessionFiltersProps> = ({
   const a = getAccent();
 
   // ── Handlers ──
-  const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number) => {
-    const timeoutId = useRef<ReturnType<typeof setTimeout>>();
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number) => {
     return (...args: Parameters<T>) => {
-      if (timeoutId.current) clearTimeout(timeoutId.current);
-      timeoutId.current = setTimeout(() => fn(...args), delay);
+      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+      debounceTimeoutRef.current = setTimeout(() => fn(...args), delay);
     };
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedOnFilterChange = useCallback(
     debounce((type: SessionFilterType, start?: string, end?: string, y?: number, m?: number) => {
       if (type === 'dateRange' && start && end) {

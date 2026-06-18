@@ -1,7 +1,7 @@
-import { GetMonthlySummaryUseCase } from './get-monthly-summary.use-case';
-import { IncomeService } from '../../domain/services/income.service';
+import { GetMonthlySummaryUseCase } from "./get-monthly-summary.use-case";
+import { IncomeService } from "../../domain/services/income.service";
 
-describe('GetMonthlySummaryUseCase', () => {
+describe("GetMonthlySummaryUseCase", () => {
   let useCase: GetMonthlySummaryUseCase;
   let mockService: jest.Mocked<IncomeService>;
 
@@ -12,31 +12,37 @@ describe('GetMonthlySummaryUseCase', () => {
     useCase = new GetMonthlySummaryUseCase(mockService);
   });
 
-  it('should call incomeService.getMonthlySummary with the correct year and month', async () => {
+  it("should call incomeService.getMonthlySummary with the correct year and month", async () => {
     const mockSummary = {
-      month: 'January 2024',
+      month: "January 2024",
       totalAmount: 500,
       incomeCount: 2,
-      dailyBreakdown: { '15': 300, '20': 200 },
+      dailyBreakdown: { "15": 300, "20": 200 },
       byReason: { Salary: 300, Freelance: 200 },
     };
     mockService.getMonthlySummary.mockResolvedValue(mockSummary);
 
-    const result = await useCase.execute('user-1', 2024, 0);
+    const result = await useCase.execute("user-1", 2024, 0);
 
-    expect(mockService.getMonthlySummary).toHaveBeenCalledWith('user-1', 2024, 0);
+    expect(mockService.getMonthlySummary).toHaveBeenCalledWith(
+      "user-1",
+      2024,
+      0,
+    );
     expect(result).toEqual(mockSummary);
   });
 
-  it('should propagate errors from the service', async () => {
+  it("should propagate errors from the service", async () => {
     mockService.getMonthlySummary.mockRejectedValue(
-      new Error('Database error'),
+      new Error("Database error"),
     );
 
-    await expect(useCase.execute('user-1', 2024, 0)).rejects.toThrow('Database error');
+    await expect(useCase.execute("user-1", 2024, 0)).rejects.toThrow(
+      "Database error",
+    );
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(useCase).toBeDefined();
   });
 });

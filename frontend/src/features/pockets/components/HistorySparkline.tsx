@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { Pocket } from '../types/pocket.types';
 import { formatCurrency } from '../../../core/utils/format';
@@ -285,7 +286,6 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
 
     const rafId = requestAnimationFrame(runAnimation);
     return () => cancelAnimationFrame(rafId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalLength, animate]);
 
   // ── Disparar onReady cuando termina el dibujo (o no hay animación) ──
@@ -426,7 +426,6 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
       }, AUTO_PLAY_CARD_DELAY);
       cardTimerRef.current = timer;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offset, cardSelectedIndices, totalLength, svgPoints.length, animate]);
 
   // ── Cleanup al desmontar ──
@@ -799,7 +798,7 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
                   height: '20px',
                   transform: 'translate(-50%, -50%)',
                   opacity: isVisible ? 1 : 0,
-                  pointerEvents: isVisible ? 'auto' : 'none' as any,
+                   pointerEvents: isVisible ? 'auto' : 'none',
                   background: hoveredIndex === i ? 'rgba(168,85,247,0.15)' : 'transparent',
                 }}
               />

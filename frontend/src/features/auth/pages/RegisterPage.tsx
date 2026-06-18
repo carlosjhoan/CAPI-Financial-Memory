@@ -53,8 +53,8 @@ const RegisterPage = () => {
       const response = await authService.register({ email, password, name });
       login(response.accessToken, response.refreshToken);
       navigate('/');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al crear la cuenta');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al crear la cuenta');
     } finally {
       setIsLoading(false);
     }

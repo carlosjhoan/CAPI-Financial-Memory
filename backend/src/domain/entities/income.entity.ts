@@ -31,7 +31,13 @@ export class Income {
   })
   createdAt: Date;
 
-  constructor(amount: number, reason: string, date: Date, id?: string, userId?: string) {
+  constructor(
+    amount: number,
+    reason: string,
+    date: Date,
+    id?: string,
+    userId?: string,
+  ) {
     this.id = id!;
     this.userId = userId!;
     this.amount = amount;

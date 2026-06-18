@@ -9,6 +9,10 @@ export class GetAllExpensesPaginatedUseCase {
     skip: number,
     limit: number,
   ): Promise<{ data: Expense[]; total: number }> {
-    return await this.expenseService.getAllExpensesPaginated(userId, skip, limit);
+    return await this.expenseService.getAllExpensesPaginated(
+      userId,
+      skip,
+      limit,
+    );
   }
 }

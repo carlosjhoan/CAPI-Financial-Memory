@@ -29,8 +29,16 @@ export class LoanService {
     );
   }
 
-  async registerPayment(userId: string, loanId: string, amount: number): Promise<Loan> {
-    return await this.registerLoanPaymentUseCase.execute(userId, loanId, amount);
+  async registerPayment(
+    userId: string,
+    loanId: string,
+    amount: number,
+  ): Promise<Loan> {
+    return await this.registerLoanPaymentUseCase.execute(
+      userId,
+      loanId,
+      amount,
+    );
   }
 
   async getAllLoans(userId: string): Promise<Loan[]> {
@@ -193,7 +201,10 @@ export class LoanService {
     });
   }
 
-  async getLoanPerformance(userId: string, loanId: string): Promise<{
+  async getLoanPerformance(
+    userId: string,
+    loanId: string,
+  ): Promise<{
     loan: Loan;
     monthsSinceStart: number;
     expectedPayments: number;
@@ -367,8 +378,7 @@ export class LoanService {
     monthLoans.forEach((loan) => {
       const day = new Date(loan.date).getUTCDate().toString().padStart(2, "0");
       byDay[day] = (byDay[day] || 0) + loan.initialAmount;
-      byDebtor[loan.debtor] =
-        (byDebtor[loan.debtor] || 0) + loan.initialAmount;
+      byDebtor[loan.debtor] = (byDebtor[loan.debtor] || 0) + loan.initialAmount;
     });
 
     const monthNames = [
@@ -402,7 +412,10 @@ export class LoanService {
     };
   }
 
-  async getYearlySummary(userId: string, year: number): Promise<{
+  async getYearlySummary(
+    userId: string,
+    year: number,
+  ): Promise<{
     year: number;
     totalAmountLent: number;
     totalInterest: number;

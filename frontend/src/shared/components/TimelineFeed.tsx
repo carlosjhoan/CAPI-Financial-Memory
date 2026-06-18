@@ -325,7 +325,7 @@ function TimelineFeed<T>({
     return () => {
       running = false;
     };
-  }, [animateSlides, isInView, totalItems, transitioning, revealedItems]);
+  }, [animateSlides, isInView, totalItems, transitioning, revealedItems, renderFocusCard]);
 
   // ── Scroll start trigger (viewport-full) ────
   useEffect(() => {

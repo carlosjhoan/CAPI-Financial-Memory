@@ -105,11 +105,13 @@ export interface OverallSummary {
 /**
  * Filter configuration for dynamic FilterPanel
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface FilterConfig<T extends Record<string, any>> {
   key: keyof T;
   label: string;
   type: 'select' | 'date' | 'number' | 'range' | 'text';
   placeholder?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options?: { value: any; label: string }[];
   min?: number;
   max?: number;

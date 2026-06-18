@@ -39,7 +39,12 @@ export class DebtService {
     amount: number,
     date?: Date,
   ): Promise<Debt> {
-    return await this.registerPaymentUseCase.execute(userId, debtId, amount, date);
+    return await this.registerPaymentUseCase.execute(
+      userId,
+      debtId,
+      amount,
+      date,
+    );
   }
 
   async getAllDebts(userId: string): Promise<Debt[]> {
@@ -181,8 +186,16 @@ export class DebtService {
     };
   }
 
-  async getDebtsByDateRange(userId: string, startDate: Date, endDate: Date): Promise<Debt[]> {
-    return await this.debtRepository.findByDateRange(startDate, endDate, userId);
+  async getDebtsByDateRange(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Debt[]> {
+    return await this.debtRepository.findByDateRange(
+      startDate,
+      endDate,
+      userId,
+    );
   }
 
   async getMonthlySummary(
@@ -256,7 +269,10 @@ export class DebtService {
     };
   }
 
-  async getYearlySummary(userId: string, year: number): Promise<{
+  async getYearlySummary(
+    userId: string,
+    year: number,
+  ): Promise<{
     year: number;
     totalAmount: number;
     totalRemaining: number;

@@ -1,4 +1,12 @@
-import { IsString, IsNumber, IsIn, Min, MinLength, MaxLength, IsOptional } from "class-validator";
+import {
+  IsString,
+  IsNumber,
+  IsIn,
+  Min,
+  MinLength,
+  MaxLength,
+  IsOptional,
+} from "class-validator";
 import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class UpdatePocketDto {
@@ -42,7 +50,9 @@ export class UpdatePocketDto {
   })
   @IsOptional()
   @IsString()
-  @MaxLength(100, { message: "Motivation cannot be longer than 100 characters" })
+  @MaxLength(100, {
+    message: "Motivation cannot be longer than 100 characters",
+  })
   motivation?: string;
 
   @ApiPropertyOptional({

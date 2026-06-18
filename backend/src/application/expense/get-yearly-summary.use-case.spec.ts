@@ -34,16 +34,18 @@ describe("GetYearlySummaryUseCase", () => {
     };
     mockService.getYearlySummary.mockResolvedValue(mockSummary);
 
-    const result = await useCase.execute('user-1', 2024);
+    const result = await useCase.execute("user-1", 2024);
 
-    expect(mockService.getYearlySummary).toHaveBeenCalledWith('user-1', 2024);
+    expect(mockService.getYearlySummary).toHaveBeenCalledWith("user-1", 2024);
     expect(result).toEqual(mockSummary);
   });
 
   it("should propagate errors from the service", async () => {
     mockService.getYearlySummary.mockRejectedValue(new Error("Database error"));
 
-    await expect(useCase.execute('user-1', 2024)).rejects.toThrow("Database error");
+    await expect(useCase.execute("user-1", 2024)).rejects.toThrow(
+      "Database error",
+    );
   });
 
   it("should be defined", () => {

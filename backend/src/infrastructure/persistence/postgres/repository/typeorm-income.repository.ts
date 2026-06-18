@@ -89,7 +89,11 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
     await this.incomeRepository.delete(where);
   }
 
-  async findByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<Income[]> {
+  async findByDateRange(
+    startDate: Date,
+    endDate: Date,
+    userId?: string,
+  ): Promise<Income[]> {
     const query = this.incomeRepository
       .createQueryBuilder("income")
       .where("income.date >= :startDate", { startDate })
@@ -197,7 +201,10 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
     };
   }
 
-  async getYearlySummary(year: number, userId?: string): Promise<{
+  async getYearlySummary(
+    year: number,
+    userId?: string,
+  ): Promise<{
     totalAmount: number;
     count: number;
     monthlyBreakdown: Record<string, number>;

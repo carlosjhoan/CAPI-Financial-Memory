@@ -5,7 +5,10 @@ import { DebtQueryDto } from "../../infrastructure/web/dto/debt-query.dto";
 export class GetAllDebtsPaginatedUseCase {
   constructor(private readonly debtService: DebtService) {}
 
-  async execute(userId: string, query: DebtQueryDto): Promise<{ data: Debt[]; total: number }> {
+  async execute(
+    userId: string,
+    query: DebtQueryDto,
+  ): Promise<{ data: Debt[]; total: number }> {
     return await this.debtService.getAllDebtsPaginated(userId, query);
   }
 }

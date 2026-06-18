@@ -11,6 +11,12 @@ export class GetIncomesByDateRangePaginatedUseCase {
     skip: number,
     limit: number,
   ): Promise<{ data: Income[]; total: number }> {
-    return await this.incomeService.getIncomesByDateRangePaginated(userId, startDate, endDate, skip, limit);
+    return await this.incomeService.getIncomesByDateRangePaginated(
+      userId,
+      startDate,
+      endDate,
+      skip,
+      limit,
+    );
   }
 }

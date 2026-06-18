@@ -9,6 +9,10 @@ export class GetDepositsByPocketIdUseCase {
     pocketId: string,
     options?: { offset?: number; limit?: number },
   ): Promise<Deposit[]> {
-    return await this.pocketService.getDepositsByPocketId(userId, pocketId, options);
+    return await this.pocketService.getDepositsByPocketId(
+      userId,
+      pocketId,
+      options,
+    );
   }
 }

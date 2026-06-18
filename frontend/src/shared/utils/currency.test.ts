@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { formatCurrencyCOP, parseCurrencyCOP, validateCurrencyCOP } from './currency';
 
 describe('Currency utilities', () => {
@@ -45,8 +46,8 @@ describe('Currency utilities', () => {
     });
 
     it('should handle invalid strings', () => {
-      expect(parseCurrencyCOP('abc')).toBe(0);
-      expect(parseCurrencyCOP('$abc')).toBe(0);
+      expect(parseCurrencyCOP('abc')).toBeNaN();
+      expect(parseCurrencyCOP('$abc')).toBeNaN();
     });
   });
 

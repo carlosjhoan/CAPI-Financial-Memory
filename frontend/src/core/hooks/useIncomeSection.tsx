@@ -134,7 +134,7 @@ export function useIncomeSection({
     1,
     TIMELINE_LIMIT,
   );
-  const timelineMonthItems = timelineMonthData?.data ?? [];
+  const timelineMonthItems = useMemo(() => timelineMonthData?.data ?? [], [timelineMonthData]);
 
   // Advance to next month when TimelineFeed calls onMonthEnd
   const goToNextMonth = useCallback(() => {

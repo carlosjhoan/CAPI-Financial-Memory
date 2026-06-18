@@ -27,7 +27,6 @@ import {
   ApiBadRequestResponse,
   ApiNoContentResponse,
 } from "@nestjs/swagger";
-import { DebtService } from "../../../domain/services/debt.service";
 import { CreateDebtUseCase } from "../../../application/debt/create-debt.use-case";
 import { RegisterPaymentUseCase } from "../../../application/debt/register-payment.use-case";
 import { GetAllDebtsUseCase } from "../../../application/debt/get-all-debts.use-case";
@@ -97,7 +96,7 @@ export class DebtController {
         createDebtDto.installAmount,
         createDebtDto.finalAmount,
         new Date(dateStr),
-        createDebtDto.reason ?? 'Me endeudé y no sé ni para qué',
+        createDebtDto.reason ?? "Me endeudé y no sé ni para qué",
       );
 
       return {
@@ -227,7 +226,10 @@ export class DebtController {
           filterQuery.page = page;
           filterQuery.limit = limit;
 
-          result = await this.getAllDebtsPaginatedUseCase.execute(req.user.id, filterQuery);
+          result = await this.getAllDebtsPaginatedUseCase.execute(
+            req.user.id,
+            filterQuery,
+          );
         } else if (query.year) {
           const year = parseInt(query.year);
           if (isNaN(year)) {
@@ -247,7 +249,10 @@ export class DebtController {
             limit,
           };
 
-          result = await this.getAllDebtsPaginatedUseCase.execute(req.user.id, filterQuery);
+          result = await this.getAllDebtsPaginatedUseCase.execute(
+            req.user.id,
+            filterQuery,
+          );
         } else if (query.startDate && query.endDate) {
           const startDate = new Date(query.startDate + "T00:00:00.000Z");
           const endDate = new Date(query.endDate + "T23:59:59.999Z");
@@ -274,7 +279,10 @@ export class DebtController {
             limit,
           };
 
-          result = await this.getAllDebtsPaginatedUseCase.execute(req.user.id, filterQuery);
+          result = await this.getAllDebtsPaginatedUseCase.execute(
+            req.user.id,
+            filterQuery,
+          );
         } else {
           // Pagination only or lender filter
           result = await this.getAllDebtsPaginatedUseCase.execute(req.user.id, {
@@ -388,7 +396,11 @@ export class DebtController {
     // month es 1-indexed (1-12), convert to 0-indexed (0-11)
     const monthNum = month ? parseInt(month) - 1 : now.getUTCMonth();
 
-    const summary = await this.getMonthlySummaryUseCase.execute(req.user.id, yearNum, monthNum);
+    const summary = await this.getMonthlySummaryUseCase.execute(
+      req.user.id,
+      yearNum,
+      monthNum,
+    );
 
     return {
       statusCode: HttpStatus.OK,
@@ -420,7 +432,10 @@ export class DebtController {
     const now = new Date();
     const yearNum = year ? parseInt(year) : now.getUTCFullYear();
 
-    const summary = await this.getYearlySummaryUseCase.execute(req.user.id, yearNum);
+    const summary = await this.getYearlySummaryUseCase.execute(
+      req.user.id,
+      yearNum,
+    );
 
     return {
       statusCode: HttpStatus.OK,
@@ -513,7 +528,11 @@ export class DebtController {
       if (updateDebtDto.reason !== undefined)
         updateData.reason = updateDebtDto.reason;
 
-      const debt = await this.updateDebtUseCase.execute(req.user.id, id, updateData);
+      const debt = await this.updateDebtUseCase.execute(
+        req.user.id,
+        id,
+        updateData,
+      );
 
       return {
         statusCode: HttpStatus.OK,
@@ -605,7 +624,10 @@ export class DebtController {
     description: "Deuda no encontrada",
     type: ErrorResponse,
   })
-  async remove(@Req() req: RequestWithUser, @Param("id", ParseUUIDPipe) id: string): Promise<void> {
+  async remove(
+    @Req() req: RequestWithUser,
+    @Param("id", ParseUUIDPipe) id: string,
+  ): Promise<void> {
     try {
       await this.deleteDebtUseCase.execute(req.user.id, id);
     } catch (error) {

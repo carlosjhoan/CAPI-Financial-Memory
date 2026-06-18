@@ -42,6 +42,8 @@ export class CreateIncomeDto {
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => AllocationDto)
-  @SumEqualsTotal({ message: "The sum of allocations must be equal to the total amount." })
+  @SumEqualsTotal({
+    message: "The sum of allocations must be equal to the total amount.",
+  })
   allocations: AllocationDto[];
 }

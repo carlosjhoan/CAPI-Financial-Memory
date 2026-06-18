@@ -70,7 +70,9 @@ export class InMemoryLoanRepository implements LoanRepository {
   }
 
   async findActiveLoans(): Promise<Loan[]> {
-    return Array.from(this.loans.values()).filter((loan) => !loan.isFullyPaid());
+    return Array.from(this.loans.values()).filter(
+      (loan) => !loan.isFullyPaid(),
+    );
   }
 
   async findFullyPaidLoans(): Promise<Loan[]> {

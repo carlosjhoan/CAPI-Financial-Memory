@@ -72,7 +72,7 @@ const PocketDetailPage: React.FC = () => {
 
   // ── Cálculos derivados (ANTES de early returns) ──
   const isGoal = pocket?.type === 'goal';
-  const deposits = pocket?.deposits || depositsData || [];
+  const deposits = useMemo(() => pocket?.deposits || depositsData || [], [pocket?.deposits, depositsData]);
   const expenses = pocket?.expenses || [];
 
   const transfers = pocket?.transfers || [];
@@ -115,6 +115,7 @@ const PocketDetailPage: React.FC = () => {
     return new Date(pocket.createdAt)
       .toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
       .toUpperCase();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pocket?.createdAt]);
 
   // ── HistoryItem type plano (evita uniones complejas) ──
@@ -137,7 +138,7 @@ const PocketDetailPage: React.FC = () => {
 
     const pages = historyQuery.data.pages.flatMap(p => p.data);
 
-    const mapped: HistoryItem[] = pages.map((item: any) => ({
+    const mapped: HistoryItem[] = pages.map((item: Record<string, unknown>) => ({
       id: item.id,
       type: item.type as 'deposit' | 'expense' | 'transfer',
       amount: Number(item.amount),

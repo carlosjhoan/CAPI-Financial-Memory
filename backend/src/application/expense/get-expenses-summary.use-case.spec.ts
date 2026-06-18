@@ -23,7 +23,7 @@ describe("GetExpensesSummaryUseCase", () => {
     };
     mockService.getExpensesSummary.mockResolvedValue(mockSummary);
 
-    const result = await useCase.execute('user-1');
+    const result = await useCase.execute("user-1");
 
     expect(mockService.getExpensesSummary).toHaveBeenCalled();
     expect(result).toEqual(mockSummary);
@@ -34,7 +34,7 @@ describe("GetExpensesSummaryUseCase", () => {
       new Error("Database error"),
     );
 
-    await expect(useCase.execute('user-1')).rejects.toThrow("Database error");
+    await expect(useCase.execute("user-1")).rejects.toThrow("Database error");
   });
 
   it("should be defined", () => {

@@ -22,7 +22,15 @@ export class PocketService {
     motivation: string,
     initialAmount?: number,
   ): Promise<Pocket> {
-    return await this.createPocketUseCase.execute(userId, name, type, goal, accumulatedAmount, motivation, initialAmount);
+    return await this.createPocketUseCase.execute(
+      userId,
+      name,
+      type,
+      goal,
+      accumulatedAmount,
+      motivation,
+      initialAmount,
+    );
   }
 
   async getAllPockets(userId: string): Promise<Pocket[]> {
@@ -39,7 +47,10 @@ export class PocketService {
     return pocket;
   }
 
-  async getPocketWithDeposits(userId: string, id: string): Promise<{ pocket: Pocket; deposits: Deposit[]; expenses: Expense[] }> {
+  async getPocketWithDeposits(
+    userId: string,
+    id: string,
+  ): Promise<{ pocket: Pocket; deposits: Deposit[]; expenses: Expense[] }> {
     const pocket = await this.getPocketById(userId, id);
     const deposits = await this.pocketRepository.findDepositsByPocketId(id);
     const expenses = await this.pocketRepository.findExpensesByPocketId(id);
@@ -118,7 +129,9 @@ export class PocketService {
     await this.pocketRepository.delete(id, userId);
   }
 
-  async getPocketsSummary(userId: string): Promise<{ totalAccumulated: number; totalGoal: number; count: number }> {
+  async getPocketsSummary(
+    userId: string,
+  ): Promise<{ totalAccumulated: number; totalGoal: number; count: number }> {
     return await this.pocketRepository.getSummary(userId);
   }
 
@@ -130,7 +143,14 @@ export class PocketService {
     newGoal?: number,
     reason?: string,
   ): Promise<{ pocket: Pocket; deposit: Deposit }> {
-    return await this.registerDepositUseCase.execute(userId, pocketId, amount, date, newGoal, reason);
+    return await this.registerDepositUseCase.execute(
+      userId,
+      pocketId,
+      amount,
+      date,
+      newGoal,
+      reason,
+    );
   }
 
   async getDepositsByPocketId(
@@ -140,7 +160,10 @@ export class PocketService {
   ): Promise<Deposit[]> {
     // Verify pocket exists
     await this.getPocketById(userId, pocketId);
-    return await this.pocketRepository.findDepositsByPocketId(pocketId, options);
+    return await this.pocketRepository.findDepositsByPocketId(
+      pocketId,
+      options,
+    );
   }
 
   async getTransfersByPocketId(pocketId: string): Promise<PocketTransfer[]> {

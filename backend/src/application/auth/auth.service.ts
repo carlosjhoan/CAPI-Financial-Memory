@@ -17,10 +17,7 @@ import { UserRepository } from "../../domain/repositories/user.repository";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { GoogleAuthDto } from "./dto/google-auth.dto";
-import {
-  AuthEventsLoggerService,
-  AuthEvent,
-} from "./auth-events-logger.service";
+import { AuthEventsLoggerService } from "./auth-events-logger.service";
 
 export interface JwtPayload {
   sub: string;
@@ -69,10 +66,7 @@ export class AuthService {
         ip: string;
         success: boolean;
       }): Promise<void>;
-      countRecentFailures(
-        email: string,
-        since: Date,
-      ): Promise<number>;
+      countRecentFailures(email: string, since: Date): Promise<number>;
       clearForEmail(email: string): Promise<void>;
     },
     private jwtService: JwtService,
@@ -115,10 +109,7 @@ export class AuthService {
     return this.generateAuthResponse(savedUser);
   }
 
-  async login(
-    loginDto: LoginDto,
-    ip?: string,
-  ): Promise<AuthResponse> {
+  async login(loginDto: LoginDto, ip?: string): Promise<AuthResponse> {
     const result = await this.userRepository.findByEmailWithPassword(
       loginDto.email,
     );

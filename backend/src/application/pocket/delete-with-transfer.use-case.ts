@@ -25,7 +25,9 @@ export class DeleteWithTransferUseCase {
 
     const totalDist = distributions.reduce((s, d) => s + d.amount, 0);
     if (Math.abs(totalDist - sourcePocket.accumulatedAmount) > 0.001) {
-      throw new Error(`DISTRIBUTION_SUM_MISMATCH:${sourcePocket.accumulatedAmount}:${totalDist}`);
+      throw new Error(
+        `DISTRIBUTION_SUM_MISMATCH:${sourcePocket.accumulatedAmount}:${totalDist}`,
+      );
     }
 
     // Reject distributions targeting the source pocket
@@ -37,7 +39,10 @@ export class DeleteWithTransferUseCase {
 
     // Validate all target pockets exist
     for (const d of distributions) {
-      const target = await this.pocketRepository.findById(d.targetPocketId, userId);
+      const target = await this.pocketRepository.findById(
+        d.targetPocketId,
+        userId,
+      );
       if (!target) {
         throw new Error(`POCKET_NOT_FOUND:${d.targetPocketId}`);
       }
@@ -98,7 +103,9 @@ export class DeleteWithTransferUseCase {
         if (targetEntity.type === "goal" && Number(targetEntity.goal) > 0) {
           const remaining = Number(targetEntity.goal) - targetAccumulated;
           if (dist.amount > remaining) {
-            throw new Error(`TRANSFER_EXCEEDS_GOAL:${remaining}:${dist.amount}:${targetEntity.id}`);
+            throw new Error(
+              `TRANSFER_EXCEEDS_GOAL:${remaining}:${dist.amount}:${targetEntity.id}`,
+            );
           }
         }
 

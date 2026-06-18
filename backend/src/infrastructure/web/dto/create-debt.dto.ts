@@ -65,7 +65,8 @@ export class CreateDebtDto {
   finalAmount: number;
 
   @ApiPropertyOptional({
-    description: "Motivo de la deuda (opcional, valor por defecto si no se envía)",
+    description:
+      "Motivo de la deuda (opcional, valor por defecto si no se envía)",
     example: "Para pagar estudios",
     maxLength: 100,
   })

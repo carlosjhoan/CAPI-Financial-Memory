@@ -6,7 +6,10 @@ import { PocketService } from "../../domain/services/pocket.service";
 export class GetPocketWithDepositsUseCase {
   constructor(private readonly pocketService: PocketService) {}
 
-  async execute(userId: string, id: string): Promise<{ pocket: Pocket; deposits: Deposit[]; expenses: Expense[] }> {
+  async execute(
+    userId: string,
+    id: string,
+  ): Promise<{ pocket: Pocket; deposits: Deposit[]; expenses: Expense[] }> {
     return await this.pocketService.getPocketWithDeposits(userId, id);
   }
 }

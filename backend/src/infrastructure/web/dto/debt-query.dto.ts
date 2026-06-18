@@ -75,7 +75,8 @@ export class DebtQueryDto {
   lender?: string;
 
   @ApiPropertyOptional({
-    description: "Filtrar por estado: active (paidAmount < finalAmount) | paid (paidAmount >= finalAmount)",
+    description:
+      "Filtrar por estado: active (paidAmount < finalAmount) | paid (paidAmount >= finalAmount)",
     enum: ["active", "paid"],
   })
   @IsOptional()

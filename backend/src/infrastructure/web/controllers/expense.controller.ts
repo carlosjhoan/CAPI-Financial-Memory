@@ -363,7 +363,11 @@ export class ExpenseController {
         updateData.date = new Date(dateStr);
       }
 
-      const expense = await this.updateExpenseUseCase.execute(req.user.id, id, updateData);
+      const expense = await this.updateExpenseUseCase.execute(
+        req.user.id,
+        id,
+        updateData,
+      );
 
       return {
         statusCode: HttpStatus.OK,
@@ -473,7 +477,10 @@ export class ExpenseController {
     const now = new Date();
     const yearNum = year ? parseInt(year) : now.getUTCFullYear();
 
-    const summary = await this.getYearlySummaryUseCase.execute(req.user.id, yearNum);
+    const summary = await this.getYearlySummaryUseCase.execute(
+      req.user.id,
+      yearNum,
+    );
 
     return {
       statusCode: HttpStatus.OK,

@@ -23,10 +23,7 @@ export class TypeOrmLoginAttemptRepository {
     await this.repository.save(entity);
   }
 
-  async countRecentFailures(
-    email: string,
-    since: Date,
-  ): Promise<number> {
+  async countRecentFailures(email: string, since: Date): Promise<number> {
     return this.repository.count({
       where: {
         email,

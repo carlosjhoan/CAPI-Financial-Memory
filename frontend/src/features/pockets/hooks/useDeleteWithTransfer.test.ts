@@ -50,7 +50,7 @@ describe('useDeleteWithTransfer', () => {
 
   it('should call api with correct parameters on mutate', async () => {
     const { pocketsService } = await import('../../../core/api');
-    (pocketsService.deleteWithTransfer as any).mockResolvedValue({
+    (pocketsService.deleteWithTransfer as jest.Mock).mockResolvedValue({
       deletedPocketId: 'pocket-1',
     });
 

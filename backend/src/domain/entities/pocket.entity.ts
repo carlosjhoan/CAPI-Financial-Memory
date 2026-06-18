@@ -8,7 +8,10 @@ export class Pocket {
   @ApiProperty({ description: "ID del usuario propietario (UUID)" })
   userId: string;
 
-  @ApiProperty({ description: "Nombre del bolsillo", example: "Efectivo libre" })
+  @ApiProperty({
+    description: "Nombre del bolsillo",
+    example: "Efectivo libre",
+  })
   name: string;
 
   @ApiProperty({
@@ -24,7 +27,8 @@ export class Pocket {
   accumulatedAmount: number;
 
   @ApiProperty({
-    description: "Monto inicial al crear el bolsillo (para gráfica de evolución)",
+    description:
+      "Monto inicial al crear el bolsillo (para gráfica de evolución)",
     example: 0,
   })
   initialAmount: number;
@@ -66,7 +70,8 @@ export class Pocket {
     this.type = type;
     this.goal = goal;
     this.accumulatedAmount = accumulatedAmount;
-    this.motivation = motivation ?? 'Quiero ahorrar para algo que aún no sé qué es';
+    this.motivation =
+      motivation ?? "Quiero ahorrar para algo que aún no sé qué es";
     this.createdAt = new Date();
     this.updatedAt = new Date();
   }

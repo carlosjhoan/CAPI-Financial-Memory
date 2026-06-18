@@ -3,7 +3,10 @@ import { DebtService } from "../../domain/services/debt.service";
 export class GetYearlySummaryUseCase {
   constructor(private readonly debtService: DebtService) {}
 
-  async execute(userId: string, year: number): Promise<{
+  async execute(
+    userId: string,
+    year: number,
+  ): Promise<{
     year: number;
     totalAmount: number;
     totalRemaining: number;

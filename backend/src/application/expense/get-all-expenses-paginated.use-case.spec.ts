@@ -20,9 +20,13 @@ describe("GetAllExpensesPaginatedUseCase", () => {
     };
     mockService.getAllExpensesPaginated.mockResolvedValue(mockResult);
 
-    const result = await useCase.execute('user-1', 0, 10);
+    const result = await useCase.execute("user-1", 0, 10);
 
-    expect(mockService.getAllExpensesPaginated).toHaveBeenCalledWith('user-1', 0, 10);
+    expect(mockService.getAllExpensesPaginated).toHaveBeenCalledWith(
+      "user-1",
+      0,
+      10,
+    );
     expect(result).toEqual(mockResult);
   });
 
@@ -31,7 +35,9 @@ describe("GetAllExpensesPaginatedUseCase", () => {
       new Error("Database error"),
     );
 
-    await expect(useCase.execute('user-1', 0, 10)).rejects.toThrow("Database error");
+    await expect(useCase.execute("user-1", 0, 10)).rejects.toThrow(
+      "Database error",
+    );
   });
 
   it("should be defined", () => {

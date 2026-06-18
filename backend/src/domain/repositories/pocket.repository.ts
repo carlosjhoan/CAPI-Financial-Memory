@@ -9,8 +9,13 @@ export interface PocketRepository {
   findAll(userId: string): Promise<Pocket[]>;
   update(pocket: Pocket): Promise<Pocket>;
   delete(id: string, userId?: string): Promise<void>;
-  getSummary(userId: string): Promise<{ totalAccumulated: number; totalGoal: number; count: number }>;
-  findDepositsByPocketId(pocketId: string, options?: { offset?: number; limit?: number }): Promise<Deposit[]>;
+  getSummary(
+    userId: string,
+  ): Promise<{ totalAccumulated: number; totalGoal: number; count: number }>;
+  findDepositsByPocketId(
+    pocketId: string,
+    options?: { offset?: number; limit?: number },
+  ): Promise<Deposit[]>;
   findExpensesByPocketId(pocketId: string): Promise<Expense[]>;
   saveDeposit(deposit: Deposit): Promise<Deposit>;
   saveTransfer(transfer: PocketTransfer): Promise<PocketTransfer>;

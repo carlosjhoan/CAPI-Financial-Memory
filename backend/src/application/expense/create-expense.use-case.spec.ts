@@ -2,7 +2,6 @@ import { CreateExpenseUseCase } from "./create-expense.use-case";
 import { ExpenseRepository } from "../../domain/repositories/expense.repository";
 import { PocketRepository } from "../../domain/repositories/pocket.repository";
 import { Pocket } from "../../domain/entities/pocket.entity";
-import { Expense } from "../../domain/entities/expense.entity";
 import { DataSource } from "typeorm";
 
 describe("CreateExpenseUseCase", () => {
@@ -21,8 +20,14 @@ describe("CreateExpenseUseCase", () => {
     mockDataSource = {
       transaction: jest.fn().mockImplementation((cb: any) =>
         cb({
-          create: jest.fn().mockImplementation((_entity: any, data: any) => ({ ...data })),
-          save: jest.fn().mockImplementation((entity: any) => Promise.resolve({ ...entity, id: "uuid-1" })),
+          create: jest
+            .fn()
+            .mockImplementation((_entity: any, data: any) => ({ ...data })),
+          save: jest
+            .fn()
+            .mockImplementation((entity: any) =>
+              Promise.resolve({ ...entity, id: "uuid-1" }),
+            ),
         }),
       ),
     } as any;
@@ -31,7 +36,11 @@ describe("CreateExpenseUseCase", () => {
       findById: jest.fn(),
     } as any;
 
-    useCase = new CreateExpenseUseCase(mockRepo, mockDataSource, mockPocketRepo);
+    useCase = new CreateExpenseUseCase(
+      mockRepo,
+      mockDataSource,
+      mockPocketRepo,
+    );
   });
 
   it("should create an expense successfully", async () => {
@@ -41,9 +50,15 @@ describe("CreateExpenseUseCase", () => {
 
     const date = new Date("2024-01-15");
 
-    const result = await useCase.execute('user-1', 100, "Food", date, mockAllocations);
+    const result = await useCase.execute(
+      "user-1",
+      100,
+      "Food",
+      date,
+      mockAllocations,
+    );
 
-    expect(mockPocketRepo.findById).toHaveBeenCalledWith('user-1', "uuid-1");
+    expect(mockPocketRepo.findById).toHaveBeenCalledWith("uuid-1", "user-1");
     expect(mockDataSource.transaction).toHaveBeenCalled();
     expect(result.amount).toBe(100);
     expect(result.reason).toBe("Food");
@@ -51,39 +66,39 @@ describe("CreateExpenseUseCase", () => {
   });
 
   it("should throw if amount is 0", async () => {
-    await expect(useCase.execute('user-1', 0, "Food", new Date(), mockAllocations)).rejects.toThrow(
-      "Amount must be greater than 0",
-    );
+    await expect(
+      useCase.execute("user-1", 0, "Food", new Date(), mockAllocations),
+    ).rejects.toThrow("Amount must be greater than 0");
     expect(mockRepo.save).not.toHaveBeenCalled();
   });
 
   it("should throw if amount is negative", async () => {
-    await expect(useCase.execute('user-1', -100, "Food", new Date(), mockAllocations)).rejects.toThrow(
-      "Amount must be greater than 0",
-    );
+    await expect(
+      useCase.execute("user-1", -100, "Food", new Date(), mockAllocations),
+    ).rejects.toThrow("Amount must be greater than 0");
     expect(mockRepo.save).not.toHaveBeenCalled();
   });
 
   it("should throw if reason is empty", async () => {
-    await expect(useCase.execute('user-1', 100, "", new Date(), mockAllocations)).rejects.toThrow(
-      "Reason is required",
-    );
+    await expect(
+      useCase.execute("user-1", 100, "", new Date(), mockAllocations),
+    ).rejects.toThrow("Reason is required");
     expect(mockRepo.save).not.toHaveBeenCalled();
   });
 
   it("should throw if reason is whitespace", async () => {
-    await expect(useCase.execute('user-1', 100, "   ", new Date(), mockAllocations)).rejects.toThrow(
-      "Reason is required",
-    );
+    await expect(
+      useCase.execute("user-1", 100, "   ", new Date(), mockAllocations),
+    ).rejects.toThrow("Reason is required");
     expect(mockRepo.save).not.toHaveBeenCalled();
   });
 
   it("should throw if pocket does not exist", async () => {
     mockPocketRepo.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('user-1', 100, "Food", new Date(), mockAllocations)).rejects.toThrow(
-      "El bolsillo con ID uuid-1 no existe",
-    );
+    await expect(
+      useCase.execute("user-1", 100, "Food", new Date(), mockAllocations),
+    ).rejects.toThrow("El bolsillo con ID uuid-1 no existe");
     expect(mockDataSource.transaction).not.toHaveBeenCalled();
   });
 
@@ -92,9 +107,9 @@ describe("CreateExpenseUseCase", () => {
       new Pocket("Test Pocket", "deposit", 0, 50, "Motivation", "uuid-1"),
     );
 
-    await expect(useCase.execute('user-1', 100, "Food", new Date(), mockAllocations)).rejects.toThrow(
-      /Fondos insuficientes en el bolsillo "Test Pocket"/,
-    );
+    await expect(
+      useCase.execute("user-1", 100, "Food", new Date(), mockAllocations),
+    ).rejects.toThrow(/Fondos insuficientes en el bolsillo "Test Pocket"/);
     expect(mockDataSource.transaction).not.toHaveBeenCalled();
   });
 

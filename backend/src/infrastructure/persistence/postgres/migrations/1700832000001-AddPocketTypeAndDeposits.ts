@@ -1,9 +1,4 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-  Table,
-  TableColumn,
-} from "typeorm";
+import { MigrationInterface, QueryRunner, Table, TableColumn } from "typeorm";
 
 export class AddPocketTypeAndDeposits1700832000001
   implements MigrationInterface

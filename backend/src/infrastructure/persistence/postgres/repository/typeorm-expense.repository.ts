@@ -77,7 +77,11 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
     };
   }
 
-  async findByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<Expense[]> {
+  async findByDateRange(
+    startDate: Date,
+    endDate: Date,
+    userId?: string,
+  ): Promise<Expense[]> {
     const query = this.expenseRepository
       .createQueryBuilder("expense")
       .where("expense.date >= :startDate", { startDate })
@@ -175,7 +179,10 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
     };
   }
 
-  async getYearlySummary(year: number, userId?: string): Promise<{
+  async getYearlySummary(
+    year: number,
+    userId?: string,
+  ): Promise<{
     totalAmount: number;
     count: number;
     monthlyBreakdown: Record<string, number>;

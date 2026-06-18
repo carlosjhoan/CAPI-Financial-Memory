@@ -20,7 +20,12 @@ import { TransferBetweenPocketsUseCase } from "../../../application/pocket/trans
 import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-with-transfer.use-case";
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PocketEntity, DepositEntity, ExpenseAllocationEntity, PocketTransferEntity]),
+    TypeOrmModule.forFeature([
+      PocketEntity,
+      DepositEntity,
+      ExpenseAllocationEntity,
+      PocketTransferEntity,
+    ]),
   ],
   controllers: [PocketController],
   exports: ["PocketRepository", PocketService],
