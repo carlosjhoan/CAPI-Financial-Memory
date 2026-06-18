@@ -6,6 +6,7 @@ import {
   UseGuards,
   Req,
   Headers,
+  HttpCode,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -34,6 +35,7 @@ export class AuthController {
   }
 
   @Post("login")
+  @HttpCode(200)
   @ApiOperation({ summary: "Iniciar sesión con credentials" })
   @ApiResponse({ status: 200, description: "Login exitoso" })
   @ApiResponse({ status: 401, description: "Credenciales inválidas" })

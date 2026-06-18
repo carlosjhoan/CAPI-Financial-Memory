@@ -9,6 +9,30 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pfm_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: pfm_test
+      JWT_SECRET: ci-jwt-secret-min-32-characters-long-for-testing
+      GOOGLE_CLIENT_ID: ci-dummy-client-id-for-validation
+      GOOGLE_CLIENT_SECRET: ci-dummy-client-secret-for-validation
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,6 +43,8 @@ jobs:
       - run: npm run lint -w backend
       - run: npm run test -w backend
       - run: npm run build -w backend
+      - run: npm run migration:run -w backend
+      - run: npm run test:e2e -w backend
 
   frontend:
     runs-on: ubuntu-latest
