@@ -29,6 +29,10 @@ jobs:
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_NAME: pfm_test
+      JWT_SECRET: ci-jwt-secret-min-32-characters-long-for-testing
+      GOOGLE_CLIENT_ID: ci-dummy-client-id-for-validation
+      GOOGLE_CLIENT_SECRET: ci-dummy-client-secret-for-validation
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
