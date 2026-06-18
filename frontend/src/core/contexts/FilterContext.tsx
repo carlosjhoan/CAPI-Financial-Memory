@@ -5,6 +5,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useEffect,
   ReactNode,
 } from 'react';
 import type { SessionFilterType } from '../../shared/components/SessionFilters';

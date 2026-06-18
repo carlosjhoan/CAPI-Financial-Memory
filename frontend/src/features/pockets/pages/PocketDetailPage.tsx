@@ -139,15 +139,15 @@ const PocketDetailPage: React.FC = () => {
     const pages = historyQuery.data.pages.flatMap(p => p.data);
 
     const mapped: HistoryItem[] = pages.map((item: Record<string, unknown>) => ({
-      id: item.id,
+      id: item.id as string,
       type: item.type as 'deposit' | 'expense' | 'transfer',
       amount: Number(item.amount),
-      date: item.date,
-      createdAt: item.createdAt,
-      reason: item.reason || undefined,
+      date: item.date as string,
+      createdAt: item.createdAt as string | undefined,
+      reason: (item.reason as string) || undefined,
       direction: (item.direction as 'incoming' | 'outgoing') || undefined,
-      sourcePocketId: item.sourcePocketId || undefined,
-      targetPocketId: item.targetPocketId || undefined,
+      sourcePocketId: (item.sourcePocketId as string) || undefined,
+      targetPocketId: (item.targetPocketId as string) || undefined,
     }));
 
     // Agregar movimiento de apertura al final (es el más antiguo)
@@ -226,7 +226,7 @@ const PocketDetailPage: React.FC = () => {
   };
 
   const pocketMood = useMemo(() => {
-    if (!pocket) return { image: '', status: '', message: '' };
+    if (!pocket) return { image: '', status: '', message: '', glowColor: '', glowColorDark: '' };
     return getPocketMood(pocket);
   }, [pocket]);
 

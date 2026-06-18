@@ -11,7 +11,7 @@ beforeAll(() => {
       constructor(private callback: IntersectionObserverCallback) {}
       observe(el: Element) {
         this.callback(
-          [{ isIntersecting: true, target: el, intersectionRatio: 1, boundingClientRect: {} as DOMRectReadOnly, intersectionRect: {} as DOMRectReadOnly, rootBounds: null, isVisible: true }] as IntersectionObserverEntry[],
+          [{ isIntersecting: true, target: el, intersectionRatio: 1, boundingClientRect: {} as DOMRectReadOnly, intersectionRect: {} as DOMRectReadOnly, rootBounds: null }] as IntersectionObserverEntry[],
           {} as IntersectionObserver,
         );
       }

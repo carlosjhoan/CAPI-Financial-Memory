@@ -183,7 +183,8 @@ export const debtsApiCustom = {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
-    const qs = params.toString() ? `?${qs.toString()}` : '';
+    const qsStr = params.toString();
+    const qs = qsStr ? `?${qsStr}` : '';
 
     const response = await customRequest<DebtOverallSummary, Record<string, unknown>>(
       'get',

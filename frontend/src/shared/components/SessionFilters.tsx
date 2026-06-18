@@ -123,7 +123,8 @@ const SessionFilters: React.FC<SessionFiltersProps> = ({
 
   // ── Handlers ──
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const debounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number) => {
     return (...args: Parameters<T>) => {
       if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
       debounceTimeoutRef.current = setTimeout(() => fn(...args), delay);
