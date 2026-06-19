@@ -201,8 +201,8 @@ const DebtForm: React.FC<DebtFormProps> = ({
               control={control}
               label="Fecha"
               fullWidth
-              required
-              disabled={isLoading || isSubmitting}
+              required={!isEditMode}
+              disabled={isEditMode || isLoading || isSubmitting}
               accent="debt"
             />
 

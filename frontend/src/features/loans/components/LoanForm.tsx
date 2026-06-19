@@ -173,7 +173,7 @@ const LoanForm: React.FC<LoanFormProps> = ({
             label="Fecha"
             fullWidth
             required
-            disabled={isLoading || isSubmitting}
+            disabled={isEditMode || isLoading || isSubmitting}
             accent="loan"
           />
         )}

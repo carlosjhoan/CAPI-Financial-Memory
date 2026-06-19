@@ -1,14 +1,13 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { dateSchema } from '../../../shared/utils/dateValidation';
 
 const depositFormSchema = z.object({
   amount: z
     .number({ required_error: 'El monto es requerido' })
     .positive('El monto debe ser mayor a 0'),
-  date: z
-    .string({ required_error: 'La fecha es requerida' })
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener formato YYYY-MM-DD'),
+  date: dateSchema,
   newGoal: z.number().optional(),
 });
 

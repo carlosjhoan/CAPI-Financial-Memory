@@ -26,7 +26,7 @@ const FloatSelect = React.forwardRef<HTMLSelectElement, FloatSelectProps>(
       helperText,
       fullWidth = false,
       options,
-      placeholder = 'Seleccionar',
+      placeholder = '────────────────────',
       accent = 'primary',
       id,
       value,
@@ -41,8 +41,9 @@ const FloatSelect = React.forwardRef<HTMLSelectElement, FloatSelectProps>(
     const accentCls = FORM_ACCENT[accent];
     const [isFocused, setIsFocused] = useState(false);
 
-    const hasValue = value !== undefined && value !== '' && value !== '__placeholder__';
-    const isFloating = isFocused || hasValue;
+    // ponytail: Always float — a <select> always shows text (placeholder or value),
+    // so a centered label overlaps with the visible text. Floating avoids that.
+    const isFloating = true;
 
     const handleFocus = (e: React.FocusEvent<HTMLSelectElement>) => {
       setIsFocused(true);
@@ -78,7 +79,7 @@ const FloatSelect = React.forwardRef<HTMLSelectElement, FloatSelectProps>(
           <select
             ref={ref}
             id={inputId}
-            value={value ?? '__placeholder__'}
+            value={value || '__placeholder__'}
             onFocus={handleFocus}
             onBlur={handleBlur}
             className={cn(

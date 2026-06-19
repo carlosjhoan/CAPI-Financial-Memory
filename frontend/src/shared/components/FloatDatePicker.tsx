@@ -1,6 +1,7 @@
-import React, { useState, useId } from 'react';
+import React, { useState, useId, useRef, useCallback } from 'react';
 import { cn } from '../../core/utils/format';
 import { FORM_ACCENT, type FormAccent } from '../utils/formAccent';
+import { getDateConstraints } from '../utils/dateValidation';
 
 export interface FloatDatePickerProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'placeholder'> {
   label: string;
@@ -20,7 +21,6 @@ const FloatDatePicker = React.forwardRef<HTMLInputElement, FloatDatePickerProps>
       fullWidth = false,
       accent = 'primary',
       id,
-      value,
       onFocus,
       onBlur,
       ...props
@@ -30,9 +30,29 @@ const FloatDatePicker = React.forwardRef<HTMLInputElement, FloatDatePickerProps>
     const generatedId = useId();
     const inputId = id || generatedId;
     const accentCls = FORM_ACCENT[accent];
+
+    const inputRef = useRef<HTMLInputElement | null>(null);
+    const pickerOpenRef = useRef(false);
+
+    const { minDate, maxDate } = getDateConstraints();
+
+    // Merge local ref + forwarded ref
+    const setRef = useCallback(
+      (node: HTMLInputElement | null) => {
+        inputRef.current = node;
+        if (typeof ref === 'function') {
+          ref(node);
+        } else if (ref) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (ref as any).current = node;
+        }
+      },
+      [ref],
+    );
+
     const [isFocused, setIsFocused] = useState(false);
 
-    const hasValue = value !== undefined && value !== '';
+    const hasValue = props.value !== undefined && props.value !== '';
     const isFloating = isFocused || hasValue;
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -42,7 +62,23 @@ const FloatDatePicker = React.forwardRef<HTMLInputElement, FloatDatePickerProps>
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(false);
+      pickerOpenRef.current = false;
       onBlur?.(e);
+    };
+
+    const handleIconMouseDown = (e: React.MouseEvent) => {
+      // mousedown fires BEFORE blur, so pickerOpenRef still has the right value
+      e.preventDefault();
+      if (!inputRef.current) return;
+
+      if (pickerOpenRef.current) {
+        inputRef.current.blur();
+        // handleBlur runs after this, sets pickerOpenRef to false
+      } else {
+        inputRef.current.focus();
+        inputRef.current.showPicker();
+        pickerOpenRef.current = true;
+      }
     };
 
     return (
@@ -67,10 +103,11 @@ const FloatDatePicker = React.forwardRef<HTMLInputElement, FloatDatePickerProps>
           style={(isFocused && !error) ? { '--glow-rgb': accentCls.glowRGB } as React.CSSProperties : undefined}
         >
           <input
-            ref={ref}
+            ref={setRef}
             type="date"
             id={inputId}
-            value={value}
+            min={minDate}
+            max={maxDate}
             onFocus={handleFocus}
             onBlur={handleBlur}
             placeholder=" "
@@ -90,8 +127,11 @@ const FloatDatePicker = React.forwardRef<HTMLInputElement, FloatDatePickerProps>
             {...props}
           />
 
-          {/* ── Calendar icon con accent color ── */}
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center pr-3">
+          {/* ── Calendar icon clickeable con accent color ── */}
+          <div
+            className="absolute inset-y-0 right-0 z-10 flex cursor-pointer items-center pr-3"
+            onMouseDown={handleIconMouseDown}
+          >
             <svg
               className={cn('w-4 h-4', error ? 'text-red-500' : accentCls.label)}
               fill="none"
