@@ -14,6 +14,11 @@ describe("CreateIncomeUseCase", () => {
       save: jest.fn(),
     } as any;
 
+    const mockPocketEntity = {
+      id: "uuid-1",
+      accumulatedAmount: 500,
+    };
+
     mockDataSource = {
       transaction: jest.fn().mockImplementation((cb: any) =>
         cb({
@@ -25,6 +30,9 @@ describe("CreateIncomeUseCase", () => {
             .mockImplementation((entity: any) =>
               Promise.resolve({ ...entity, id: "uuid-1" }),
             ),
+          findOne: jest
+            .fn()
+            .mockResolvedValue({ ...mockPocketEntity }),
         }),
       ),
     } as any;

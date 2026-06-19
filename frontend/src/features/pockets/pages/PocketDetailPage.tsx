@@ -121,7 +121,7 @@ const PocketDetailPage: React.FC = () => {
   // ── HistoryItem type plano (evita uniones complejas) ──
   interface HistoryItem {
     id: string;
-    type: 'deposit' | 'expense' | 'transfer' | 'opening';
+    type: 'deposit' | 'expense' | 'transfer' | 'opening' | 'income';
     amount: number;
     date: string;
     createdAt?: string;
@@ -140,7 +140,7 @@ const PocketDetailPage: React.FC = () => {
 
     const mapped: HistoryItem[] = pages.map((item: Record<string, unknown>) => ({
       id: item.id as string,
-      type: item.type as 'deposit' | 'expense' | 'transfer',
+      type: item.type as 'deposit' | 'expense' | 'transfer' | 'income',
       amount: Number(item.amount),
       date: item.date as string,
       createdAt: item.createdAt as string | undefined,
@@ -180,6 +180,7 @@ const PocketDetailPage: React.FC = () => {
   const getMovementLabel = (item: HistoryItem): string => {
     switch (item.type) {
       case 'deposit': return 'Depósito';
+      case 'income': return 'Ingreso';
       case 'expense': return 'Gasto';
       case 'transfer': return 'Transferencia';
       case 'opening': return 'Apertura';
@@ -192,13 +193,15 @@ const PocketDetailPage: React.FC = () => {
       return item.direction === 'incoming' ? '↑' : '↓';
     }
     if (item.type === 'opening') return '★';
-    return item.type === 'deposit' ? '↑' : '↓';
+    if (item.type === 'deposit' || item.type === 'income') return '↑';
+    return '↓';
   };
   
   const getDefaultReason = (item: HistoryItem): string => {
     if (item.reason) return item.reason;
     switch (item.type) {
       case 'deposit': return 'Por motivo de ingreso';
+      case 'income': return 'Por motivo de ingreso';
       case 'expense': return 'Por motivo de gasto';
       case 'transfer':
         return item.direction === 'incoming'
@@ -214,7 +217,8 @@ const PocketDetailPage: React.FC = () => {
       return item.direction === 'incoming' ? 'text-green-500' : 'text-red-500';
     }
     if (item.type === 'opening') return 'text-blue-500';
-    return item.type === 'deposit' ? 'text-green-500' : 'text-red-500';
+    if (item.type === 'deposit' || item.type === 'income') return 'text-green-500';
+    return 'text-red-500';
   };
 
   const getMovementSign = (item: HistoryItem): string => {
@@ -222,7 +226,8 @@ const PocketDetailPage: React.FC = () => {
       return item.direction === 'incoming' ? '+' : '-';
     }
     if (item.type === 'opening') return '+';
-    return item.type === 'deposit' ? '+' : '-';
+    if (item.type === 'deposit' || item.type === 'income') return '+';
+    return '-';
   };
 
   const pocketMood = useMemo(() => {

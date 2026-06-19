@@ -3,7 +3,9 @@ import {
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
+  OneToMany,
 } from "typeorm";
+import { IncomeAllocationEntity } from "./income-allocation.entity";
 
 @Entity("incomes")
 export class IncomeEntity {
@@ -24,4 +26,7 @@ export class IncomeEntity {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @OneToMany(() => IncomeAllocationEntity, (allocation) => allocation.income)
+  allocations: IncomeAllocationEntity[];
 }

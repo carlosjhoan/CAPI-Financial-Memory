@@ -5,6 +5,7 @@ import { IncomeController } from "../controllers/income.controller";
 import { IncomeService } from "../../../domain/services/income.service";
 import { TypeOrmIncomeRepository } from "../../persistence/postgres/repository/typeorm-income.repository";
 import { IncomeEntity } from "../../persistence/postgres/entities/income.entity";
+import { IncomeAllocationEntity } from "../../persistence/postgres/entities/income-allocation.entity";
 import { CreateIncomeUseCase } from "../../../application/income/create-income.use-case";
 import { RegisterIncomePaymentUseCase } from "../../../application/income/register-income-payment.use-case";
 import { GetAllIncomesUseCase } from "../../../application/income/get-all-incomes.use-case";
@@ -19,7 +20,7 @@ import { GetIncomesByDateRangePaginatedUseCase } from "../../../application/inco
 import { GetIncomesByDateRangeUseCase } from "../../../application/income/get-incomes-by-date-range.use-case";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([IncomeEntity])],
+  imports: [TypeOrmModule.forFeature([IncomeEntity, IncomeAllocationEntity])],
   controllers: [IncomeController],
   providers: [
     {
@@ -66,10 +67,13 @@ import { GetIncomesByDateRangeUseCase } from "../../../application/income/get-in
     },
     {
       provide: UpdateIncomeUseCase,
-      useFactory: (incomeService: IncomeService) => {
-        return new UpdateIncomeUseCase(incomeService);
+      useFactory: (
+        incomeService: IncomeService,
+        dataSource: DataSource,
+      ) => {
+        return new UpdateIncomeUseCase(incomeService, dataSource);
       },
-      inject: [IncomeService],
+      inject: [IncomeService, DataSource],
     },
     {
       provide: DeleteIncomeUseCase,

@@ -5,8 +5,12 @@ import {
   Min,
   MaxLength,
   IsOptional,
+  ValidateNested,
+  IsArray,
 } from "class-validator";
 import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import { AllocationDto } from "./allocation.dto";
 
 export class UpdateIncomeDto {
   @ApiPropertyOptional({ description: "Monto del ingreso", example: 2500.0 })
@@ -31,4 +35,14 @@ export class UpdateIncomeDto {
   @IsOptional()
   @IsDateString()
   date?: string;
+
+  @ApiPropertyOptional({
+    description: "Asignaciones a bolsillos",
+    type: [AllocationDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AllocationDto)
+  allocations?: AllocationDto[];
 }

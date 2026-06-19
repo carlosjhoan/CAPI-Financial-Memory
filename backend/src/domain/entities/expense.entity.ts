@@ -1,5 +1,11 @@
 import { ApiProperty } from "@nestjs/swagger";
 
+export interface ExpenseAllocationInfo {
+  pocketId: string;
+  pocketName: string;
+  amount: number;
+}
+
 export class Expense {
   @ApiProperty({
     description: "ID único del gasto (UUID)",
@@ -30,6 +36,8 @@ export class Expense {
     example: "2024-01-15T10:30:00.000Z",
   })
   createdAt: Date;
+
+  allocations?: ExpenseAllocationInfo[];
 
   constructor(
     amount: number,

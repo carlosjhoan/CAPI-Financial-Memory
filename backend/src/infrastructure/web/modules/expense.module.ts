@@ -71,10 +71,18 @@ import { PocketModule } from "./pocket.module";
     },
     {
       provide: UpdateExpenseUseCase,
-      useFactory: (expenseService: ExpenseService) => {
-        return new UpdateExpenseUseCase(expenseService);
+      useFactory: (
+        expenseService: ExpenseService,
+        dataSource: DataSource,
+        pocketRepository: PocketRepository,
+      ) => {
+        return new UpdateExpenseUseCase(
+          expenseService,
+          dataSource,
+          pocketRepository,
+        );
       },
-      inject: [ExpenseService],
+      inject: [ExpenseService, DataSource, "PocketRepository"],
     },
     {
       provide: DeleteExpenseUseCase,

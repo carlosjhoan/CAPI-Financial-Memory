@@ -4,6 +4,7 @@ import { PocketRepository } from "../../domain/repositories/pocket.repository";
 import { DataSource } from "typeorm";
 import { ExpenseAllocationEntity } from "../../infrastructure/persistence/postgres/entities/expense-allocation.entity";
 import { ExpenseEntity } from "../../infrastructure/persistence/postgres/entities/expense.entity";
+import { PocketEntity } from "../../infrastructure/persistence/postgres/entities/pocket.entity";
 import { AllocationDto } from "../../infrastructure/web/dto/allocation.dto";
 
 export class CreateExpenseUseCase {
@@ -67,6 +68,17 @@ export class CreateExpenseUseCase {
           }),
         );
         await transactionalEntityManager.save(allocationEntities);
+
+        // 3. Decrement each pocket's accumulated amount
+        for (const alloc of allocations) {
+          const pocket = await transactionalEntityManager.findOne(PocketEntity, {
+            where: { id: alloc.pocketId },
+          });
+          if (pocket) {
+            pocket.accumulatedAmount = Number(pocket.accumulatedAmount) - alloc.amount;
+            await transactionalEntityManager.save(pocket);
+          }
+        }
 
         return new Expense(
           savedExpense.amount,

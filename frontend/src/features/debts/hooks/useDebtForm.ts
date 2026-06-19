@@ -1,5 +1,6 @@
 import { useBaseForm } from '../../../shared/hooks/useBaseForm';
 import { z } from 'zod';
+import { dateSchemaOptional } from '../../../shared/utils/dateValidation';
 import type { CreateDebtDto, UpdateDebtDto } from '../types/debt.types';
 
 const debtSchema = z.object({
@@ -20,10 +21,7 @@ const debtSchema = z.object({
     .number({ required_error: 'El monto de cuota es requerido' })
     .positive('El monto debe ser positivo')
     .max(999999999.99, 'El monto no puede exceder $999.999.999,99'),
-  date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener el formato YYYY-MM-DD')
-    .optional(),
+  date: dateSchemaOptional,
   finalAmount: z.number().positive().optional(),
   reason: z
     .string()

@@ -1,15 +1,14 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { dateSchema } from '../../../shared/utils/dateValidation';
 
 const paymentSchema = z.object({
   amount: z
     .number({ required_error: 'El monto del pago es requerido' })
     .positive('El monto debe ser positivo')
     .max(999999999.99, 'El monto no puede exceder $999.999.999,99'),
-  date: z
-    .string({ required_error: 'La fecha es requerida' })
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener el formato YYYY-MM-DD'),
+  date: dateSchema,
 });
 
 export type PaymentFormData = z.infer<typeof paymentSchema>;

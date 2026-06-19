@@ -1,5 +1,6 @@
 import { useBaseForm } from '../../../shared/hooks/useBaseForm';
 import { z } from 'zod';
+import { dateSchema } from '../../../shared/utils/dateValidation';
 import type { CreateLoanDto, UpdateLoanDto } from '../types/loan.types';
 
 const loanSchema = z.object({
@@ -19,9 +20,7 @@ const loanSchema = z.object({
     .string({ required_error: 'El deudor es requerido' })
     .min(1, 'El deudor es requerido')
     .max(255, 'El nombre del deudor no puede exceder 255 caracteres'),
-  date: z
-    .string({ required_error: 'La fecha es requerida' })
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener el formato YYYY-MM-DD'),
+  date: dateSchema,
 });
 
 export type LoanFormData = z.infer<typeof loanSchema>;

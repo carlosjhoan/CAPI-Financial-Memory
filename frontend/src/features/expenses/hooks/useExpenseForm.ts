@@ -1,9 +1,9 @@
 import { useFieldArray } from 'react-hook-form';
 import { useBaseForm } from '../../../shared/hooks/useBaseForm';
 import { z } from 'zod';
+import { dateSchema } from '../../../shared/utils/dateValidation';
 import type { CreateExpenseDto, UpdateExpenseDto } from '../types/expense.types';
 
-// Schema base — se usa tal cual para creación
 const expenseSchema = z
   .object({
     amount: z
@@ -14,9 +14,7 @@ const expenseSchema = z
       .string({ required_error: 'El motivo es requerido' })
       .min(1, 'El motivo es requerido')
       .max(255, 'El motivo no puede exceder 255 caracteres'),
-    date: z
-      .string({ required_error: 'La fecha es requerida' })
-      .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener el formato YYYY-MM-DD'),
+    date: dateSchema,
     allocations: z
       .array(
         z.object({
@@ -31,7 +29,7 @@ const expenseSchema = z
       const totalAllocated = data.allocations?.reduce((sum, alloc) => sum + alloc.amount, 0) || 0;
       return Math.abs(totalAllocated - data.amount) < 0.01;
     },
-    { message: 'La suma de las asignaciones debe ser igual al monto total', path: ['allocations'] },
+    { message: 'La suma total de los montos debe ser igual al valor RETIRADO', path: ['allocations'] },
   );
 
 // Schema para actualizar — amount puede ser 0 (no editar)
@@ -62,7 +60,7 @@ const expenseUpdateSchema = z
       const totalAllocated = data.allocations?.reduce((sum, alloc) => sum + alloc.amount, 0) || 0;
       return Math.abs(totalAllocated - (data.amount || 0)) < 0.01;
     },
-    { message: 'La suma de las asignaciones debe ser igual al monto total', path: ['allocations'] },
+    { message: 'La suma total de los montos debe ser igual al valor RETIRADO', path: ['allocations'] },
   );
 
 export type ExpenseFormData = z.infer<typeof expenseSchema>;
@@ -81,7 +79,7 @@ export function useExpenseForm(defaultValues?: Partial<ExpenseFormData>, isEditM
     updateSchema: expenseUpdateSchema,
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
     name: 'allocations',
   });
@@ -105,6 +103,7 @@ export function useExpenseForm(defaultValues?: Partial<ExpenseFormData>, isEditM
     fields,
     append,
     remove,
+    replace,
     toCreateDto,
     toUpdateDto,
   };

@@ -360,6 +360,8 @@ export class IncomeController {
           : `${updateIncomeDto.date}T12:00:00.000Z`; // UTC noon to avoid timezone shifts
         updateData.date = new Date(dateStr);
       }
+      if (updateIncomeDto.allocations !== undefined)
+        updateData.allocations = updateIncomeDto.allocations;
 
       const income = await this.updateIncomeUseCase.execute(
         req.user.id,

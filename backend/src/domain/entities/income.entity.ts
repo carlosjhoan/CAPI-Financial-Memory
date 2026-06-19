@@ -1,5 +1,11 @@
 import { ApiProperty } from "@nestjs/swagger";
 
+export interface IncomeAllocationInfo {
+  pocketId: string;
+  pocketName: string;
+  amount: number;
+}
+
 export class Income {
   @ApiProperty({
     description: "ID único del ingreso (UUID)",
@@ -30,6 +36,8 @@ export class Income {
     example: "2024-01-15T10:30:00.000Z",
   })
   createdAt: Date;
+
+  allocations?: IncomeAllocationInfo[];
 
   constructor(
     amount: number,

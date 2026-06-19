@@ -362,6 +362,8 @@ export class ExpenseController {
           : `${updateExpenseDto.date}T12:00:00.000Z`; // UTC noon to avoid timezone shifts
         updateData.date = new Date(dateStr);
       }
+      if (updateExpenseDto.allocations !== undefined)
+        updateData.allocations = updateExpenseDto.allocations;
 
       const expense = await this.updateExpenseUseCase.execute(
         req.user.id,
