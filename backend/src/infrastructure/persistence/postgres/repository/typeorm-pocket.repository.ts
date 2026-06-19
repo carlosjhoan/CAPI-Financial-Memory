@@ -335,7 +335,7 @@ export class TypeOrmPocketRepository implements PocketRepository {
         SELECT
           e.id,
           'expense' AS type,
-          e.amount,
+          ea.amount,
           e.date,
           e."createdAt",
           e.reason,
@@ -347,6 +347,24 @@ export class TypeOrmPocketRepository implements PocketRepository {
         FROM expenses e
         JOIN expense_allocations ea ON ea."expenseId" = e.id
         WHERE ea."pocketId"::text = $1
+
+        UNION ALL
+
+        SELECT
+          i.id,
+          'income' AS type,
+          ia.amount,
+          i.date,
+          i."createdAt",
+          i.reason,
+          NULL::text AS direction,
+          NULL::uuid AS "sourcePocketId",
+          NULL::uuid AS "targetPocketId",
+          i.date AS sort_date,
+          i."createdAt" AS sort_created
+        FROM incomes i
+        JOIN income_allocations ia ON ia."incomeId" = i.id
+        WHERE ia."pocketId"::text = $1
 
         UNION ALL
 
@@ -376,6 +394,10 @@ export class TypeOrmPocketRepository implements PocketRepository {
         SELECT e.id FROM expenses e
           JOIN expense_allocations ea ON ea."expenseId" = e.id
           WHERE ea."pocketId"::text = $1
+        UNION ALL
+        SELECT i.id FROM incomes i
+          JOIN income_allocations ia ON ia."incomeId" = i.id
+          WHERE ia."pocketId"::text = $1
         UNION ALL
         SELECT id FROM pocket_transfers
           WHERE "sourcePocketId"::text = $1 OR "targetPocketId"::text = $1

@@ -22,6 +22,14 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
 
     income.createdAt = entity.createdAt;
 
+    if (entity.allocations) {
+      income.allocations = entity.allocations.map((alloc) => ({
+        pocketId: alloc.pocketId,
+        pocketName: alloc.pocket?.name ?? "Sin bolsillo",
+        amount: Number(alloc.amount),
+      }));
+    }
+
     return income;
   }
 
@@ -48,12 +56,18 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
   async findById(id: string, userId?: string): Promise<Income | null> {
     const where: any = { id };
     if (userId) where.userId = userId;
-    const entity = await this.incomeRepository.findOne({ where });
+    const entity = await this.incomeRepository.findOne({
+      where,
+      relations: ["allocations", "allocations.pocket"],
+    });
     return entity ? this.toDomain(entity) : null;
   }
 
   async findAll(userId: string): Promise<Income[]> {
-    const entities = await this.incomeRepository.find({ where: { userId } });
+    const entities = await this.incomeRepository.find({
+      where: { userId },
+      relations: ["allocations", "allocations.pocket"],
+    });
     return entities.map((entity) => this.toDomain(entity));
   }
 
@@ -69,6 +83,7 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
       order: { date: "DESC" },
       skip,
       take: limit,
+      relations: ["allocations", "allocations.pocket"],
     });
 
     return {
@@ -96,6 +111,8 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
   ): Promise<Income[]> {
     const query = this.incomeRepository
       .createQueryBuilder("income")
+      .leftJoinAndSelect("income.allocations", "allocations")
+      .leftJoinAndSelect("allocations.pocket", "pocket")
       .where("income.date >= :startDate", { startDate })
       .andWhere("income.date <= :endDate", { endDate })
       .orderBy("income.date", "DESC");
@@ -115,6 +132,8 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
   ): Promise<{ data: Income[]; total: number }> {
     const queryBuilder = this.incomeRepository
       .createQueryBuilder("income")
+      .leftJoinAndSelect("income.allocations", "allocations")
+      .leftJoinAndSelect("allocations.pocket", "pocket")
       .where("income.date >= :startDate", { startDate })
       .andWhere("income.date <= :endDate", { endDate })
       .orderBy("income.date", "DESC");

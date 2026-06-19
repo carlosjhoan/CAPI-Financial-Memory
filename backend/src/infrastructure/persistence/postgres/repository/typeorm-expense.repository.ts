@@ -22,6 +22,14 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
 
     expense.createdAt = entity.createdAt;
 
+    if (entity.allocations) {
+      expense.allocations = entity.allocations.map((alloc) => ({
+        pocketId: alloc.pocketId,
+        pocketName: alloc.pocket?.name ?? "Sin bolsillo",
+        amount: Number(alloc.amount),
+      }));
+    }
+
     return expense;
   }
 
@@ -48,12 +56,18 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
   async findById(id: string, userId?: string): Promise<Expense | null> {
     const where: any = { id };
     if (userId) where.userId = userId;
-    const entity = await this.expenseRepository.findOne({ where });
+    const entity = await this.expenseRepository.findOne({
+      where,
+      relations: ["allocations", "allocations.pocket"],
+    });
     return entity ? this.toDomain(entity) : null;
   }
 
   async findAll(userId: string): Promise<Expense[]> {
-    const entities = await this.expenseRepository.find({ where: { userId } });
+    const entities = await this.expenseRepository.find({
+      where: { userId },
+      relations: ["allocations", "allocations.pocket"],
+    });
     return entities.map((entity) => this.toDomain(entity));
   }
 
@@ -69,6 +83,7 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
       order: { date: "DESC" },
       skip,
       take: limit,
+      relations: ["allocations", "allocations.pocket"],
     });
 
     return {
@@ -84,6 +99,8 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
   ): Promise<Expense[]> {
     const query = this.expenseRepository
       .createQueryBuilder("expense")
+      .leftJoinAndSelect("expense.allocations", "allocations")
+      .leftJoinAndSelect("allocations.pocket", "pocket")
       .where("expense.date >= :startDate", { startDate })
       .andWhere("expense.date <= :endDate", { endDate })
       .orderBy("expense.date", "DESC");
@@ -103,6 +120,8 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
   ): Promise<{ data: Expense[]; total: number }> {
     const queryBuilder = this.expenseRepository
       .createQueryBuilder("expense")
+      .leftJoinAndSelect("expense.allocations", "allocations")
+      .leftJoinAndSelect("allocations.pocket", "pocket")
       .where("expense.date >= :startDate", { startDate })
       .andWhere("expense.date <= :endDate", { endDate })
       .orderBy("expense.date", "DESC");

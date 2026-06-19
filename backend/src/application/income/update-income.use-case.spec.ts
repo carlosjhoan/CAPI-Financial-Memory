@@ -1,16 +1,22 @@
 import { UpdateIncomeUseCase } from "./update-income.use-case";
 import { IncomeService } from "../../domain/services/income.service";
 import { Income } from "../../domain/entities/income.entity";
+import { DataSource } from "typeorm";
 
 describe("UpdateIncomeUseCase", () => {
   let useCase: UpdateIncomeUseCase;
   let mockService: jest.Mocked<IncomeService>;
+  let mockDataSource: jest.Mocked<DataSource>;
 
   beforeEach(() => {
     mockService = {
       updateIncome: jest.fn(),
     } as any;
-    useCase = new UpdateIncomeUseCase(mockService);
+    mockDataSource = {
+      transaction: jest.fn(),
+      manager: {} as any,
+    } as any;
+    useCase = new UpdateIncomeUseCase(mockService, mockDataSource);
   });
 
   it("should call incomeService.updateIncome with the correct id and updates", async () => {
