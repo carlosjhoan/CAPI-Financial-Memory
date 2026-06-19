@@ -53,6 +53,8 @@ export function useCreateIncome() {
       // Invalidar quirúrgicamente — solo listas y summaries (no detalles individuales)
       queryClient.invalidateQueries({ queryKey: ['incomes', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['incomes', 'summary'] });
+      // Los ingresos con allocations afectan bolsillos — refrescar diagramas
+      queryClient.invalidateQueries({ queryKey: ['pockets'] });
 
       success('Ingreso creado', `El ingreso de $${newIncome.amount.toFixed(2)} ha sido creado exitosamente`);
     },
@@ -75,6 +77,8 @@ export function useUpdateIncome() {
       // Invalidar quirúrgicamente — solo listas y summaries
       queryClient.invalidateQueries({ queryKey: ['incomes', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['incomes', 'summary'] });
+      // Las allocations actualizadas afectan bolsillos — refrescar diagramas
+      queryClient.invalidateQueries({ queryKey: ['pockets'] });
 
       success('Ingreso actualizado', `El ingreso ha sido actualizado exitosamente`);
     },
@@ -96,6 +100,8 @@ export function useDeleteIncome() {
       // Invalidar quirúrgicamente — solo listas y summaries
       queryClient.invalidateQueries({ queryKey: ['incomes', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['incomes', 'summary'] });
+      // Eliminar un ingreso con allocations afecta bolsillos — refrescar diagramas
+      queryClient.invalidateQueries({ queryKey: ['pockets'] });
 
       success('Ingreso eliminado', 'El ingreso ha sido eliminado exitosamente');
     },

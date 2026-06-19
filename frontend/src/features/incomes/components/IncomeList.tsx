@@ -82,7 +82,11 @@ const IncomeList: React.FC<IncomeListProps> = ({
         </span>
       </div>
     ),
-    renderPocket: () => 'sin bolsillo',
+    renderPocket: (income: Income) => {
+      if (!income.allocations || income.allocations.length === 0) return 'sin bolsillo';
+      if (income.allocations.length === 1) return income.allocations[0].pocketName;
+      return `${income.allocations[0].pocketName} y ${income.allocations.length - 1} más`;
+    },
     getDate: (i: Income) => i.date,
     getStatusDot: () => 'bg-green-500',
     renderFocusCard: (income: Income) => (

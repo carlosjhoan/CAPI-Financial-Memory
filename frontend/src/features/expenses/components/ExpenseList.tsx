@@ -82,7 +82,11 @@ const ExpenseList: React.FC<ExpenseListProps> = ({
         </span>
       </div>
     ),
-    renderPocket: () => 'sin bolsillo',
+    renderPocket: (expense: Expense) => {
+      if (!expense.allocations || expense.allocations.length === 0) return 'sin bolsillo';
+      if (expense.allocations.length === 1) return expense.allocations[0].pocketName;
+      return `${expense.allocations[0].pocketName} y ${expense.allocations.length - 1} más`;
+    },
     getDate: (e: Expense) => e.date,
     getStatusDot: () => 'bg-orange-500',
     renderFocusCard: (expense: Expense) => (

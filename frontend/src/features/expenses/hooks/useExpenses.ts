@@ -53,6 +53,8 @@ export function useCreateExpense() {
       // Invalidar quirúrgicamente — solo listas y summaries (no detalles individuales)
       queryClient.invalidateQueries({ queryKey: ['expenses', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['expenses', 'summary'] });
+      // Los gastos con allocations afectan bolsillos — refrescar diagramas
+      queryClient.invalidateQueries({ queryKey: ['pockets'] });
 
       success('Gasto creado', `El gasto de $${newExpense.amount.toFixed(2)} ha sido creado exitosamente`);
     },
@@ -75,6 +77,8 @@ export function useUpdateExpense() {
       // Invalidar quirúrgicamente — solo listas y summaries
       queryClient.invalidateQueries({ queryKey: ['expenses', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['expenses', 'summary'] });
+      // Las allocations actualizadas afectan bolsillos — refrescar diagramas
+      queryClient.invalidateQueries({ queryKey: ['pockets'] });
 
       success('Gasto actualizado', 'El gasto ha sido actualizado exitosamente');
     },
@@ -96,6 +100,8 @@ export function useDeleteExpense() {
       // Invalidar quirúrgicamente — solo listas y summaries
       queryClient.invalidateQueries({ queryKey: ['expenses', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['expenses', 'summary'] });
+      // Eliminar un gasto con allocations afecta bolsillos — refrescar diagramas
+      queryClient.invalidateQueries({ queryKey: ['pockets'] });
 
       success('Gasto eliminado', 'El gasto ha sido eliminado exitosamente');
     },

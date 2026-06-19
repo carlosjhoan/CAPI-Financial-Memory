@@ -11,6 +11,7 @@ export interface Expense {
   date: string;
   createdAt: string;
   updatedAt?: string;
+  allocations?: { pocketId: string; pocketName: string; amount: number }[];
 }
 
 export interface Allocation {
