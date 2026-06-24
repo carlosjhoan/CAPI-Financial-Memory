@@ -138,38 +138,6 @@ export function usePocketsSummary() {
   });
 }
 
-export function useRegisterDeposit() {
-  const queryClient = useQueryClient();
-  const { success, error: showError } = useGlobalToast();
-
-  return useMutation({
-    mutationFn: ({ pocketId, amount, date, reason, newGoal }: { pocketId: string; amount: number; date: string; reason?: string; newGoal?: number }) =>
-      pocketsService.registerDeposit(pocketId, amount, date, reason, newGoal),
-    onSuccess: (updatedPocket) => {
-      // Invalidar específicamente el pocket detail para asegurar datos frescos
-      queryClient.invalidateQueries({ queryKey: pocketKeys.detail(updatedPocket.id) });
-      queryClient.invalidateQueries({ queryKey: ['pockets', 'list'] });
-      queryClient.invalidateQueries({ queryKey: ['pockets', 'summary'] });
-      queryClient.invalidateQueries({ queryKey: [...pocketKeys.detail(updatedPocket.id), 'deposits'] });
-      const formattedAmount = typeof updatedPocket.accumulatedAmount === 'number'
-        ? updatedPocket.accumulatedAmount.toFixed(2)
-        : '0.00';
-      success('Depósito registrado', `Se han depositado $${formattedAmount} en "${updatedPocket.name}"`);
-    },
-    onError: (err: Error) => {
-      showError('Error al registrar depósito', err.message || 'No se pudo registrar el depósito');
-    },
-  });
-}
-
-export function usePocketDeposits(pocketId: string, offset = 0, limit = 4) {
-  return useQuery({
-    queryKey: [...pocketKeys.detail(pocketId), 'deposits', { offset, limit }],
-    queryFn: () => pocketsService.getDeposits(pocketId, offset, limit),
-    enabled: !!pocketId,
-  });
-}
-
 export function usePocketHistory(pocketId: string, limit = 20) {
   return useInfiniteQuery({
     queryKey: [...pocketKeys.detail(pocketId), 'history'],

@@ -4,7 +4,8 @@ import { Pocket } from "../../domain/entities/pocket.entity";
 import { DataSource } from "typeorm";
 import { PocketEntity } from "../../infrastructure/persistence/postgres/entities/pocket.entity";
 import { PocketTransferEntity } from "../../infrastructure/persistence/postgres/entities/pocket-transfer.entity";
-import { DepositEntity } from "../../infrastructure/persistence/postgres/entities/deposit.entity";
+import { IncomeEntity } from "../../infrastructure/persistence/postgres/entities/income.entity";
+import { IncomeAllocationEntity } from "../../infrastructure/persistence/postgres/entities/income-allocation.entity";
 
 function createMockPocket(
   id: string,
@@ -59,11 +60,10 @@ describe("DeleteWithTransferUseCase", () => {
       save: jest.fn(),
       update: jest.fn(),
       getSummary: jest.fn(),
-      findDepositsByPocketId: jest.fn(),
+      findIncomesByPocketId: jest.fn(),
       findExpensesByPocketId: jest.fn(),
       findTransfersByPocketId: jest.fn(),
       findHistoryByPocketId: jest.fn(),
-      saveDeposit: jest.fn(),
       saveTransfer: jest.fn(),
     } as any;
 
@@ -161,22 +161,18 @@ describe("DeleteWithTransferUseCase", () => {
         .mockResolvedValueOnce(targetPocket); // target exists
     });
 
-    it("should debit source, credit target, create deposit, and delete pocket", async () => {
+    it("should debit source, credit target, create income+allocation, and delete pocket", async () => {
       const sourceEntity = createMockEntity("source-1", 500);
       sourceEntity.name = "Test Source";
+      sourceEntity.userId = "user-1";
       const targetEntity = createMockEntity("target-1", 200);
       mockQueryBuilder.getOne
         .mockResolvedValueOnce(sourceEntity) // lock source
         .mockResolvedValueOnce(targetEntity); // lock target
 
-      const mockDepositEntity = {
-        id: "dep-1",
-        pocketId: "target-1",
-        amount: 500,
-        date: new Date(),
-      };
-      mockEntityManager.save.mockResolvedValue(null);
-      mockEntityManager.create.mockReturnValue(mockDepositEntity);
+      const mockSavedIncome = { id: "inc-1" };
+      mockEntityManager.save.mockResolvedValue(mockSavedIncome);
+      mockEntityManager.create.mockReturnValue({});
 
       const result = await useCase.execute(
         "user-1",
@@ -187,30 +183,37 @@ describe("DeleteWithTransferUseCase", () => {
       );
 
       expect(result.deletedPocketId).toBe("source-1");
-      expect(result.depositsCreated).toBe(1);
-      // saves: source debit + target credit + deposit = 3
-      expect(mockEntityManager.save).toHaveBeenCalledTimes(3);
-      // delete old transfers (source + target) + delete deposits + delete pocket = 4 deletes
+      expect(result.transfersCreated).toBe(1);
+      // saves: source debit + target credit + income + allocation = 4
+      expect(mockEntityManager.save).toHaveBeenCalledTimes(4);
+      // delete old transfers (source + target) + delete income_allocations + delete pocket = 4
       expect(mockEntityManager.delete).toHaveBeenCalledTimes(4);
       expect(mockEntityManager.delete).toHaveBeenCalledWith(
         PocketTransferEntity,
         expect.objectContaining({ sourcePocketId: "source-1" }),
       );
       expect(mockEntityManager.delete).toHaveBeenCalledWith(
-        DepositEntity,
+        IncomeAllocationEntity,
         { pocketId: "source-1" },
       );
       expect(mockEntityManager.delete).toHaveBeenCalledWith(
         PocketEntity,
         "source-1",
       );
-      // Verify deposit was created on the target pocket with the pocket name in the reason
+      // Verify income was created on the target with the pocket name in the reason
       expect(mockEntityManager.create).toHaveBeenCalledWith(
-        DepositEntity,
+        IncomeEntity,
+        expect.objectContaining({
+          userId: "user-1",
+          amount: 500,
+          reason: 'Transferencia desde "Test Source" (bolsillo eliminado)',
+        }),
+      );
+      expect(mockEntityManager.create).toHaveBeenCalledWith(
+        IncomeAllocationEntity,
         expect.objectContaining({
           pocketId: "target-1",
           amount: 500,
-          reason: 'Transferencia desde "Test Source" (bolsillo eliminado)',
         }),
       );
     });
@@ -253,6 +256,7 @@ describe("DeleteWithTransferUseCase", () => {
     it("should handle multiple distributions correctly", async () => {
       const sourceEntity = createMockEntity("source-1", 1000);
       sourceEntity.name = "Multi";
+      sourceEntity.userId = "user-1";
       const targetEntity1 = createMockEntity("target-1", 100);
       const targetEntity2 = createMockEntity("target-2", 50);
 
@@ -268,7 +272,7 @@ describe("DeleteWithTransferUseCase", () => {
         .mockResolvedValueOnce(targetEntity1)
         .mockResolvedValueOnce(targetEntity2);
 
-      mockEntityManager.save.mockResolvedValue(null);
+      mockEntityManager.save.mockResolvedValue({ id: "mock-inc-id" });
       mockEntityManager.create.mockReturnValue({});
 
       const result = await useCase.execute(
@@ -283,19 +287,29 @@ describe("DeleteWithTransferUseCase", () => {
       );
 
       expect(result.deletedPocketId).toBe("source-1");
-      expect(result.depositsCreated).toBe(2);
-      // saves: source debit + target-1 credit + deposit-1 + target-2 credit + deposit-2 = 5
-      expect(mockEntityManager.save).toHaveBeenCalledTimes(5);
-      // creates: 2 deposit records
-      expect(mockEntityManager.create).toHaveBeenCalledTimes(2);
+      expect(result.transfersCreated).toBe(2);
+      // saves: source debit + target-1 credit + income-1 + alloc-1 + target-2 credit + income-2 + alloc-2 = 7
+      expect(mockEntityManager.save).toHaveBeenCalledTimes(7);
+      // creates: 2 incomes + 2 allocations = 4
+      expect(mockEntityManager.create).toHaveBeenCalledTimes(4);
       expect(mockEntityManager.create).toHaveBeenNthCalledWith(
         1,
-        DepositEntity,
-        expect.objectContaining({ pocketId: "target-1", amount: 600 }),
+        IncomeEntity,
+        expect.objectContaining({ amount: 600 }),
       );
       expect(mockEntityManager.create).toHaveBeenNthCalledWith(
         2,
-        DepositEntity,
+        IncomeAllocationEntity,
+        expect.objectContaining({ pocketId: "target-1", amount: 600 }),
+      );
+      expect(mockEntityManager.create).toHaveBeenNthCalledWith(
+        3,
+        IncomeEntity,
+        expect.objectContaining({ amount: 400 }),
+      );
+      expect(mockEntityManager.create).toHaveBeenNthCalledWith(
+        4,
+        IncomeAllocationEntity,
         expect.objectContaining({ pocketId: "target-2", amount: 400 }),
       );
     });

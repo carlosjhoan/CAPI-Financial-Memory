@@ -2,7 +2,6 @@ import { PocketService } from "./pocket.service";
 import { Pocket } from "../entities/pocket.entity";
 import { PocketRepository } from "../repositories/pocket.repository";
 import { CreatePocketUseCase } from "../../application/pocket/create-pocket.use-case";
-import { RegisterDepositUseCase } from "../../application/pocket/register-deposit.use-case";
 
 function createMockPocket(id: string, accumulatedAmount: number): Pocket {
   const pocket = new Pocket(
@@ -21,8 +20,6 @@ describe("PocketService", () => {
   let service: PocketService;
   let mockRepository: jest.Mocked<PocketRepository>;
   let mockCreatePocketUseCase: jest.Mocked<CreatePocketUseCase>;
-  let mockRegisterDepositUseCase: jest.Mocked<RegisterDepositUseCase>;
-
   beforeEach(() => {
     mockRepository = {
       findById: jest.fn(),
@@ -31,21 +28,18 @@ describe("PocketService", () => {
       save: jest.fn(),
       update: jest.fn(),
       getSummary: jest.fn(),
-      findDepositsByPocketId: jest.fn(),
+      findIncomesByPocketId: jest.fn(),
       findExpensesByPocketId: jest.fn(),
       findTransfersByPocketId: jest.fn(),
       findHistoryByPocketId: jest.fn(),
-      saveDeposit: jest.fn(),
       saveTransfer: jest.fn(),
     } as any;
 
     mockCreatePocketUseCase = { execute: jest.fn() } as any;
-    mockRegisterDepositUseCase = { execute: jest.fn() } as any;
 
     service = new PocketService(
       mockRepository,
       mockCreatePocketUseCase,
-      mockRegisterDepositUseCase,
     );
   });
 

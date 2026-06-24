@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Deposit } from "./deposit.entity";
+import { Income } from "./income.entity";
 
 export class Pocket {
   @ApiProperty({ description: "ID único del bolsillo (UUID)" })
@@ -46,14 +46,11 @@ export class Pocket {
   @ApiProperty({ description: "Fecha de última actualización" })
   updatedAt: Date;
 
-  @ApiProperty({ description: "Cantidad de depósitos realizados", example: 3 })
-  depositCount?: number;
-
   @ApiProperty({
-    description: "Últimos 4 depósitos del bolsillo",
-    type: [Deposit],
+    description: "Ingresos asociados al bolsillo",
+    type: [Income],
   })
-  deposits?: Deposit[];
+  incomes?: Income[];
 
   constructor(
     name: string,
@@ -91,7 +88,7 @@ export class Pocket {
     this.updatedAt = new Date();
   }
 
-  registerDeposit(amount: number): void {
+  credit(amount: number): void {
     this.accumulatedAmount += amount;
     this.updatedAt = new Date();
   }

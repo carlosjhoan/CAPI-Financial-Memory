@@ -13,16 +13,15 @@ export interface PocketCardProps {
 
 const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => {
   const navigate = useNavigate();
-  const { lastDate, depositCount, withdrawalCount, transferOutCount, transferTotal } = useMemo(() => {
-    const deposits = pocket.deposits || [];
+  const { lastDate, withdrawalCount, transferOutCount, transferTotal } = useMemo(() => {
+    const incomes = pocket.incomes || [];
     const expenses = pocket.expenses || [];
     const transfers = pocket.transfers || [];
 
     // Transferencias
     const outgoingTransfers = transfers.filter(t => t.direction === 'outgoing');
-    const hasInitialAmount = (pocket.initialAmount ?? 0) > 0;
 
-    const allActivities = [...deposits, ...expenses, ...transfers];
+    const allActivities = [...incomes, ...expenses, ...transfers];
     const latestActivity = allActivities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
     
     const dateObj = latestActivity 
@@ -34,12 +33,11 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
     
     return {
       lastDate: `${day} ${month}`,
-      depositCount: deposits.length + (hasInitialAmount ? 1 : 0),
       withdrawalCount: expenses.length,
       transferOutCount: outgoingTransfers.length,
       transferTotal: transfers.length,
     };
-  }, [pocket.deposits, pocket.expenses, pocket.transfers, pocket.createdAt, pocket.initialAmount]);
+  }, [pocket.incomes, pocket.expenses, pocket.transfers, pocket.createdAt, pocket.initialAmount]);
 
   const isGoal = pocket.type === 'goal';
   const percentage = isGoal && pocket.goal > 0
@@ -137,7 +135,7 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
               </span>
               <span className="text-secondary-300 dark:text-secondary-600">•</span>
               <span className="text-green-600 dark:text-green-500 font-bold flex items-center">
-                ↑ {depositCount}
+                ↑ {pocket.incomes?.length || 0}
               </span>
               <span className="text-secondary-300 dark:text-secondary-600">•</span>
               <span className="text-red-600 dark:text-red-500 font-bold flex items-center">
@@ -173,11 +171,11 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
               </div>
             )}
             {/* MiniLineChart for deposit type with data */}
-            {!isGoal && (pocket.accumulatedAmount > 0 || (pocket.deposits && pocket.deposits.length > 0)) && (
+            {!isGoal && (pocket.accumulatedAmount > 0 || (pocket.incomes && pocket.incomes.length > 0)) && (
               <div>
                 <MiniLineChart
                   initialAmount={pocket.initialAmount ?? 0}
-                  deposits={pocket.deposits ?? []}
+                  transactions={pocket.incomes ?? []}
                   createdAt={pocket.createdAt}
                   currentAccumulated={pocket.accumulatedAmount}
                 />
@@ -185,7 +183,7 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
             )}
 
             {/* Empty state for deposit type without data */}
-            {!isGoal && pocket.accumulatedAmount === 0 && (!pocket.deposits || pocket.deposits.length === 0) && (
+            {!isGoal && pocket.accumulatedAmount === 0 && (!pocket.incomes || pocket.incomes.length === 0) && (
               <div>
                 <div className="text-center text-xs text-secondary-400 py-4">
                   Bolsillo vacío

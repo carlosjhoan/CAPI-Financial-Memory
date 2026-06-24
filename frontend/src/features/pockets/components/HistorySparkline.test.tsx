@@ -21,7 +21,7 @@ function createMockPocket(overrides: Partial<Pocket> = {}): Pocket {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     motivation: 'Test motivation',
-    deposits: [],
+    incomes: [],
     expenses: [],
     transfers: [],
     ...overrides,
@@ -39,8 +39,8 @@ describe('buildHistoryDataPoints — today extension', () => {
 
     const pocket = createMockPocket({
       createdAt: thirtyDaysAgo.toISOString(),
-      deposits: [{
-        id: 'd1', pocketId: 'test-1', amount: 10000,
+      incomes: [{
+        id: 'd1', amount: 10000,
         date: twoDaysAgo.toISOString(),
         createdAt: twoDaysAgo.toISOString(),
       }],
@@ -61,8 +61,8 @@ describe('buildHistoryDataPoints — today extension', () => {
 
     const pocket = createMockPocket({
       createdAt: thirtyDaysAgo.toISOString(),
-      deposits: [{
-        id: 'd1', pocketId: 'test-1', amount: 10000,
+      incomes: [{
+        id: 'd1', amount: 10000,
         date: today.toISOString(),
         createdAt: today.toISOString(),
       }],
@@ -115,9 +115,9 @@ describe('buildHistoryDataPoints — today extension', () => {
 
     const pocket = createMockPocket({
       createdAt: thirtyDaysAgo.toISOString(),
-      deposits: [
-        { id: 'd1', pocketId: 'test-1', amount: 5000, date: day1.toISOString(), createdAt: day1.toISOString() },
-        { id: 'd2', pocketId: 'test-1', amount: 3000, date: day2.toISOString(), createdAt: day2.toISOString() },
+      incomes: [
+        { id: 'd1', amount: 5000, date: day1.toISOString(), createdAt: day1.toISOString() },
+        { id: 'd2', amount: 3000, date: day2.toISOString(), createdAt: day2.toISOString() },
       ],
     });
 
@@ -146,8 +146,8 @@ describe('HistorySparkline component — Status display', () => {
 
     const pocket = createMockPocket({
       createdAt: thirtyDaysAgo.toISOString(),
-      deposits: [{
-        id: 'd1', pocketId: 'test-1', amount: 10000,
+      incomes: [{
+        id: 'd1', amount: 10000,
         date: twoDaysAgo.toISOString(),
         createdAt: twoDaysAgo.toISOString(),
       }],
@@ -165,8 +165,8 @@ describe('HistorySparkline component — Status display', () => {
 
     const pocket = createMockPocket({
       createdAt: thirtyDaysAgo.toISOString(),
-      deposits: [{
-        id: 'd1', pocketId: 'test-1', amount: 10000,
+      incomes: [{
+        id: 'd1', amount: 10000,
         date: today.toISOString(),
         createdAt: today.toISOString(),
       }],
@@ -187,10 +187,10 @@ describe('HistorySparkline component — Status display', () => {
 
     const pocket = createMockPocket({
       createdAt: new Date(Date.now() - 60 * 86400000).toISOString(),
-      deposits: [
-        { id: 'd1', pocketId: 'test-1', amount: 20000, date: d1.toISOString(), createdAt: d1.toISOString() },
-        { id: 'd2', pocketId: 'test-1', amount: 5000, date: d2.toISOString(), createdAt: d2.toISOString() },
-        { id: 'd3', pocketId: 'test-1', amount: 15000, date: d3.toISOString(), createdAt: d3.toISOString() },
+      incomes: [
+        { id: 'd1', amount: 20000, date: d1.toISOString(), createdAt: d1.toISOString() },
+        { id: 'd2', amount: 5000, date: d2.toISOString(), createdAt: d2.toISOString() },
+        { id: 'd3', amount: 15000, date: d3.toISOString(), createdAt: d3.toISOString() },
       ],
     });
 

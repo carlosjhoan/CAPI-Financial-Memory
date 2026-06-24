@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 
-interface DepositItem {
+interface TransactionItem {
   amount: number;
   date: string;
 }
 
 interface MiniLineChartProps {
   initialAmount: number;
-  deposits: DepositItem[];
+  transactions: TransactionItem[];
   createdAt: string;
   currentAccumulated: number;
 }
@@ -36,7 +36,7 @@ function parseDate(dateStr: string): Date {
 
 function buildDataPoints({
   initialAmount,
-  deposits,
+  transactions,
   createdAt,
   currentAccumulated,
 }: MiniLineChartProps): Point[] {
@@ -46,16 +46,16 @@ function buildDataPoints({
   // 1. Start point: { date: createdAt, value: initialAmount }
   const points: Point[] = [{ date: createdDate, value: initialAmount }];
 
-  // 2. Sort deposits chronologically (oldest first)
-  const sortedDeposits = [...deposits].sort(
+  // 2. Sort transactions chronologically (oldest first)
+  const sortedTransactions = [...transactions].sort(
     (a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime()
   );
 
-  // 3-4. Running total + point for each individual deposit (no daily grouping)
+  // 3-4. Running total + point for each individual transaction (no daily grouping)
   let runningTotal = initialAmount;
-  for (const deposit of sortedDeposits) {
-    runningTotal += deposit.amount;
-    points.push({ date: parseDate(deposit.date), value: runningTotal });
+  for (const txn of sortedTransactions) {
+    runningTotal += txn.amount;
+    points.push({ date: parseDate(txn.date), value: runningTotal });
   }
 
   // 5. End point: today with current accumulated value

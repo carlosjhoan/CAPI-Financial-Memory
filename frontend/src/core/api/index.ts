@@ -10,7 +10,7 @@ import type {
   OverallSummary as ExpenseOverallSummary,
 } from '../../features/expenses/types/expense.types';
 import type { Loan, CreateLoanDto, UpdateLoanDto, LoanFilters, LoanOverallSummary, LoanPerformance, MonthlySummary as LoanMonthlySummary, YearlySummary as LoanYearlySummary } from '../../features/loans/types/loan.types';
-import type { Pocket, CreatePocketDto, UpdatePocketDto, PocketsSummary, Deposit, RegisterDepositDto, TransferDto, DistributionItem, DeleteWithTransferDto } from '../../features/pockets/types/pocket.types';
+import type { Pocket, CreatePocketDto, UpdatePocketDto, PocketsSummary, TransferDto, DistributionItem, DeleteWithTransferDto } from '../../features/pockets/types/pocket.types';
 
 // ==========================================
 // AUTH SERVICE (special case - no ApiResponse wrapper)
@@ -369,21 +369,6 @@ export const pocketsApiCustom = {
     return response;
   },
 
-  registerDeposit: async (pocketId: string, amount: number, date: string, reason?: string, newGoal?: number): Promise<Pocket> => {
-    return customRequest<Pocket, RegisterDepositDto>('post', `/pockets/${pocketId}/deposits`, { amount, date, reason, newGoal });
-  },
-
-  getDeposits: async (pocketId: string, offset?: number, limit?: number): Promise<Deposit[]> => {
-    const params = new URLSearchParams();
-    if (offset !== undefined) params.append('offset', String(offset));
-    if (limit !== undefined) params.append('limit', String(limit));
-    
-    return customRequest<Deposit[], Record<string, unknown>>(
-      'get',
-      `/pockets/${pocketId}/deposits?${params.toString()}`
-    );
-  },
-
   transfer: async (data: TransferDto): Promise<void> => {
     return customRequest<void, TransferDto>('post', '/pockets/transfer', data);
   },
@@ -421,8 +406,6 @@ export const pocketsService = {
   update: pocketsApi.update,
   delete: pocketsApi.delete,
   getSummary: pocketsApiCustom.getSummary,
-  registerDeposit: pocketsApiCustom.registerDeposit,
-  getDeposits: pocketsApiCustom.getDeposits,
   transfer: pocketsApiCustom.transfer,
   getHistory: pocketsApiCustom.getHistory,
   deleteWithTransfer: pocketsApiCustom.deleteWithTransfer,
