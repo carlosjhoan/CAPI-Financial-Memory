@@ -71,7 +71,7 @@ const PocketDetailPage: React.FC = () => {
 
   // ── Cálculos derivados (ANTES de early returns) ──
   const isGoal = pocket?.type === 'goal';
-  const incomes = pocket?.incomes || [];
+  const incomes = useMemo(() => pocket?.incomes || [], [pocket?.incomes]);
   const expenses = pocket?.expenses || [];
 
   const transfers = pocket?.transfers || [];

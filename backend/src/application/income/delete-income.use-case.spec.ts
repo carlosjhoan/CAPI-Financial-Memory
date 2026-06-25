@@ -1,6 +1,5 @@
 import { DeleteIncomeUseCase } from "./delete-income.use-case";
 import { IncomeRepository } from "../../domain/repositories/income.repository";
-import { DataSource } from "typeorm";
 
 describe("DeleteIncomeUseCase", () => {
   let useCase: DeleteIncomeUseCase;

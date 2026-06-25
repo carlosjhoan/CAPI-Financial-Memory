@@ -37,7 +37,7 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
       transferOutCount: outgoingTransfers.length,
       transferTotal: transfers.length,
     };
-  }, [pocket.incomes, pocket.expenses, pocket.transfers, pocket.createdAt, pocket.initialAmount]);
+  }, [pocket.incomes, pocket.expenses, pocket.transfers, pocket.createdAt]);
 
   const isGoal = pocket.type === 'goal';
   const percentage = isGoal && pocket.goal > 0
