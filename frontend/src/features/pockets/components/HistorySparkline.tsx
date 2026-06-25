@@ -64,12 +64,12 @@ export function buildHistoryDataPoints(
 
   // Combinar y ordenar movimientos cronológicamente
   const allMovements: RawMovement[] = [
-    ...(pocket.deposits || []).map(d => ({
-      date: d.date,
-      amount: d.amount,
+    ...(pocket.incomes || []).map(i => ({
+      date: i.date,
+      amount: i.amount,
       type: 'deposit' as const,
       displayType: 'deposit' as const,
-      reason: d.reason,
+      reason: i.reason,
     })),
     ...(pocket.expenses || []).map(e => ({
       date: e.date,

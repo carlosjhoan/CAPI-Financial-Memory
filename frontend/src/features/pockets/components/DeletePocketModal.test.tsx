@@ -34,7 +34,7 @@ function createMockPocket(overrides: Partial<Pocket> = {}): Pocket {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     motivation: 'Para viajar',
-    deposits: [],
+    incomes: [],
     expenses: [],
     transfers: [],
     ...overrides,

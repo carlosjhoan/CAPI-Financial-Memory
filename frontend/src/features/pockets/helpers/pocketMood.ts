@@ -20,7 +20,7 @@ export interface PocketMood {
  * CAPI_Furia.png NO se usa en bolsillos (reservado para módulo de deudas).
  */
 export function getPocketMood(pocket: Pocket): PocketMood {
-  const totalDeposited = pocket.deposits?.reduce((sum, d) => sum + d.amount, 0) || 0;
+  const totalDeposited = (pocket.incomes || []).reduce((sum, inc) => sum + inc.amount, 0);
   const totalWithdrawn = pocket.expenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
   const totalMovement = totalDeposited + totalWithdrawn;
 

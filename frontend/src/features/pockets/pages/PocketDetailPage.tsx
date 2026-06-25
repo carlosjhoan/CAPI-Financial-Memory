@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowsRightLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { usePockets, usePocket, useUpdatePocket, useDeletePocket, usePocketDeposits, usePocketHistory } from '../hooks/usePockets';
+import { usePockets, usePocket, useUpdatePocket, useDeletePocket, usePocketHistory } from '../hooks/usePockets';
 import type { PocketFormData } from '../hooks/usePocketForm';
 import { formatCurrency } from '../../../core/utils/format';
 import Button from '../../../shared/components/Button';
@@ -50,7 +50,6 @@ const PocketDetailPage: React.FC = () => {
   const navigate = useNavigate();
 
   const { data: pocket, isLoading, error } = usePocket(id || '');
-  const { data: depositsData } = usePocketDeposits(id || '');
   const { data: pocketsList } = usePockets();
   const historyQuery = usePocketHistory(id || '');
   const updatePocketMutation = useUpdatePocket();
@@ -72,7 +71,7 @@ const PocketDetailPage: React.FC = () => {
 
   // ── Cálculos derivados (ANTES de early returns) ──
   const isGoal = pocket?.type === 'goal';
-  const deposits = useMemo(() => pocket?.deposits || depositsData || [], [pocket?.deposits, depositsData]);
+  const incomes = useMemo(() => pocket?.incomes || [], [pocket?.incomes]);
   const expenses = pocket?.expenses || [];
 
   const transfers = pocket?.transfers || [];
@@ -81,7 +80,7 @@ const PocketDetailPage: React.FC = () => {
 
   const totalDeposited =
     (pocket?.initialAmount || 0)
-    + deposits.reduce((sum, dep) => sum + dep.amount, 0)
+    + incomes.reduce((sum, inc) => sum + inc.amount, 0)
     + incomingTransfers.reduce((sum, t) => sum + t.amount, 0);
 
   const totalSpent =
@@ -97,18 +96,18 @@ const PocketDetailPage: React.FC = () => {
   }, [totalDeposited, totalSpent]);
 
   const monthlyAverage = useMemo(() => {
-    if (deposits.length === 0) return 0;
-    const total = deposits.reduce((sum, d) => sum + d.amount, 0);
-    // Encontrar el primer depósito por fecha
-    const firstDep = deposits.reduce((earliest, d) =>
-      new Date(d.date) < new Date(earliest.date) ? d : earliest,
-    deposits[0]);
+    if (incomes.length === 0) return 0;
+    const total = incomes.reduce((sum, inc) => sum + inc.amount, 0);
+    // Encontrar el primer ingreso por fecha
+    const firstInc = incomes.reduce((earliest, inc) =>
+      new Date(inc.date) < new Date(earliest.date) ? inc : earliest,
+    incomes[0]);
     const monthsSinceFirst = Math.max(
       1,
-      (Date.now() - new Date(firstDep.date).getTime()) / (1000 * 60 * 60 * 24 * 30),
+      (Date.now() - new Date(firstInc.date).getTime()) / (1000 * 60 * 60 * 24 * 30),
     );
     return total / monthsSinceFirst;
-  }, [deposits]);
+  }, [incomes]);
 
   const activeSince = useMemo(() => {
     if (!pocket) return '';

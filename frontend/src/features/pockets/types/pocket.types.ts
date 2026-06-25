@@ -26,12 +26,11 @@ export interface InitialMovement {
   description: string;
 }
 
-export interface Deposit {
+export interface IncomeForPocket {
   id: string;
-  pocketId: string;
   amount: number;
-  reason?: string;  // NUEVO: opcional
   date: string;
+  reason?: string;
   createdAt: string;
 }
 
@@ -44,13 +43,6 @@ export interface Expense {
   reason?: string;
 }
 
-export interface RegisterDepositDto {
-  amount: number;
-  date: string;
-  reason?: string;   // NUEVO: opcional
-  newGoal?: number;
-}
-
 export interface Pocket {
   id: string;
   name: string;
@@ -58,8 +50,7 @@ export interface Pocket {
   goal: number;
   initialAmount: number;
   accumulatedAmount: number;
-  depositCount?: number;
-  deposits?: Deposit[];
+  incomes?: IncomeForPocket[];
   expenses?: Expense[];
   transfers?: TransferMovement[];     // NUEVO
   initialMovement?: InitialMovement;  // NUEVO
@@ -103,5 +94,4 @@ export interface PocketsSummary {
   totalGoal: number;
   count: number;
   goalCount: number;
-  depositCount: number;
 }

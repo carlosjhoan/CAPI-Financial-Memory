@@ -28,10 +28,7 @@ import {
   ApiNoContentResponse,
 } from "@nestjs/swagger";
 import { CreatePocketUseCase } from "../../../application/pocket/create-pocket.use-case";
-import { RegisterDepositUseCase } from "../../../application/pocket/register-deposit.use-case";
 import { GetAllPocketsUseCase } from "../../../application/pocket/get-all-pockets.use-case";
-import { GetPocketWithDepositsUseCase } from "../../../application/pocket/get-pocket-with-deposits.use-case";
-import { GetDepositsByPocketIdUseCase } from "../../../application/pocket/get-deposits-by-pocket-id.use-case";
 import { GetPocketsSummaryUseCase } from "../../../application/pocket/get-pockets-summary.use-case";
 import { UpdatePocketUseCase } from "../../../application/pocket/update-pocket.use-case";
 import { DeletePocketUseCase } from "../../../application/pocket/delete-pocket.use-case";
@@ -40,7 +37,6 @@ import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-wi
 import { PocketService } from "../../../domain/services/pocket.service";
 import { CreatePocketDto } from "../dto/create-pocket.dto";
 import { UpdatePocketDto } from "../dto/update-pocket.dto";
-import { RegisterDepositDto } from "../dto/register-deposit.dto";
 import { CreateTransferDto } from "../dto/create-transfer.dto";
 import { DeleteWithTransferDto } from "../dto/delete-with-transfer.dto";
 import { ApiResponse as ApiResponseDto } from "../../../shared/dtos/api-response.dto";
@@ -55,14 +51,11 @@ export class PocketController {
   constructor(
     private readonly getAllPocketsUseCase: GetAllPocketsUseCase,
     private readonly createPocketUseCase: CreatePocketUseCase,
-    private readonly getPocketWithDepositsUseCase: GetPocketWithDepositsUseCase,
-    private readonly getDepositsByPocketIdUseCase: GetDepositsByPocketIdUseCase,
     private readonly getPocketsSummaryUseCase: GetPocketsSummaryUseCase,
     private readonly updatePocketUseCase: UpdatePocketUseCase,
     private readonly deletePocketUseCase: DeletePocketUseCase,
     private readonly transferBetweenPocketsUseCase: TransferBetweenPocketsUseCase,
     private readonly deleteWithTransferUseCase: DeleteWithTransferUseCase,
-    private readonly registerDepositUseCase: RegisterDepositUseCase,
     private readonly pocketService: PocketService,
   ) {}
 
@@ -154,56 +147,6 @@ export class PocketController {
       message: "Pocket summary retrieved successfully",
       timestamp: new Date().toISOString(),
     };
-  }
-
-  @Get(":id/deposits")
-  @ApiOperation({
-    summary: "Obtener depósitos de un bolsillo",
-    description:
-      "Retorna los depósitos registrados para un bolsillo específico con soporte de paginación",
-  })
-  @ApiParam({
-    name: "id",
-    description: "ID del bolsillo",
-    example: "123e4567-e89b-12d3-a456-426614174000",
-  })
-  @ApiOkResponse({
-    description: "Depósitos obtenidos exitosamente",
-    type: ApiResponseDto,
-  })
-  @ApiNotFoundResponse({
-    description: "Bolsillo no encontrado",
-    type: ErrorResponse,
-  })
-  async getDeposits(
-    @Req() req: RequestWithUser,
-    @Param("id", ParseUUIDPipe) id: string,
-    @Query("offset") offset?: number,
-    @Query("limit") limit?: number,
-  ): Promise<ApiResponseDto<any> | ErrorResponse> {
-    try {
-      const deposits = await this.getDepositsByPocketIdUseCase.execute(
-        req.user.id,
-        id,
-        {
-          offset: offset ? Number(offset) : undefined,
-          limit: limit ? Number(limit) : undefined,
-        },
-      );
-
-      return {
-        statusCode: HttpStatus.OK,
-        data: deposits,
-        message: "Deposits retrieved successfully",
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      return new ErrorResponse(
-        HttpStatus.NOT_FOUND,
-        "Not Found",
-        "Pocket not found",
-      );
-    }
   }
 
   @Get(":id/history")
@@ -305,8 +248,8 @@ export class PocketController {
     @Param("id", ParseUUIDPipe) id: string,
   ): Promise<ApiResponseDto<any> | ErrorResponse> {
     try {
-      const { pocket, deposits, expenses } =
-        await this.getPocketWithDepositsUseCase.execute(req.user.id, id);
+      const { pocket, incomes, expenses } =
+        await this.pocketService.getPocketDetail(req.user.id, id);
 
       const transfers = await this.pocketService.getTransfersByPocketId(id);
 
@@ -331,7 +274,7 @@ export class PocketController {
         statusCode: HttpStatus.OK,
         data: {
           ...pocket,
-          deposits,
+          incomes,
           expenses,
           transfers: transfersWithDirection,
           initialMovement,
@@ -400,86 +343,6 @@ export class PocketController {
         statusCode: HttpStatus.OK,
         data: pocket,
         message: "Pocket updated successfully",
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      return new ErrorResponse(
-        HttpStatus.BAD_REQUEST,
-        "Bad Request",
-        error.message,
-      );
-    }
-  }
-
-  @Post(":id/deposits")
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: "Registrar un depósito en un bolsillo",
-    description:
-      "Registra un depósito que incrementa el accumulatedAmount del bolsillo",
-  })
-  @ApiParam({
-    name: "id",
-    description: "ID del bolsillo",
-    example: "123e4567-e89b-12d3-a456-426614174000",
-  })
-  @ApiBody({ type: RegisterDepositDto })
-  @ApiCreatedResponse({
-    description: "Depósito registrado exitosamente",
-    type: ApiResponseDto,
-  })
-  @ApiNotFoundResponse({
-    description: "Bolsillo no encontrado",
-    type: ErrorResponse,
-  })
-  @ApiBadRequestResponse({
-    description: "Datos de depósito inválidos",
-    type: ErrorResponse,
-  })
-  async registerDeposit(
-    @Req() req: RequestWithUser,
-    @Param("id", ParseUUIDPipe) id: string,
-    @Body() registerDepositDto: RegisterDepositDto,
-  ): Promise<ApiResponseDto<any> | ErrorResponse> {
-    try {
-      const depositDate = new Date(registerDepositDto.date + "T12:00:00.000Z");
-
-      const result = await this.registerDepositUseCase.execute(
-        req.user.id,
-        id,
-        registerDepositDto.amount,
-        depositDate,
-        registerDepositDto.newGoal,
-        registerDepositDto.reason,
-      );
-
-      // Enriquecer respuesta con transfers e initialMovement para mantener cache consistente
-      const transfers = await this.pocketService.getTransfersByPocketId(id);
-      const transfersWithDirection = transfers.map((t) => ({
-        ...t,
-        direction: t.targetPocketId === id ? "incoming" : "outgoing",
-      }));
-
-      const { pocket, deposit } = result;
-      const initialMovement =
-        pocket.initialAmount > 0
-          ? {
-              type: "opening",
-              amount: pocket.initialAmount,
-              date: pocket.createdAt,
-              description: "Monto de apertura",
-            }
-          : undefined;
-
-      return {
-        statusCode: HttpStatus.CREATED,
-        data: {
-          pocket,
-          deposit,
-          transfers: transfersWithDirection,
-          initialMovement,
-        },
-        message: "Deposit registered successfully",
         timestamp: new Date().toISOString(),
       };
     } catch (error) {

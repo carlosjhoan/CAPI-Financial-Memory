@@ -1,12 +1,12 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 
-interface DepositItem {
+interface TransactionItem {
   amount: number;
   date: string;
 }
 
 interface MiniBarChartProps {
-  deposits: DepositItem[];
+  transactions: TransactionItem[];
 }
 
 const MONTH_LABELS: Record<string, string> = {
@@ -23,7 +23,7 @@ const getChartLabel = (dateStr: string): string => {
   return `${day}-${month}-${year}`;
 };
 
-const MiniBarChart: React.FC<MiniBarChartProps> = ({ deposits }) => {
+const MiniBarChart: React.FC<MiniBarChartProps> = ({ transactions }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const initialScrollDone = useRef(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -75,25 +75,25 @@ const MiniBarChart: React.FC<MiniBarChartProps> = ({ deposits }) => {
     }
   }, []);
 
-  // Sort deposits oldest -> newest (left to right), take last 7
-  const sortedDeposits = [...deposits]
+  // Sort transactions oldest -> newest (left to right), take last 7
+  const sortedTransactions = [...transactions]
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(-7); // Últimos 7 (más recientes)
 
-  const maxAmount = sortedDeposits.reduce((max, d) => Math.max(max, d.amount), 0);
-  const hasScrollableContent = sortedDeposits.length > 4;
+  const maxAmount = sortedTransactions.reduce((max, t) => Math.max(max, t.amount), 0);
+  const hasScrollableContent = sortedTransactions.length > 4;
 
-  // Scroll to the RIGHT end ONLY on initial mount (show newest deposits)
+  // Scroll to the RIGHT end ONLY on initial mount (show newest transactions)
   useEffect(() => {
     if (initialScrollDone.current) return;
     const container = containerRef.current;
-    if (container && sortedDeposits.length > 0) {
+    if (container && sortedTransactions.length > 0) {
       requestAnimationFrame(() => {
         container.scrollLeft = container.scrollWidth;
         initialScrollDone.current = true;
       });
     }
-  }, [sortedDeposits.length]);
+  }, [sortedTransactions.length]);
 
   return (
     <>
@@ -107,13 +107,13 @@ const MiniBarChart: React.FC<MiniBarChartProps> = ({ deposits }) => {
           onClick={handleContainerClick}
           className="flex items-end gap-2 overflow-x-auto pb-2 hide-scrollbar"
       >
-        {sortedDeposits.length === 0 ? (
+        {sortedTransactions.length === 0 ? (
           <div className="text-center text-xs text-secondary-400 w-full py-4">
             Sin movimientos
           </div>
         ) : (
-          sortedDeposits.map((deposit, index) => {
-            const barHeight = maxAmount > 0 ? (deposit.amount / maxAmount) * 44 : 0;
+          sortedTransactions.map((txn, index) => {
+            const barHeight = maxAmount > 0 ? (txn.amount / maxAmount) * 44 : 0;
             const isHovered = hoveredIndex === index;
 
             return (
@@ -126,7 +126,7 @@ const MiniBarChart: React.FC<MiniBarChartProps> = ({ deposits }) => {
                 {/* Value at top - siempre presente pero invisible */}
                 {maxAmount > 0 && (
                   <div className={`text-xs font-bold text-green-500 mb-0.5 whitespace-nowrap transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-                    +${deposit.amount.toLocaleString()}
+                    +${txn.amount.toLocaleString()}
                   </div>
                 )}
 
@@ -138,7 +138,7 @@ const MiniBarChart: React.FC<MiniBarChartProps> = ({ deposits }) => {
 
                 {/* Date at bottom - siempre presente pero invisible */}
                 <span className={`text-[10px] text-secondary-500 dark:text-secondary-400 mt-1 whitespace-nowrap transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-                  {getChartLabel(deposit.date)}
+                  {getChartLabel(txn.date)}
                 </span>
               </div>
             );

@@ -1,5 +1,5 @@
 import { Pocket } from "../entities/pocket.entity";
-import { Deposit } from "../entities/deposit.entity";
+import { Income } from "../entities/income.entity";
 import { Expense } from "../entities/expense.entity";
 import { PocketTransfer } from "../entities/pocket-transfer.entity";
 
@@ -12,12 +12,8 @@ export interface PocketRepository {
   getSummary(
     userId: string,
   ): Promise<{ totalAccumulated: number; totalGoal: number; count: number }>;
-  findDepositsByPocketId(
-    pocketId: string,
-    options?: { offset?: number; limit?: number },
-  ): Promise<Deposit[]>;
+  findIncomesByPocketId(pocketId: string): Promise<Income[]>;
   findExpensesByPocketId(pocketId: string): Promise<Expense[]>;
-  saveDeposit(deposit: Deposit): Promise<Deposit>;
   saveTransfer(transfer: PocketTransfer): Promise<PocketTransfer>;
   findTransfersByPocketId(pocketId: string): Promise<PocketTransfer[]>;
   findHistoryByPocketId(
