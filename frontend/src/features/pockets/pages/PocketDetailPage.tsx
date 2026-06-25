@@ -13,37 +13,10 @@ import { getPocketMood } from '../helpers/pocketMood';
 import type { Pocket } from '../types/pocket.types';
 import HistoryProgressArc from '../components/HistoryProgressArc';
 import HistorySparkline from '../components/HistorySparkline';
+import PocketHistoryTimeline, { type HistoryItem } from '../components/PocketHistoryTimeline';
 
 /** Trackea qué pockets ya vieron su animación this session */
 const animatedPockets = new Set<string>();
-
-/** True si la fecha cae en el día de hoy */
-function isToday(date: Date): boolean {
-  const today = new Date();
-  return date.getFullYear() === today.getFullYear()
-    && date.getMonth() === today.getMonth()
-    && date.getDate() === today.getDate();
-}
-
-/** Formatea fecha como "DD MMM YYYY" (ej: "15 May 2026") — hoy muestra "HOY" */
-function formatShortDate(date: string | Date): string {
-  const d = new Date(date);
-  if (isToday(d)) return 'HOY';
-  const day = d.getDate().toString().padStart(2, '0');
-  const month = d
-    .toLocaleDateString('en-US', { month: 'short' })
-    .toUpperCase();
-  const year = d.getFullYear();
-  return `${day} ${month} ${year}`;
-}
-
-/** Extrae HH:MM de un ISO timestamp o string de fecha */
-function formatTime(dateStr: string | undefined | null): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
-}
 
 const PocketDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -117,20 +90,6 @@ const PocketDetailPage: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pocket?.createdAt]);
 
-  // ── HistoryItem type plano (evita uniones complejas) ──
-  interface HistoryItem {
-    id: string;
-    type: 'deposit' | 'expense' | 'transfer' | 'opening' | 'income';
-    amount: number;
-    date: string;
-    createdAt?: string;
-    reason?: string;
-    direction?: 'incoming' | 'outgoing';
-    description?: string;
-    sourcePocketId?: string;
-    targetPocketId?: string;
-  }
-
   // ── Historial paginado (desde backend) ──
   const history: HistoryItem[] = useMemo(() => {
     if (!historyQuery.data) return [];
@@ -139,7 +98,7 @@ const PocketDetailPage: React.FC = () => {
 
     const mapped: HistoryItem[] = pages.map((item: Record<string, unknown>) => ({
       id: item.id as string,
-      type: item.type as 'deposit' | 'expense' | 'transfer' | 'income',
+      type: item.type as string,
       amount: Number(item.amount),
       date: item.date as string,
       createdAt: item.createdAt as string | undefined,
@@ -162,72 +121,6 @@ const PocketDetailPage: React.FC = () => {
 
     return mapped;
   }, [historyQuery.data, pocket?.initialMovement]);
-
-  // ── Agrupar historial por fecha ──
-  const groupedHistory = useMemo(() => {
-    const groups = new Map<string, HistoryItem[]>();
-    for (const item of history) {
-      const key = item.date;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(item);
-    }
-    return Array.from(groups.entries()).sort(
-      (a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime(),
-    );
-  }, [history]);
-
-  const getMovementLabel = (item: HistoryItem): string => {
-    switch (item.type) {
-      case 'deposit': return 'Depósito';
-      case 'income': return 'Ingreso';
-      case 'expense': return 'Gasto';
-      case 'transfer': return 'Transferencia';
-      case 'opening': return 'Apertura';
-      default: return 'Movimiento';
-    }
-  };
-
-  const getMovementIcon = (item: HistoryItem): string => {
-    if (item.type === 'transfer') {
-      return item.direction === 'incoming' ? '↑' : '↓';
-    }
-    if (item.type === 'opening') return '★';
-    if (item.type === 'deposit' || item.type === 'income') return '↑';
-    return '↓';
-  };
-  
-  const getDefaultReason = (item: HistoryItem): string => {
-    if (item.reason) return item.reason;
-    switch (item.type) {
-      case 'deposit': return 'Por motivo de ingreso';
-      case 'income': return 'Por motivo de ingreso';
-      case 'expense': return 'Por motivo de gasto';
-      case 'transfer':
-        return item.direction === 'incoming'
-          ? 'Transferencia recibida'
-          : 'Transferencia enviada';
-      case 'opening': return 'Monto de apertura del bolsillo';
-      default: return '—';
-    }
-  };
-
-  const getMovementColor = (item: HistoryItem): string => {
-    if (item.type === 'transfer') {
-      return item.direction === 'incoming' ? 'text-green-500' : 'text-red-500';
-    }
-    if (item.type === 'opening') return 'text-blue-500';
-    if (item.type === 'deposit' || item.type === 'income') return 'text-green-500';
-    return 'text-red-500';
-  };
-
-  const getMovementSign = (item: HistoryItem): string => {
-    if (item.type === 'transfer') {
-      return item.direction === 'incoming' ? '+' : '-';
-    }
-    if (item.type === 'opening') return '+';
-    if (item.type === 'deposit' || item.type === 'income') return '+';
-    return '-';
-  };
 
   const pocketMood = useMemo(() => {
     if (!pocket) return { image: '', status: '', message: '', glowColor: '', glowColorDark: '' };
@@ -542,85 +435,15 @@ const PocketDetailPage: React.FC = () => {
       <h2 className="text-lg font-semibold mb-4 text-secondary-900 dark:text-white px-4">
         Historial de Movimientos
       </h2>
-      {groupedHistory.length === 0 ? (
-        <p className="text-secondary-500 dark:text-secondary-400 text-sm px-4">
-          No hay movimientos registrados.
-        </p>
-      ) : (
-        <div className="px-4">
-          {groupedHistory.map(([dateKey, items], idx) => (
-            <div key={dateKey} className={idx > 0 ? 'pt-8' : ''}>
-              {/* ═══ Date Header ═══ */}
-              <h3 className="text-[11px] font-semibold uppercase tracking-widest text-secondary-400 dark:text-secondary-500 pb-1.5 mb-3 border-b border-secondary-300/70 dark:border-secondary-600/60">
-                {formatShortDate(dateKey)}
-              </h3>
-
-              {items.map((item, i) => (
-                <div key={item.id}>
-                  {/* ═══ Item del Timeline ═══ */}
-                  <div className="flex items-start justify-between text-sm">
-                    <div className="flex items-start gap-3">
-                      {/* Icono */}
-                      <span className={`mt-0.5 ${getMovementColor(item)} flex-shrink-0 flex items-center justify-center`}>
-                        {item.type === 'transfer' ? (
-                          <ArrowsRightLeftIcon className="w-4 h-4" />
-                        ) : (
-                          <span className="font-bold text-base leading-none">{getMovementIcon(item)}</span>
-                        )}
-                      </span>
-                      <div>
-                        {/* Línea 1: Tipo · Hora */}
-                        <div className="flex items-center gap-2">
-                          <span className={`font-bold ${getMovementColor(item)}`}>
-                            {getMovementLabel(item)}
-                          </span>
-                          {item.createdAt && (
-                            <>
-                              <span className="text-secondary-400 dark:text-secondary-500">·</span>
-                              <span className="text-xs text-secondary-500 dark:text-secondary-400 font-mono">
-                                {formatTime(item.createdAt)}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                        {/* Línea 2: Razón/Descripción */}
-                        <p className="text-xs text-secondary-500 dark:text-secondary-400 mt-0.5">
-                          {item.type === 'transfer' && item.direction === 'incoming' && item.sourcePocketId
-                            ? `Procedente de ${pocketNameMap.get(item.sourcePocketId) || item.sourcePocketId.slice(0, 8)}`
-                            : item.type === 'transfer' && item.direction === 'outgoing' && item.targetPocketId
-                              ? `Hacia ${pocketNameMap.get(item.targetPocketId) || item.targetPocketId.slice(0, 8)}`
-                              : getDefaultReason(item)}
-                        </p>
-                      </div>
-                    </div>
-                    {/* Monto */}
-                    <span className={`font-bold text-sm ${getMovementColor(item)}`}>
-                      {getMovementSign(item)}{formatCurrency(item.amount)}
-                    </span>
-                  </div>
-                  {/* Divider entre items del mismo grupo */}
-                  {i < items.length - 1 && (
-                    <div className="border-b border-secondary-100/50 dark:border-secondary-700/20 my-3" />
-                  )}
-                </div>
-              ))}
-            </div>
-          ))}
-
-          {/* Ver más */}
-          {historyQuery.hasNextPage && (
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={() => historyQuery.fetchNextPage()}
-                disabled={historyQuery.isFetchingNextPage}
-                className="text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {historyQuery.isFetchingNextPage ? 'Cargando...' : 'Ver más'}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="px-4">
+        <PocketHistoryTimeline
+          history={history}
+          pocketNameMap={pocketNameMap}
+          fetchNextPage={() => historyQuery.fetchNextPage()}
+          hasNextPage={!!historyQuery.hasNextPage}
+          isFetchingNextPage={!!historyQuery.isFetchingNextPage}
+        />
+      </div>
 
       {/* ═══ Modals ═══ */}
       <DeletePocketModal
