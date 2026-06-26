@@ -432,8 +432,13 @@ const PocketDetailPage: React.FC = () => {
       </div>
 
       {/* ═══ Activity Feed: Historial de Movimientos ═══ */}
-      <h2 className="text-lg font-semibold mb-4 text-secondary-900 dark:text-white px-4">
-        Historial de Movimientos
+      <h2 className="flex items-center text-lg font-semibold mb-4 text-secondary-900 dark:text-white px-4">
+        <span>Historial de Movimientos</span>
+        {history.length > 0 && (
+          <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-[10px] font-semibold text-purple-700 dark:text-purple-400">
+            {historyQuery.data?.pages?.[0]?.meta?.total ?? history.length} movs
+          </span>
+        )}
       </h2>
       <div className="px-4">
         <PocketHistoryTimeline

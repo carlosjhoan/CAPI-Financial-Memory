@@ -121,14 +121,11 @@ const HistoryRow: React.FC<{ item: HistoryItem; pocketNameMap: Map<string, strin
           )}
         </span>
         <div>
-          <div className="flex items-center gap-2">
-            <span className={`font-bold ${color}`}>{getLabel(item.type)}</span>
-            <span className="text-secondary-400 dark:text-secondary-500">·</span>
-            <span className="text-xs text-secondary-500 dark:text-secondary-400 font-mono">
-              {formatDateLabel(item.date)}{item.createdAt ? ` · ${formatTime(item.createdAt)}` : ''}
-            </span>
+          <span className={`font-bold ${color}`}>{getLabel(item.type)}</span>
+          <div className="text-xs text-secondary-400 dark:text-secondary-500 mt-0.5">
+            {formatDateLabel(item.date)}{item.createdAt ? ` · ${formatTime(item.createdAt)}` : ''}
           </div>
-          <p className="text-xs text-secondary-500 dark:text-secondary-400 mt-0.5">
+          <p className="text-xs text-secondary-600 dark:text-secondary-300 mt-1.5">
             {item.type === 'transfer' && item.direction === 'incoming' && item.sourcePocketId
               ? `Procedente de ${pocketNameMap.get(item.sourcePocketId) || item.sourcePocketId.slice(0, 8)}`
               : item.type === 'transfer' && item.direction === 'outgoing' && item.targetPocketId
@@ -137,7 +134,7 @@ const HistoryRow: React.FC<{ item: HistoryItem; pocketNameMap: Map<string, strin
           </p>
         </div>
       </div>
-      <span className={`font-bold text-sm ${color}`}>
+      <span className={`font-bold text-sm text-right tabular-nums ${color}`}>
         {getMovementSign(item)}
         {formatCurrency(item.amount)}
       </span>
@@ -222,6 +219,9 @@ const PocketHistoryTimeline: React.FC<PocketHistoryTimelineProps> = ({
       ) : (
         <>
           {/* Recent items (first 5) */}
+          <div className="text-[11px] font-semibold uppercase tracking-widest text-secondary-400 dark:text-secondary-500 py-2 border-b border-secondary-100 dark:border-secondary-700/50">
+            RECIENTES
+          </div>
           <div>
             {recentItems.map((item) => (
               <HistoryRow key={item.id} item={item} pocketNameMap={pocketNameMap} />
@@ -231,10 +231,13 @@ const PocketHistoryTimeline: React.FC<PocketHistoryTimelineProps> = ({
           {/* Monthly groups for older items */}
           {(showAllMonths ? monthlyGroups : monthlyGroups.slice(0, VISIBLE_MONTHS)).map(([monthYear, items]) => {
             const totalIn = items
-              .filter((i) => i.type === 'income' || i.type === 'deposit' || (i.type === 'transfer' && i.direction === 'incoming') || i.type === 'opening')
+              .filter((i) => i.type === 'income' || i.type === 'deposit' || i.type === 'opening')
               .reduce((sum, i) => sum + i.amount, 0);
             const totalOut = items
-              .filter((i) => i.type === 'expense' || (i.type === 'transfer' && i.direction === 'outgoing'))
+              .filter((i) => i.type === 'expense')
+              .reduce((sum, i) => sum + i.amount, 0);
+            const totalTransfers = items
+              .filter((i) => i.type === 'transfer')
               .reduce((sum, i) => sum + i.amount, 0);
             return (
               <div key={monthYear}>
@@ -254,7 +257,8 @@ const PocketHistoryTimeline: React.FC<PocketHistoryTimelineProps> = ({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
                   <span>{monthYear}</span>
-                  <span className="ml-auto flex items-center gap-2">
+                  <span className="text-secondary-400 dark:text-secondary-500 flex-shrink-0">·</span>
+                  <span className="flex items-center gap-1.5">
                     {totalIn > 0 && (
                       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-[10px] font-semibold text-green-700 dark:text-green-400 not-uppercase tracking-normal leading-none">
                         ↑{formatCurrency(totalIn)}
@@ -263,6 +267,11 @@ const PocketHistoryTimeline: React.FC<PocketHistoryTimelineProps> = ({
                     {totalOut > 0 && (
                       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-[10px] font-semibold text-red-700 dark:text-red-400 not-uppercase tracking-normal leading-none">
                         ↓{formatCurrency(totalOut)}
+                      </span>
+                    )}
+                    {totalTransfers > 0 && (
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-[10px] font-semibold text-blue-700 dark:text-blue-400 not-uppercase tracking-normal leading-none">
+                        ↔{formatCurrency(totalTransfers)}
                       </span>
                     )}
                     <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-[10px] font-semibold text-purple-700 dark:text-purple-400 not-uppercase tracking-normal leading-none">
