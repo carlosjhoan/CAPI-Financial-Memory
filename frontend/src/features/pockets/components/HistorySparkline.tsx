@@ -439,10 +439,6 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
       case 'expense': return 'Gasto';
       case 'transfer_in': return 'Transferencia recibida';
       case 'transfer_out': return 'Transferencia enviada';
-      case 'deposit': return 'Depósito';
-      case 'expense': return 'Gasto';
-      case 'transfer_in': return 'Transferencia recibida';
-      case 'transfer_out': return 'Transferencia enviada';
     }
   };
 

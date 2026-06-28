@@ -19,7 +19,7 @@ export class CreatePocketUseCase {
     accumulatedAmount: number,
     motivation: string,
     sourceType?: "external" | "transfer",
-    sourcePocketId?: string,
+    _sourcePocketId?: string,
   ): Promise<Pocket> {
     if (!name || name.trim().length === 0) {
       throw new Error("Name is required");
@@ -58,17 +58,14 @@ export class CreatePocketUseCase {
         async (transactionalEntityManager) => {
           // 1. Save the pocket entity (accumulatedAmount starts at 0,
           //    the income allocation will increment it)
-          const pocketEntity = transactionalEntityManager.create(
-            PocketEntity,
-            {
-              name: pocket.name,
-              type: pocket.type,
-              goal: pocket.goal,
-              accumulatedAmount: 0,
-              motivation: pocket.motivation,
-              userId: pocket.userId,
-            },
-          );
+          const pocketEntity = transactionalEntityManager.create(PocketEntity, {
+            name: pocket.name,
+            type: pocket.type,
+            goal: pocket.goal,
+            accumulatedAmount: 0,
+            motivation: pocket.motivation,
+            userId: pocket.userId,
+          });
           const savedEntity =
             await transactionalEntityManager.save(pocketEntity);
 
@@ -87,17 +84,22 @@ export class CreatePocketUseCase {
             date,
             userId,
           });
-          const savedIncome = await transactionalEntityManager.save(incomeEntity);
+          const savedIncome =
+            await transactionalEntityManager.save(incomeEntity);
 
-          const allocationEntity = transactionalEntityManager.create(IncomeAllocationEntity, {
-            incomeId: savedIncome.id,
-            pocketId: pocket.id,
-            amount: accumulatedAmount,
-          });
+          const allocationEntity = transactionalEntityManager.create(
+            IncomeAllocationEntity,
+            {
+              incomeId: savedIncome.id,
+              pocketId: pocket.id,
+              amount: accumulatedAmount,
+            },
+          );
           await transactionalEntityManager.save(allocationEntity);
 
           // 3. Update pocket accumulated amount
-          savedEntity.accumulatedAmount = Number(savedEntity.accumulatedAmount) + accumulatedAmount;
+          savedEntity.accumulatedAmount =
+            Number(savedEntity.accumulatedAmount) + accumulatedAmount;
           await transactionalEntityManager.save(savedEntity);
           pocket.accumulatedAmount = accumulatedAmount;
 

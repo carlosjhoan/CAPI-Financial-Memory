@@ -1,7 +1,6 @@
 import { CreatePocketUseCase } from "./create-pocket.use-case";
 import { PocketRepository } from "../../domain/repositories/pocket.repository";
 import { Pocket } from "../../domain/entities/pocket.entity";
-import { DataSource } from "typeorm";
 
 describe("CreatePocketUseCase", () => {
   let useCase: CreatePocketUseCase;
@@ -15,10 +14,7 @@ describe("CreatePocketUseCase", () => {
     mockDataSource = {
       transaction: jest.fn(),
     };
-    useCase = new CreatePocketUseCase(
-      mockRepo as any,
-      mockDataSource as any,
-    );
+    useCase = new CreatePocketUseCase(mockRepo as any, mockDataSource as any);
   });
 
   // ── Basic creation tests ──
@@ -121,13 +117,18 @@ describe("CreatePocketUseCase", () => {
       };
       const savedIncomeEntity = { id: "income-1" };
       const mockEm = {
-        create: jest.fn().mockImplementation((Entity: any, data: any) => ({ ...data })),
+        create: jest
+          .fn()
+          .mockImplementation((Entity: any, data: any) => ({ ...data })),
         save: jest
           .fn()
           .mockResolvedValueOnce(savedPocketEntity) // pocket save
-          .mockResolvedValueOnce(savedIncomeEntity)  // income save
-          .mockResolvedValueOnce({})                  // allocation save
-          .mockResolvedValueOnce({ ...savedPocketEntity, accumulatedAmount: 3000 }), // accumulated update
+          .mockResolvedValueOnce(savedIncomeEntity) // income save
+          .mockResolvedValueOnce({}) // allocation save
+          .mockResolvedValueOnce({
+            ...savedPocketEntity,
+            accumulatedAmount: 3000,
+          }), // accumulated update
       } as any;
       mockDataSource.transaction.mockImplementation(
         async (cb: (em: typeof mockEm) => Promise<any>) => cb(mockEm),
@@ -159,7 +160,10 @@ describe("CreatePocketUseCase", () => {
       );
       expect(mockEm.create).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ amount: 3000, reason: "Monto inicial de bolsillo Vacations" }),
+        expect.objectContaining({
+          amount: 3000,
+          reason: "Monto inicial de bolsillo Vacations",
+        }),
       );
       expect(result).toBeDefined();
       expect(result.id).toBe("new-pocket-id");
@@ -204,11 +208,9 @@ describe("CreatePocketUseCase", () => {
     });
 
     it("scenario 2d: transaction failure propagates error", async () => {
-      mockDataSource.transaction.mockImplementation(
-        async (_cb: any) => {
-          throw new Error("Income creation failed");
-        },
-      );
+      mockDataSource.transaction.mockImplementation(async () => {
+        throw new Error("Income creation failed");
+      });
 
       await expect(
         useCase.execute(

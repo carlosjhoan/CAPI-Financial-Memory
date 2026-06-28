@@ -52,7 +52,7 @@ export class ConvertInitialAmountToIncome1779568178857
     `);
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
+  public async down(_queryRunner: QueryRunner): Promise<void> {
     // Irreversible — incomes created here are legitimate records.
     // Rolling back would require deleting incomes by reason pattern,
     // which is too destructive for a down migration.
