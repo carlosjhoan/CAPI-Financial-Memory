@@ -36,7 +36,6 @@ function createMockEntity(
   entity.type = type;
   entity.goal = goal;
   entity.accumulatedAmount = accumulatedAmount;
-  entity.initialAmount = 0;
   entity.motivation = "";
   entity.createdAt = new Date();
   entity.updatedAt = new Date();

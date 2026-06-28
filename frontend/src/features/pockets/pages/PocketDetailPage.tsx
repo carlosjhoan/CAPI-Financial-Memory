@@ -52,8 +52,7 @@ const PocketDetailPage: React.FC = () => {
   const outgoingTransfers = transfers.filter(t => t.direction === 'outgoing');
 
   const totalDeposited =
-    (pocket?.initialAmount || 0)
-    + incomes.reduce((sum, inc) => sum + inc.amount, 0)
+    incomes.reduce((sum, inc) => sum + inc.amount, 0)
     + incomingTransfers.reduce((sum, t) => sum + t.amount, 0);
 
   const totalSpent =
@@ -108,19 +107,8 @@ const PocketDetailPage: React.FC = () => {
       targetPocketId: (item.targetPocketId as string) || undefined,
     }));
 
-    // Agregar movimiento de apertura al final (es el más antiguo)
-    if (pocket?.initialMovement) {
-      mapped.push({
-        id: 'opening',
-        type: 'opening',
-        amount: pocket.initialMovement.amount,
-        date: pocket.initialMovement.date,
-        description: pocket.initialMovement.description,
-      });
-    }
-
     return mapped;
-  }, [historyQuery.data, pocket?.initialMovement]);
+  }, [historyQuery.data]);
 
   const pocketMood = useMemo(() => {
     if (!pocket) return { image: '', status: '', message: '', glowColor: '', glowColorDark: '' };
@@ -228,22 +216,29 @@ const PocketDetailPage: React.FC = () => {
         
         {/* Acciones */}
         <div className="flex gap-2">
-          <div className="relative group">
+          <div className={`relative ${netAmount === 0 ? '' : 'group'}`}>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => setIsTransferModalOpen(true)} 
+              disabled={netAmount === 0}
               aria-label="Transferir fondos"
-              className="rounded-full p-2 transition-all duration-300 text-secondary-500 dark:text-secondary-400 hover:text-purple-600 dark:hover:text-purple-400 hover:shadow-[0_0_10px_rgba(147,51,234,0.5)]"
+              className={`rounded-full p-2 transition-all duration-300 ${
+                netAmount === 0
+                  ? 'text-secondary-300 dark:text-secondary-600 cursor-not-allowed'
+                  : 'text-secondary-500 dark:text-secondary-400 hover:text-purple-600 dark:hover:text-purple-400 hover:shadow-[0_0_10px_rgba(147,51,234,0.5)]'
+              }`}
             >
               <ArrowsRightLeftIcon className="w-5 h-5" />
             </Button>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 
-                            bg-secondary-900 text-white dark:bg-white dark:text-secondary-900 
-                            text-[10px] rounded shadow-lg z-50 pointer-events-none
-                            opacity-0 invisible transition-opacity duration-300 group-hover:opacity-100 group-hover:visible">
-              Transferir a otro bolsillo
-            </div>
+            {netAmount > 0 && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 
+                              bg-secondary-900 text-white dark:bg-white dark:text-secondary-900 
+                              text-[10px] rounded shadow-lg z-50 pointer-events-none
+                              opacity-0 invisible transition-opacity duration-300 group-hover:opacity-100 group-hover:visible">
+                Transferir a otro bolsillo
+              </div>
+            )}
           </div>
           <div className="relative group">
             <Button 

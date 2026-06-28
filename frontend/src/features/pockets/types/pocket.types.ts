@@ -18,14 +18,6 @@ export interface TransferMovement {
   direction: 'incoming' | 'outgoing';
 }
 
-// NUEVO: InitialMovement
-export interface InitialMovement {
-  type: 'opening';
-  amount: number;
-  date: string;
-  description: string;
-}
-
 export interface IncomeForPocket {
   id: string;
   amount: number;
@@ -48,12 +40,10 @@ export interface Pocket {
   name: string;
   type: 'goal' | 'deposit';
   goal: number;
-  initialAmount: number;
   accumulatedAmount: number;
   incomes?: IncomeForPocket[];
   expenses?: Expense[];
   transfers?: TransferMovement[];     // NUEVO
-  initialMovement?: InitialMovement;  // NUEVO
   createdAt: string;
   updatedAt: string;
   motivation: string;
@@ -65,6 +55,8 @@ export interface CreatePocketDto {
   goal: number;
   accumulatedAmount: number;
   motivation: string;
+  sourceType?: 'external' | 'transfer';
+  sourcePocketId?: string;
 }
 
 export interface UpdatePocketDto {

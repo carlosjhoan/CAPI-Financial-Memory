@@ -9,6 +9,8 @@ import {
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
+export type SourceType = "external" | "transfer";
+
 export class CreatePocketDto {
   @ApiProperty({
     description: "Nombre del bolsillo",
@@ -70,14 +72,22 @@ export class CreatePocketDto {
 
   @ApiPropertyOptional({
     description:
-      "Monto inicial del bolsillo (si no se envía, se usa accumulatedAmount). Sirve como punto de partida para la gráfica de evolución.",
-    example: 0,
-    minimum: 0,
-    type: "number",
-    format: "float",
+      "Origen del monto inicial: 'external' (dinero nuevo) o 'transfer' (viene de otro bolsillo). Solo aplica en creación.",
+    example: "external",
+    enum: ["external", "transfer"],
   })
   @IsOptional()
-  @IsNumber()
-  @Min(0, { message: "Initial amount cannot be negative" })
-  initialAmount?: number;
+  @IsIn(["external", "transfer"], {
+    message: "Source type must be 'external' or 'transfer'",
+  })
+  sourceType?: SourceType;
+
+  @ApiPropertyOptional({
+    description:
+      "ID del bolsillo de origen cuando sourceType='transfer' (reservado para uso futuro).",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @IsOptional()
+  @IsString()
+  sourcePocketId?: string;
 }

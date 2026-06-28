@@ -174,7 +174,6 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
             {!isGoal && (pocket.accumulatedAmount > 0 || (pocket.incomes && pocket.incomes.length > 0)) && (
               <div>
                 <MiniLineChart
-                  initialAmount={pocket.initialAmount ?? 0}
                   transactions={pocket.incomes ?? []}
                   createdAt={pocket.createdAt}
                   currentAccumulated={pocket.accumulatedAmount}

@@ -21,6 +21,7 @@ const pocketSchema = z.object({
     .string({ required_error: 'La motivación es requerida' })
     .min(1, 'La motivación es requerida')
     .max(100, 'La motivación no puede exceder 100 caracteres'),
+  sourceType: z.enum(['external', 'transfer']).optional(),
 });
 
 export type PocketFormData = z.infer<typeof pocketSchema>;
@@ -49,6 +50,7 @@ export function usePocketForm(defaultValues?: Partial<PocketFormData>): UsePocke
     goal: data.type === 'goal' ? data.goal : 0,
     accumulatedAmount: data.accumulatedAmount,
     motivation: data.motivation,
+    sourceType: data.sourceType,
   });
 
   const toUpdateDto = (data: PocketFormData): UpdatePocketDto => ({

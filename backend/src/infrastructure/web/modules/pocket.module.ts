@@ -25,6 +25,7 @@ import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-wi
       IncomeAllocationEntity,
       IncomeEntity,
     ]),
+
   ],
   controllers: [PocketController],
   exports: ["PocketRepository", PocketService],
@@ -35,10 +36,16 @@ import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-wi
     },
     {
       provide: CreatePocketUseCase,
-      useFactory: (pocketRepository: TypeOrmPocketRepository) => {
-        return new CreatePocketUseCase(pocketRepository);
+      useFactory: (
+        pocketRepository: TypeOrmPocketRepository,
+        dataSource: DataSource,
+      ) => {
+        return new CreatePocketUseCase(
+          pocketRepository,
+          dataSource,
+        );
       },
-      inject: ["PocketRepository"],
+      inject: ["PocketRepository", DataSource],
     },
     {
       provide: GetAllPocketsUseCase,

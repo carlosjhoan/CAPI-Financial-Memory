@@ -16,7 +16,6 @@ function createMockPocket(overrides: Partial<Pocket> = {}): Pocket {
     name: 'Test Pocket',
     type: 'deposit',
     goal: 0,
-    initialAmount: 0,
     accumulatedAmount: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -81,16 +80,13 @@ describe('buildHistoryDataPoints — today extension', () => {
     expect(points[0].movements).toEqual([]);
   });
 
-  it('shows 2 points when created today with initial amount > 0 and no movements', () => {
+  it('shows 1 point when created today with no movements (no initialAmount anymore)', () => {
     const pocket = createMockPocket({
       createdAt: new Date().toISOString(),
-      initialAmount: 10000,
     });
     const points = buildHistoryDataPoints(pocket, false);
-    expect(points.length).toBe(2);
-    expect(points[0].value).toBe(10000);
-    expect(points[1].value).toBe(10000); // flat line
-    expect(points[1].date.toDateString()).toBe(new Date().toDateString());
+    expect(points.length).toBe(1);
+    expect(points[0].value).toBe(0);
   });
 
   it('handles no-movements with creation yesterday → adds today point', () => {

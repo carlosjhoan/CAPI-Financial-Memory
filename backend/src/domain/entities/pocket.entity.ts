@@ -27,13 +27,6 @@ export class Pocket {
   accumulatedAmount: number;
 
   @ApiProperty({
-    description:
-      "Monto inicial al crear el bolsillo (para gráfica de evolución)",
-    example: 0,
-  })
-  initialAmount: number;
-
-  @ApiProperty({
     description: "Motivación para crear el bolsillo",
     example: "Para ahorrar para un viaje",
     maxLength: 100,

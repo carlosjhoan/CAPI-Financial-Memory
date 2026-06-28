@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Pocket } from '../types/pocket.types';
 import { usePocketForm, type PocketFormData } from '../hooks/usePocketForm';
 import {
@@ -48,8 +48,17 @@ const PocketForm: React.FC<PocketFormProps> = ({
   );
 
   const pocketType = watch('type');
+  const accumulatedAmount = watch('accumulatedAmount');
+  const sourceType = watch('sourceType');
 
   const isLastStep = currentStep === STEPS.length - 1;
+
+  // Auto-default sourceType to 'external' when accumulatedAmount becomes positive in create mode
+  useEffect(() => {
+    if (!isEditMode && accumulatedAmount > 0 && !sourceType) {
+      setValue('sourceType', 'external', { shouldValidate: true });
+    }
+  }, [accumulatedAmount, isEditMode, sourceType, setValue]);
 
   const validateStep = async (): Promise<boolean> => {
     const stepFields = STEPS[currentStep].fields;
@@ -229,6 +238,46 @@ const PocketForm: React.FC<PocketFormProps> = ({
               required
               accent="pocket"
             />
+
+            {/* Source selector — only in create mode when accumulatedAmount > 0 */}
+            {!isEditMode && accumulatedAmount > 0 && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-secondary-700 dark:text-secondary-300">
+                  Origen del dinero <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setValue('sourceType', 'external', { shouldValidate: true })}
+                    className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${
+                      sourceType === 'external'
+                        ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300'
+                        : 'border-secondary-200 bg-white text-secondary-600 hover:border-purple-300 dark:border-secondary-700 dark:bg-secondary-800 dark:text-secondary-400 dark:hover:border-purple-600'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">Dinero nuevo</span>
+                    <span className="text-center text-xs text-secondary-500 dark:text-secondary-400">
+                      Ingreso externo a tu patrimonio
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setValue('sourceType', 'transfer', { shouldValidate: true })}
+                    className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${
+                      sourceType === 'transfer'
+                        ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300'
+                        : 'border-secondary-200 bg-white text-secondary-600 hover:border-purple-300 dark:border-secondary-700 dark:bg-secondary-800 dark:text-secondary-400 dark:hover:border-purple-600'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">Viene de otro bolsillo</span>
+                    <span className="text-center text-xs text-secondary-500 dark:text-secondary-400">
+                      Transferencia desde otro bolsillo
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
