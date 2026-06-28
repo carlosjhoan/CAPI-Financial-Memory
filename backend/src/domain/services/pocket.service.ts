@@ -18,7 +18,8 @@ export class PocketService {
     goal: number,
     accumulatedAmount: number,
     motivation: string,
-    initialAmount?: number,
+    sourceType?: "external" | "transfer",
+    sourcePocketId?: string,
   ): Promise<Pocket> {
     return await this.createPocketUseCase.execute(
       userId,
@@ -27,7 +28,8 @@ export class PocketService {
       goal,
       accumulatedAmount,
       motivation,
-      initialAmount,
+      sourceType,
+      sourcePocketId,
     );
   }
 

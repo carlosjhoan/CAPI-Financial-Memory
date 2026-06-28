@@ -35,7 +35,6 @@ export class TypeOrmPocketRepository implements PocketRepository {
       entity.motivation,
       entity.id,
     );
-    pocket.initialAmount = Number(entity.initialAmount);
     pocket.createdAt = entity.createdAt;
     pocket.updatedAt = entity.updatedAt;
     return pocket;
@@ -46,11 +45,11 @@ export class TypeOrmPocketRepository implements PocketRepository {
     if (domain.id) {
       entity.id = domain.id;
     }
+    entity.userId = domain.userId;
     entity.name = domain.name;
     entity.type = domain.type;
     entity.goal = domain.goal;
     entity.accumulatedAmount = domain.accumulatedAmount;
-    entity.initialAmount = domain.initialAmount;
     entity.motivation = domain.motivation;
     entity.createdAt = domain.createdAt;
     entity.updatedAt = domain.updatedAt;

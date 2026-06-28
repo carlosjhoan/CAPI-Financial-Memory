@@ -88,7 +88,8 @@ export class PocketController {
         createPocketDto.accumulatedAmount,
         createPocketDto.motivation ??
           "Quiero ahorrar para algo que aún no sé qué es",
-        createPocketDto.initialAmount,
+        createPocketDto.sourceType,
+        createPocketDto.sourcePocketId,
       );
 
       return {
@@ -259,17 +260,6 @@ export class PocketController {
         direction: t.targetPocketId === id ? "incoming" : "outgoing",
       }));
 
-      // Crear synthetic initial movement
-      const initialMovement =
-        pocket.initialAmount > 0
-          ? {
-              type: "opening",
-              amount: pocket.initialAmount,
-              date: pocket.createdAt,
-              description: "Monto de apertura",
-            }
-          : undefined;
-
       return {
         statusCode: HttpStatus.OK,
         data: {
@@ -277,7 +267,6 @@ export class PocketController {
           incomes,
           expenses,
           transfers: transfersWithDirection,
-          initialMovement,
         },
         message: "Pocket retrieved successfully",
         timestamp: new Date().toISOString(),

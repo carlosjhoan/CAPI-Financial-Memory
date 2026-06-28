@@ -29,7 +29,7 @@ const AUTO_PLAY_CARD_FADE_DURATION = 300; // ms of opacity transition
 const AUTO_PLAY_MAX_CARDS = 7;          // max simultaneously visible cards
 
 export interface PointMovement {
-  type: 'deposit' | 'expense' | 'transfer_in' | 'transfer_out' | 'opening';
+  type: 'deposit' | 'expense' | 'transfer_in' | 'transfer_out';
   amount: number;
   reason?: string;
 }
@@ -54,13 +54,10 @@ export function buildHistoryDataPoints(
   isFirst24h: boolean,
 ): Point[] {
   const points: Point[] = [];
-  let runningTotal = pocket.initialAmount || 0;
+  let runningTotal = 0;
 
-  // Punto inicial (fecha de creación) — con movimiento virtual si hay monto de apertura
-  const initialMovements: PointMovement[] = pocket.initialAmount > 0
-    ? [{ type: 'opening' as const, amount: pocket.initialAmount, reason: 'Apertura' }]
-    : [];
-  points.push({ date: new Date(pocket.createdAt), value: runningTotal, movements: initialMovements });
+  // Punto inicial (fecha de creación)
+  points.push({ date: new Date(pocket.createdAt), value: runningTotal, movements: [] });
 
   // Combinar y ordenar movimientos cronológicamente
   const allMovements: RawMovement[] = [
@@ -198,7 +195,7 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
     let min = Math.min(...values);
     let max = Math.max(...values);
     const availableHeight = SVG_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
-    // When all values are equal (e.g. pocket with opening amount only),
+    // When all values are equal (e.g. pocket with initial amount only),
     // expand the range so the line renders centered, not at y=38 bottom.
     if (max === min) {
       min = min - availableHeight / 2;
@@ -442,7 +439,6 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
       case 'expense': return 'Gasto';
       case 'transfer_in': return 'Transferencia recibida';
       case 'transfer_out': return 'Transferencia enviada';
-      case 'opening': return 'Apertura';
     }
   };
 
@@ -452,7 +448,6 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
       case 'expense': return '↓';
       case 'transfer_in': return '→';
       case 'transfer_out': return '←';
-      case 'opening': return '★';
     }
   };
 
@@ -462,7 +457,6 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
       case 'expense': return 'text-red-500';
       case 'transfer_in': return 'text-green-500';
       case 'transfer_out': return 'text-red-500';
-      case 'opening': return 'text-blue-500';
     }
   };
 
@@ -579,7 +573,7 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
 
           {/* ── Dots característicos en cada punto ── */}
           {svgPoints.map((pt, i) => {
-            // Skip first dot if no opening amount, skip last (today extension)
+            // Skip first dot if no initial amount, skip last (today extension)
             if ((i === 0 && (dataPoints[i]?.value ?? 0) <= 0) || i === svgPoints.length - 1) return null;
             const delay = (i / (svgPoints.length - 1)) * 2000;
             return (
@@ -611,7 +605,7 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
         {/* ── Dots HTML + fechas ── */}
         <div className="absolute inset-0 overflow-visible pointer-events-none">
           {svgPoints.map((pt, i) => {
-            // Skip first dot if no opening amount, skip last (today extension)
+            // Skip first dot if no initial amount, skip last (today extension)
             if ((i === 0 && (dataPoints[i]?.value ?? 0) <= 0) || i === svgPoints.length - 1) return null;
             const drawProgress = 1 - offset / totalLength;
             const pointProgress = i / (svgPoints.length - 1);
@@ -779,7 +773,7 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
         {/* ── Hover targets (desktop-only hit areas) — above auto-play card for reliable hit-testing ── */}
         <div className="absolute inset-0 overflow-visible block z-[45]">
           {svgPoints.map((pt, i) => {
-            if (i === 0 && (dataPoints[i]?.value ?? 0) <= 0) return null; // skip initial point without opening amount
+            if (i === 0 && (dataPoints[i]?.value ?? 0) <= 0) return null; // skip initial point without initial amount
             const pctX = (pt.x / SVG_WIDTH) * 100;
             const pctY = (pt.y / SVG_HEIGHT) * 100;
             const drawProgress = 1 - offset / totalLength;

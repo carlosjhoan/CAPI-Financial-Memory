@@ -22,6 +22,7 @@ import { GetIncomesByDateRangeUseCase } from "../../../application/income/get-in
 @Module({
   imports: [TypeOrmModule.forFeature([IncomeEntity, IncomeAllocationEntity])],
   controllers: [IncomeController],
+  exports: [IncomeService],
   providers: [
     {
       provide: "IncomeRepository",

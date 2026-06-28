@@ -6,7 +6,6 @@ interface TransactionItem {
 }
 
 interface MiniLineChartProps {
-  initialAmount: number;
   transactions: TransactionItem[];
   createdAt: string;
   currentAccumulated: number;
@@ -35,7 +34,6 @@ function parseDate(dateStr: string): Date {
 // ==========================================
 
 function buildDataPoints({
-  initialAmount,
   transactions,
   createdAt,
   currentAccumulated,
@@ -43,8 +41,8 @@ function buildDataPoints({
   const createdDate = parseDate(createdAt);
   const today = new Date();
 
-  // 1. Start point: { date: createdAt, value: initialAmount }
-  const points: Point[] = [{ date: createdDate, value: initialAmount }];
+  // 1. Start point: { date: createdAt, value: 0 }
+  const points: Point[] = [{ date: createdDate, value: 0 }];
 
   // 2. Sort transactions chronologically (oldest first)
   const sortedTransactions = [...transactions].sort(
@@ -52,7 +50,7 @@ function buildDataPoints({
   );
 
   // 3-4. Running total + point for each individual transaction (no daily grouping)
-  let runningTotal = initialAmount;
+  let runningTotal = 0;
   for (const txn of sortedTransactions) {
     runningTotal += txn.amount;
     points.push({ date: parseDate(txn.date), value: runningTotal });

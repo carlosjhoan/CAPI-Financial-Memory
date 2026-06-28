@@ -41,7 +41,7 @@ function getLabel(type: string): string {
     deposit: 'Depósito',
     expense: 'Gasto',
     transfer: 'Transferencia',
-    opening: 'Apertura',
+
   };
   return labels[type] || 'Movimiento';
 }
@@ -50,7 +50,6 @@ function getMovementColor(item: HistoryItem): string {
   if (item.type === 'transfer') {
     return item.direction === 'incoming' ? 'text-green-500' : 'text-red-500';
   }
-  if (item.type === 'opening') return 'text-blue-500';
   if (item.type === 'deposit' || item.type === 'income') return 'text-green-500';
   return 'text-red-500';
 }
@@ -59,7 +58,7 @@ function getMovementSign(item: HistoryItem): string {
   if (item.type === 'transfer') {
     return item.direction === 'incoming' ? '+' : '-';
   }
-  if (item.type === 'opening' || item.type === 'deposit' || item.type === 'income') return '+';
+  if (item.type === 'deposit' || item.type === 'income') return '+';
   return '-';
 }
 
@@ -231,7 +230,7 @@ const PocketHistoryTimeline: React.FC<PocketHistoryTimelineProps> = ({
           {/* Monthly groups for older items */}
           {(showAllMonths ? monthlyGroups : monthlyGroups.slice(0, VISIBLE_MONTHS)).map(([monthYear, items]) => {
             const totalIn = items
-              .filter((i) => i.type === 'income' || i.type === 'deposit' || i.type === 'opening')
+              .filter((i) => i.type === 'income' || i.type === 'deposit')
               .reduce((sum, i) => sum + i.amount, 0);
             const totalOut = items
               .filter((i) => i.type === 'expense')

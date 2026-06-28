@@ -29,7 +29,6 @@ function createMockPocket(overrides: Partial<Pocket> = {}): Pocket {
     name: 'Vacaciones',
     type: 'deposit',
     goal: 0,
-    initialAmount: 0,
     accumulatedAmount: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
