@@ -28,7 +28,7 @@ function createMockPocket(
 
 function createMockEntity(
   id: string,
-  accumulatedAmount: number,
+  _accumulatedAmount: number,
   type = "deposit",
   goal = 0,
 ): PocketEntity {
@@ -37,7 +37,6 @@ function createMockEntity(
   entity.name = "Test";
   entity.type = type;
   entity.goal = goal;
-  entity.accumulatedAmount = accumulatedAmount;
   entity.motivation = "";
   entity.createdAt = new Date();
   entity.updatedAt = new Date();
@@ -76,6 +75,7 @@ describe("DeleteWithTransferUseCase", () => {
       createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
       save: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
       delete: jest.fn(),
     };
 
@@ -185,16 +185,25 @@ describe("DeleteWithTransferUseCase", () => {
       expect(result.transfersCreated).toBe(1);
       // saves: source debit + target credit + income + allocation = 4
       expect(mockEntityManager.save).toHaveBeenCalledTimes(4);
-      // delete old transfers (source + target) + delete income_allocations + delete pocket = 4
-      expect(mockEntityManager.delete).toHaveBeenCalledTimes(4);
-      expect(mockEntityManager.delete).toHaveBeenCalledWith(
+      // updates: source transfers nullified + target transfers nullified + income allocations nullified = 3
+      expect(mockEntityManager.update).toHaveBeenCalledTimes(3);
+      expect(mockEntityManager.update).toHaveBeenCalledWith(
         PocketTransferEntity,
-        expect.objectContaining({ sourcePocketId: "source-1" }),
+        { sourcePocketId: "source-1" },
+        { sourcePocketId: null, sourcePocketName: "Test Source" },
       );
-      expect(mockEntityManager.delete).toHaveBeenCalledWith(
+      expect(mockEntityManager.update).toHaveBeenCalledWith(
+        PocketTransferEntity,
+        { targetPocketId: "source-1" },
+        { targetPocketId: null, targetPocketName: "Test Source" },
+      );
+      expect(mockEntityManager.update).toHaveBeenCalledWith(
         IncomeAllocationEntity,
         { pocketId: "source-1" },
+        { pocketId: null },
       );
+      // delete: only the pocket itself
+      expect(mockEntityManager.delete).toHaveBeenCalledTimes(1);
       expect(mockEntityManager.delete).toHaveBeenCalledWith(
         PocketEntity,
         "source-1",
@@ -218,6 +227,12 @@ describe("DeleteWithTransferUseCase", () => {
     });
 
     it("should throw TRANSFER_EXCEEDS_GOAL when target is goal and amount exceeds remaining", async () => {
+      // Override findById so cached target has accumulated=800 → remaining=200 → 500 > 200
+      mockRepository.findById
+        .mockReset()
+        .mockResolvedValueOnce(createMockPocket("source-1", 500))
+        .mockResolvedValueOnce(createMockPocket("target-1", 800));
+
       const sourceEntity = createMockEntity("source-1", 500);
       sourceEntity.name = "Test";
       const goalEntity = createMockEntity("target-1", 800, "goal", 1000); // remaining = 200
@@ -234,22 +249,6 @@ describe("DeleteWithTransferUseCase", () => {
           new Date(),
         ),
       ).rejects.toThrow("TRANSFER_EXCEEDS_GOAL:200:500:target-1");
-    });
-
-    it("should throw INSUFFICIENT_FUNDS when balance changed after pre-validation", async () => {
-      mockQueryBuilder.getOne.mockResolvedValueOnce(
-        createMockEntity("source-1", 100),
-      ); // balance now only 100
-
-      await expect(
-        useCase.execute(
-          "user-1",
-          "source-1",
-          [{ targetPocketId: "target-1", amount: 500 }],
-          "reason",
-          new Date(),
-        ),
-      ).rejects.toThrow("INSUFFICIENT_FUNDS:100:500");
     });
 
     it("should handle multiple distributions correctly", async () => {

@@ -23,9 +23,6 @@ export class PocketEntity {
   @Column({ type: "decimal", precision: 12, scale: 2 })
   goal: number;
 
-  @Column({ type: "decimal", precision: 12, scale: 2 })
-  accumulatedAmount: number;
-
   @Column({ type: "varchar", length: 100, nullable: true })
   motivation: string;
 

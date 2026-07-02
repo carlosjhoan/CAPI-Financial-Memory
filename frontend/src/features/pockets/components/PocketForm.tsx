@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Pocket } from '../types/pocket.types';
 import { usePocketForm, type PocketFormData } from '../hooks/usePocketForm';
+import { usePockets } from '../hooks/usePockets';
 import {
   FormFloatInput,
   FormFloatCurrency,
@@ -17,7 +18,8 @@ export interface PocketFormProps {
 
 const STEPS = [
   { label: 'Identidad', fields: ['name', 'motivation'] as const },
-  { label: 'Tipo y meta', fields: ['type', 'goal', 'accumulatedAmount'] as const },
+  { label: 'Tipo', fields: ['type'] as const },
+  { label: 'Apertura', fields: ['accumulatedAmount'] as const },
 ];
 
 const PocketForm: React.FC<PocketFormProps> = ({
@@ -50,6 +52,12 @@ const PocketForm: React.FC<PocketFormProps> = ({
   const pocketType = watch('type');
   const accumulatedAmount = watch('accumulatedAmount');
   const sourceType = watch('sourceType');
+
+  const { data: pocketsData } = usePockets();
+
+  const eligiblePockets = (pocketsData ?? []).filter(
+    (p) => p.accumulatedAmount >= (accumulatedAmount || 0),
+  );
 
   const isLastStep = currentStep === STEPS.length - 1;
 
@@ -228,7 +236,11 @@ const PocketForm: React.FC<PocketFormProps> = ({
                 </div>
               </div>
             )}
+          </>
+        )}
 
+        {currentStep === 2 && (
+          <>
             <FormFloatCurrency
               name="accumulatedAmount"
               control={control}
@@ -276,6 +288,49 @@ const PocketForm: React.FC<PocketFormProps> = ({
                     </span>
                   </button>
                 </div>
+
+                {/* Pocket selector dropdown — shown only when sourceType === 'transfer' */}
+                {sourceType === 'transfer' && (
+                  <div className="mt-3">
+                    <label
+                      htmlFor="sourcePocketId"
+                      className="mb-2 block text-sm font-medium text-secondary-700 dark:text-secondary-300"
+                    >
+                      Bolsillo de origen <span className="text-red-500">*</span>
+                    </label>
+                    {eligiblePockets.length > 0 ? (
+                      <select
+                        id="sourcePocketId"
+                        onChange={(e) =>
+                          setValue('sourcePocketId', e.target.value, {
+                            shouldValidate: true,
+                          })
+                        }
+                        defaultValue=""
+                        disabled={isLoading || isSubmitting}
+                        className="block w-full rounded-lg border border-secondary-300 bg-white px-4 py-2.5 text-sm text-secondary-900 focus:border-purple-500 focus:ring-purple-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-secondary-600 dark:bg-secondary-800 dark:text-secondary-100 dark:focus:border-purple-400"
+                      >
+                        <option value="" disabled>
+                          Seleccioná un bolsillo...
+                        </option>
+                        {eligiblePockets.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} — ${Number(p.accumulatedAmount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="text-sm text-red-600 dark:text-red-400">
+                        No hay bolsillos con fondos suficientes
+                      </p>
+                    )}
+                    {errors.sourcePocketId?.message && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400" role="alert">
+                        {errors.sourcePocketId.message}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </>

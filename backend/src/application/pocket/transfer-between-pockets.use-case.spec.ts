@@ -26,7 +26,7 @@ function createMockPocket(
 
 function createMockEntity(
   id: string,
-  accumulatedAmount: number,
+  _accumulatedAmount: number,
   type = "deposit",
   goal = 0,
 ): PocketEntity {
@@ -35,7 +35,6 @@ function createMockEntity(
   entity.name = "Test";
   entity.type = type;
   entity.goal = goal;
-  entity.accumulatedAmount = accumulatedAmount;
   entity.motivation = "";
   entity.createdAt = new Date();
   entity.updatedAt = new Date();

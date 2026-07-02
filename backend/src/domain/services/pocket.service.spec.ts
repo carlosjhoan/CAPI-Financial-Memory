@@ -37,10 +37,7 @@ describe("PocketService", () => {
 
     mockCreatePocketUseCase = { execute: jest.fn() } as any;
 
-    service = new PocketService(
-      mockRepository,
-      mockCreatePocketUseCase,
-    );
+    service = new PocketService(mockRepository, mockCreatePocketUseCase);
   });
 
   describe("deletePocket", () => {

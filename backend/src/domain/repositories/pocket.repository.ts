@@ -20,4 +20,5 @@ export interface PocketRepository {
     pocketId: string,
     options: { page: number; limit: number },
   ): Promise<{ items: any[]; total: number }>;
+  computeAccumulated(pocketId: string): Promise<number>;
 }

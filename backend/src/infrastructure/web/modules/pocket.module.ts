@@ -16,6 +16,7 @@ import { UpdatePocketUseCase } from "../../../application/pocket/update-pocket.u
 import { DeletePocketUseCase } from "../../../application/pocket/delete-pocket.use-case";
 import { TransferBetweenPocketsUseCase } from "../../../application/pocket/transfer-between-pockets.use-case";
 import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-with-transfer.use-case";
+import { RecalculateAccumulatedUseCase } from "../../../application/pocket/recalculate-accumulated.use-case";
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -25,7 +26,6 @@ import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-wi
       IncomeAllocationEntity,
       IncomeEntity,
     ]),
-
   ],
   controllers: [PocketController],
   exports: ["PocketRepository", PocketService],
@@ -40,10 +40,7 @@ import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-wi
         pocketRepository: TypeOrmPocketRepository,
         dataSource: DataSource,
       ) => {
-        return new CreatePocketUseCase(
-          pocketRepository,
-          dataSource,
-        );
+        return new CreatePocketUseCase(pocketRepository, dataSource);
       },
       inject: ["PocketRepository", DataSource],
     },
@@ -86,6 +83,15 @@ import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-wi
       inject: ["PocketRepository", DataSource],
     },
     {
+      provide: RecalculateAccumulatedUseCase,
+      useFactory: (
+        pocketRepository: TypeOrmPocketRepository,
+      ) => {
+        return new RecalculateAccumulatedUseCase(pocketRepository);
+      },
+      inject: ["PocketRepository"],
+    },
+    {
       provide: DeleteWithTransferUseCase,
       useFactory: (
         pocketRepository: TypeOrmPocketRepository,
@@ -101,10 +107,7 @@ import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-wi
         pocketRepository: TypeOrmPocketRepository,
         createPocketUseCase: CreatePocketUseCase,
       ) => {
-        return new PocketService(
-          pocketRepository,
-          createPocketUseCase,
-        );
+        return new PocketService(pocketRepository, createPocketUseCase);
       },
       inject: ["PocketRepository", CreatePocketUseCase],
     },

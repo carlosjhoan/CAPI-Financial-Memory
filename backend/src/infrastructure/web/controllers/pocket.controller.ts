@@ -34,6 +34,7 @@ import { UpdatePocketUseCase } from "../../../application/pocket/update-pocket.u
 import { DeletePocketUseCase } from "../../../application/pocket/delete-pocket.use-case";
 import { TransferBetweenPocketsUseCase } from "../../../application/pocket/transfer-between-pockets.use-case";
 import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-with-transfer.use-case";
+import { RecalculateAccumulatedUseCase } from "../../../application/pocket/recalculate-accumulated.use-case";
 import { PocketService } from "../../../domain/services/pocket.service";
 import { CreatePocketDto } from "../dto/create-pocket.dto";
 import { UpdatePocketDto } from "../dto/update-pocket.dto";
@@ -56,6 +57,7 @@ export class PocketController {
     private readonly deletePocketUseCase: DeletePocketUseCase,
     private readonly transferBetweenPocketsUseCase: TransferBetweenPocketsUseCase,
     private readonly deleteWithTransferUseCase: DeleteWithTransferUseCase,
+    private readonly recalculateAccumulatedUseCase: RecalculateAccumulatedUseCase,
     private readonly pocketService: PocketService,
   ) {}
 
@@ -317,8 +319,6 @@ export class PocketController {
         updateData.type = updatePocketDto.type;
       if (updatePocketDto.goal !== undefined)
         updateData.goal = updatePocketDto.goal;
-      if (updatePocketDto.accumulatedAmount !== undefined)
-        updateData.accumulatedAmount = updatePocketDto.accumulatedAmount;
       if (updatePocketDto.motivation !== undefined)
         updateData.motivation = updatePocketDto.motivation;
 
@@ -474,6 +474,34 @@ export class PocketController {
         timestamp: new Date().toISOString(),
       });
     }
+  }
+
+  @Get("verificar")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Verificar accumulatedAmount de todos los bolsillos",
+    description:
+      "Muestra el accumulatedAmount computado para cada bolsillo a partir de " +
+      "income_allocations, expense_allocations y pocket_transfers. " +
+      "Ya no hay columna almacenada — el valor siempre se computa en lectura.",
+  })
+  @ApiOkResponse({
+    description: "Reporte de verificación",
+    type: ApiResponseDto,
+  })
+  async recalculate(
+    @Req() req: RequestWithUser,
+  ): Promise<ApiResponseDto<any>> {
+    const result = await this.recalculateAccumulatedUseCase.execute(
+      req.user.id,
+    );
+
+    return {
+      statusCode: HttpStatus.OK,
+      data: result,
+      message: "Valores acumulados computados desde transacciones",
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Delete(":id")

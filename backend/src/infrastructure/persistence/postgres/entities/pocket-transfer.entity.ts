@@ -13,19 +13,25 @@ export class PocketTransferEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column()
-  sourcePocketId: string;
+  @Column({ nullable: true })
+  sourcePocketId: string | null;
 
   @ManyToOne(() => PocketEntity)
   @JoinColumn({ name: "sourcePocketId" })
-  sourcePocket: PocketEntity;
+  sourcePocket: PocketEntity | null;
 
-  @Column()
-  targetPocketId: string;
+  @Column({ nullable: true, type: "varchar" })
+  sourcePocketName: string | null;
+
+  @Column({ nullable: true })
+  targetPocketId: string | null;
 
   @ManyToOne(() => PocketEntity)
   @JoinColumn({ name: "targetPocketId" })
-  targetPocket: PocketEntity;
+  targetPocket: PocketEntity | null;
+
+  @Column({ nullable: true, type: "varchar" })
+  targetPocketName: string | null;
 
   @Column({ type: "decimal", precision: 10, scale: 2 })
   amount: number;

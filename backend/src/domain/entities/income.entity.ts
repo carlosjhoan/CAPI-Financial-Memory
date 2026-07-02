@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 
 export interface IncomeAllocationInfo {
-  pocketId: string;
+  pocketId: string | null;
   pocketName: string;
   amount: number;
 }

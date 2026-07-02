@@ -54,16 +54,4 @@ export class UpdatePocketDto {
     message: "Motivation cannot be longer than 100 characters",
   })
   motivation?: string;
-
-  @ApiPropertyOptional({
-    description: "Valor acumulado actual",
-    example: 2000000,
-    minimum: 0,
-    type: "number",
-    format: "float",
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0, { message: "Accumulated amount cannot be negative" })
-  accumulatedAmount?: number;
 }

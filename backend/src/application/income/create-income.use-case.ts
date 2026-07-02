@@ -3,7 +3,6 @@ import { IncomeRepository } from "../../domain/repositories/income.repository";
 import { DataSource } from "typeorm";
 import { IncomeAllocationEntity } from "../../infrastructure/persistence/postgres/entities/income-allocation.entity";
 import { IncomeEntity } from "../../infrastructure/persistence/postgres/entities/income.entity";
-import { PocketEntity } from "../../infrastructure/persistence/postgres/entities/pocket.entity";
 import { AllocationDto } from "../../infrastructure/web/dto/allocation.dto";
 
 export class CreateIncomeUseCase {
@@ -47,17 +46,6 @@ export class CreateIncomeUseCase {
           }),
         );
         await transactionalEntityManager.save(allocationEntities);
-
-        // 3. Increment each pocket's accumulated amount
-        for (const alloc of allocations) {
-          const pocket = await transactionalEntityManager.findOne(PocketEntity, {
-            where: { id: alloc.pocketId },
-          });
-          if (pocket) {
-            pocket.accumulatedAmount = Number(pocket.accumulatedAmount) + alloc.amount;
-            await transactionalEntityManager.save(pocket);
-          }
-        }
 
         return new Income(
           savedIncome.amount,

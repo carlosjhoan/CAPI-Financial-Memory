@@ -49,12 +49,6 @@ const FloatInput = React.forwardRef<HTMLInputElement, FloatInputProps>(
 
     return (
       <div className={cn('relative', fullWidth && 'w-full')}>
-        <style>{`
-          @keyframes glowPulse {
-            0%, 100% { box-shadow: 0 0 0 2px rgba(var(--glow-rgb, 99, 102, 241), 0.3), 0 0 12px rgba(var(--glow-rgb, 99, 102, 241), 0.15), 0 0 24px rgba(var(--glow-rgb, 99, 102, 241), 0.08); }
-            50% { box-shadow: 0 0 0 2px rgba(var(--glow-rgb, 99, 102, 241), 0.5), 0 0 24px rgba(var(--glow-rgb, 99, 102, 241), 0.25), 0 0 48px rgba(var(--glow-rgb, 99, 102, 241), 0.15), 0 0 80px rgba(var(--glow-rgb, 99, 102, 241), 0.08); }
-          }
-        `}</style>
         {/* The border lives on this outer wrapper so the label can "cut through" it */}
         <div
           className={cn(
@@ -62,12 +56,12 @@ const FloatInput = React.forwardRef<HTMLInputElement, FloatInputProps>(
             error
               ? 'border-red-300 focus-within:border-red-500 dark:border-red-600'
               : `border-secondary-300 dark:border-secondary-600 ${accentCls.border}`,
-            isFocused &&
-              (error
-                ? 'ring-2 ring-red-500/30'
-                : 'animate-[glowPulse_2s_ease-in-out_infinite]'),
+            isFocused && !error && 'ring-0',
           )}
-          style={(isFocused && !error) ? { '--glow-rgb': accentCls.glowRGB } as React.CSSProperties : undefined}
+          style={(isFocused && !error) ? {
+            '--glow-rgb': accentCls.glowRGB,
+            boxShadow: `0 0 0 2px rgba(var(--glow-rgb, 99, 102, 241), 0.4), 0 0 24px rgba(var(--glow-rgb, 99, 102, 241), 0.2), 0 0 56px rgba(var(--glow-rgb, 99, 102, 241), 0.12), 0 0 96px rgba(var(--glow-rgb, 99, 102, 241), 0.06)`,
+          } as React.CSSProperties : undefined}
         >
           <input
             ref={ref}

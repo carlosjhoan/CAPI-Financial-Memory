@@ -30,9 +30,7 @@ describe("CreateIncomeUseCase", () => {
             .mockImplementation((entity: any) =>
               Promise.resolve({ ...entity, id: "uuid-1" }),
             ),
-          findOne: jest
-            .fn()
-            .mockResolvedValue({ ...mockPocketEntity }),
+          findOne: jest.fn().mockResolvedValue({ ...mockPocketEntity }),
         }),
       ),
     } as any;

@@ -37,23 +37,37 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           </label>
         )}
         
-        <select
-          ref={ref}
-          id={selectId}
+        <div
           className={cn(
-            'block rounded-lg border-secondary-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800 dark:text-white',
-            'disabled:cursor-not-allowed disabled:bg-secondary-100 disabled:text-secondary-500 dark:disabled:bg-secondary-700 dark:disabled:text-secondary-400',
-            error 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500 dark:border-red-600' 
-              : 'border-secondary-300 dark:border-secondary-600',
-            fullWidth ? 'w-full' : '',
-            'px-3 py-2',
-            className
+            'relative rounded-lg border transition-all duration-200',
+            error
+              ? 'border-red-300 focus-within:border-red-500 dark:border-red-600'
+              : 'border-secondary-300 dark:border-secondary-600 focus-within:border-primary-500 dark:focus-within:border-primary-400',
+            !error && 'focus-within:ring-0',
           )}
-          aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={error ? `${selectId}-error` : helperText ? `${selectId}-helper` : undefined}
-          {...props}
+          style={!error ? {
+            '--glow-rgb': '99, 102, 241',
+            boxShadow: `0 0 0 2px rgba(var(--glow-rgb, 99, 102, 241), 0.4), 0 0 24px rgba(var(--glow-rgb, 99, 102, 241), 0.2), 0 0 56px rgba(var(--glow-rgb, 99, 102, 241), 0.12), 0 0 96px rgba(var(--glow-rgb, 99, 102, 241), 0.06)`,
+          } as React.CSSProperties : undefined}
         >
+          <select
+            ref={ref}
+            id={selectId}
+            className={cn(
+              'block w-full rounded-lg border-0 bg-transparent px-3 py-2',
+              'focus:outline-none focus:ring-0',
+              'dark:text-white',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              error 
+                ? 'text-red-900 dark:text-red-100' 
+                : 'text-secondary-900 dark:text-white',
+              fullWidth ? 'w-full' : '',
+              className
+            )}
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? `${selectId}-error` : helperText ? `${selectId}-helper` : undefined}
+            {...props}
+          >
           {placeholder && (
             <option value="" disabled>
               {placeholder}
@@ -65,6 +79,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             </option>
           ))}
         </select>
+        </div>
         
         {error && (
           <p

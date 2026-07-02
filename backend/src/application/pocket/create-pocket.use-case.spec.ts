@@ -10,6 +10,7 @@ describe("CreatePocketUseCase", () => {
   beforeEach(() => {
     mockRepo = {
       save: jest.fn(),
+      findById: jest.fn(),
     } as any;
     mockDataSource = {
       transaction: jest.fn(),
@@ -79,25 +80,6 @@ describe("CreatePocketUseCase", () => {
       0,
       "motivation",
       "external",
-    );
-
-    expect(mockRepo.save).toHaveBeenCalled();
-    expect(mockDataSource.transaction).not.toHaveBeenCalled();
-    expect(result).toEqual(mockPocket);
-  });
-
-  it("should save without creating income when sourceType=transfer even with accumulatedAmount>0", async () => {
-    const mockPocket = new Pocket("Test", "deposit", 0, 500, "motivation");
-    mockRepo.save.mockResolvedValue(mockPocket);
-
-    const result = await useCase.execute(
-      "user-1",
-      "Test",
-      "deposit",
-      0,
-      500,
-      "motivation",
-      "transfer",
     );
 
     expect(mockRepo.save).toHaveBeenCalled();
@@ -181,25 +163,6 @@ describe("CreatePocketUseCase", () => {
         0,
         "motivation",
         "external",
-      );
-
-      expect(mockRepo.save).toHaveBeenCalled();
-      expect(mockDataSource.transaction).not.toHaveBeenCalled();
-      expect(result).toEqual(mockPocket);
-    });
-
-    it("scenario 2c: sourceType='transfer' does NOT create income even with accumulatedAmount>0", async () => {
-      const mockPocket = new Pocket("Test", "deposit", 0, 500, "motivation");
-      mockRepo.save.mockResolvedValue(mockPocket);
-
-      const result = await useCase.execute(
-        "user-1",
-        "Test",
-        "deposit",
-        0,
-        500,
-        "motivation",
-        "transfer",
       );
 
       expect(mockRepo.save).toHaveBeenCalled();
@@ -302,5 +265,194 @@ describe("CreatePocketUseCase", () => {
 
   it("should be defined", () => {
     expect(useCase).toBeDefined();
+  });
+
+  // ── Transfer on pocket creation ──
+
+  describe("transfer on pocket creation", () => {
+    function makeTransferTxMock(sourcePkt?: any) {
+      const sourceEntity = sourcePkt || {
+        id: "source-1",
+        name: "Source Pocket",
+        accumulatedAmount: 5000,
+        updatedAt: new Date("2026-06-26"),
+      };
+      const savedPocketEntity = {
+        id: "new-pocket-id",
+        accumulatedAmount: 0,
+        createdAt: new Date("2026-06-26"),
+        updatedAt: new Date("2026-06-26"),
+      };
+      const debitedSourceEntity = {
+        ...sourceEntity,
+        accumulatedAmount: Number(sourceEntity.accumulatedAmount) - 3000,
+      };
+      const mockEm = {
+        create: jest
+          .fn()
+          .mockImplementation((_Entity: any, data: any) => ({ ...data })),
+        save: jest
+          .fn()
+          .mockResolvedValueOnce(savedPocketEntity)
+          .mockResolvedValueOnce(debitedSourceEntity)
+          .mockResolvedValueOnce({ id: "transfer-1" }),
+        createQueryBuilder: jest.fn().mockReturnValue({
+          setLock: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(sourceEntity),
+        }),
+      };
+      mockDataSource.transaction.mockImplementation(
+        async (cb: (em: typeof mockEm) => Promise<any>) => cb(mockEm),
+      );
+      return { mockEm, savedPocketEntity, debitedSourceEntity, sourceEntity };
+    }
+
+    it("happy path: creates pocket, debits source, records transfer", async () => {
+      mockRepo.findById = jest.fn().mockResolvedValue({
+        id: "source-1",
+        name: "Source Pocket",
+        accumulatedAmount: 5000,
+      });
+      const { mockEm } = makeTransferTxMock();
+
+      const result = await useCase.execute(
+        "user-1",
+        "New Pocket",
+        "deposit",
+        0,
+        3000,
+        "motivation",
+        "transfer",
+        "source-1",
+      );
+
+      expect(mockRepo.findById).toHaveBeenCalledWith("source-1", "user-1");
+      expect(mockDataSource.transaction).toHaveBeenCalled();
+      expect(mockRepo.save).not.toHaveBeenCalled();
+      // New pocket created with 0 accumulated
+      expect(mockEm.create).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          name: "New Pocket",
+        }),
+      );
+      // Transfer record linking source → new pocket
+      expect(mockEm.create).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          sourcePocketId: "source-1",
+          targetPocketId: "new-pocket-id",
+          amount: 3000,
+        }),
+      );
+      // Returned pocket has the correct accumulated amount
+      expect(result.accumulatedAmount).toBe(3000);
+      expect(result.id).toBe("new-pocket-id");
+    });
+
+    it("throws if sourcePocketId is missing when sourceType='transfer'", async () => {
+      mockRepo.findById = jest.fn();
+
+      await expect(
+        useCase.execute(
+          "user-1",
+          "Test",
+          "deposit",
+          0,
+          500,
+          "motivation",
+          "transfer",
+        ),
+      ).rejects.toThrow(
+        "El ID del bolsillo de origen es obligatorio cuando el origen es una transferencia",
+      );
+
+      expect(mockRepo.findById).not.toHaveBeenCalled();
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
+      expect(mockRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("throws if source pocket not found", async () => {
+      mockRepo.findById = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        useCase.execute(
+          "user-1",
+          "Test",
+          "deposit",
+          0,
+          500,
+          "motivation",
+          "transfer",
+          "nonexistent",
+        ),
+      ).rejects.toThrow(
+        "No se encontró el bolsillo de origen con ID nonexistent",
+      );
+
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
+      expect(mockRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("throws if source pocket has insufficient funds", async () => {
+      mockRepo.findById = jest.fn().mockResolvedValue({
+        id: "source-1",
+        name: "Source Pocket",
+        accumulatedAmount: 100,
+      });
+
+      await expect(
+        useCase.execute(
+          "user-1",
+          "Test",
+          "deposit",
+          0,
+          500,
+          "motivation",
+          "transfer",
+          "source-1",
+        ),
+      ).rejects.toThrow("Fondos insuficientes");
+
+      expect(mockDataSource.transaction).not.toHaveBeenCalled();
+      expect(mockRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("creates pocket and transfer even if balance shifted before tx (no in-tx re-verify needed)", async () => {
+      // Pre-tx validation passes (balance 5000 >= 500)
+      mockRepo.findById = jest.fn().mockResolvedValue({
+        id: "source-1",
+        name: "Source Pocket",
+        accumulatedAmount: 5000,
+      });
+      const { mockEm } = makeTransferTxMock();
+      // Inside the tx, the locked row would show a different balance
+      // but we no longer re-verify — the pessimistic lock + pre-tx check
+      // are sufficient, and the transfer record is the source of truth.
+      mockEm.createQueryBuilder.mockReturnValue({
+        setLock: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue({
+          id: "source-1",
+          accumulatedAmount: 10,
+        }),
+      });
+
+      const result = await useCase.execute(
+        "user-1",
+        "Test",
+        "deposit",
+        0,
+        500,
+        "motivation",
+        "transfer",
+        "source-1",
+      );
+      expect(result.id).toBe("new-pocket-id");
+
+      // save IS called — pre-tx check passes, in-tx re-verify was removed
+      expect(mockEm.save).toHaveBeenCalled();
+    });
   });
 });

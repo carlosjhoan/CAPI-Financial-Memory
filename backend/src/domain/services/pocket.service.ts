@@ -66,7 +66,6 @@ export class PocketService {
       name?: string;
       type?: "goal" | "deposit";
       goal?: number;
-      accumulatedAmount?: number;
       motivation?: string;
     },
   ): Promise<Pocket> {
@@ -97,13 +96,6 @@ export class PocketService {
         throw new Error("Goal must be greater than 0");
       }
       pocket.goal = updates.goal;
-    }
-
-    if (updates.accumulatedAmount !== undefined) {
-      if (updates.accumulatedAmount < 0) {
-        throw new Error("Accumulated amount cannot be negative");
-      }
-      pocket.accumulatedAmount = updates.accumulatedAmount;
     }
 
     if (updates.motivation !== undefined) {
