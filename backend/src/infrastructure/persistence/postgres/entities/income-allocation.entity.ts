@@ -20,12 +20,12 @@ export class IncomeAllocationEntity {
   @JoinColumn({ name: "incomeId" })
   income: IncomeEntity;
 
-  @Column()
-  pocketId: string;
+  @Column({ nullable: true })
+  pocketId: string | null;
 
   @ManyToOne(() => PocketEntity)
   @JoinColumn({ name: "pocketId" })
-  pocket: PocketEntity;
+  pocket: PocketEntity | null;
 
   @Column({ type: "decimal", precision: 10, scale: 2 })
   amount: number;

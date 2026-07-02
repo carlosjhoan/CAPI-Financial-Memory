@@ -32,19 +32,31 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
           </label>
         )}
         
-        <div className="relative">
+        <div
+          className={cn(
+            'relative rounded-lg border transition-all duration-200',
+            error
+              ? 'border-red-300 focus-within:border-red-500 dark:border-red-600'
+              : 'border-secondary-300 dark:border-secondary-600 focus-within:border-primary-500 dark:focus-within:border-primary-400',
+            !error && 'focus-within:ring-0',
+          )}
+          style={!error ? {
+            '--glow-rgb': '99, 102, 241',
+            boxShadow: `0 0 0 2px rgba(var(--glow-rgb, 99, 102, 241), 0.4), 0 0 24px rgba(var(--glow-rgb, 99, 102, 241), 0.2), 0 0 56px rgba(var(--glow-rgb, 99, 102, 241), 0.12), 0 0 96px rgba(var(--glow-rgb, 99, 102, 241), 0.06)`,
+          } as React.CSSProperties : undefined}
+        >
           <input
             ref={ref}
             type="date"
             id={inputId}
             className={cn(
-              'block rounded-lg border border-secondary-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-secondary-600 dark:bg-secondary-800 dark:text-white cursor-pointer',
-              'hover:shadow-md transition-shadow duration-200 ease-in-out',
-              'ml-0 w-40',
+              'block w-full rounded-lg border-0 bg-transparent px-3 py-2 cursor-pointer',
+              'focus:outline-none focus:ring-0',
+              'dark:text-white dark:[color-scheme:dark]',
+              'disabled:cursor-not-allowed disabled:opacity-50',
               error 
-                ? 'border-red-300 focus:border-red-500 focus:ring-red-500 dark:border-red-600' 
-                : 'border-secondary-300 dark:border-secondary-600',
-              'px-3 py-2',
+                ? 'text-red-900 dark:text-red-100' 
+                : 'text-secondary-900 dark:text-white',
               className
             )}
             aria-invalid={error ? 'true' : 'false'}

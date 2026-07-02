@@ -3,7 +3,7 @@ import { useBaseForm } from '../../../shared/hooks/useBaseForm';
 import { z } from 'zod';
 import type { CreatePocketDto, UpdatePocketDto } from '../types/pocket.types';
 
-const pocketSchema = z.object({
+export const pocketSchema = z.object({
   name: z
     .string({ required_error: 'El nombre es requerido' })
     .min(1, 'El nombre es requerido')
@@ -22,6 +22,15 @@ const pocketSchema = z.object({
     .min(1, 'La motivación es requerida')
     .max(100, 'La motivación no puede exceder 100 caracteres'),
   sourceType: z.enum(['external', 'transfer']).optional(),
+  sourcePocketId: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.sourceType === 'transfer' && (!data.sourcePocketId || data.sourcePocketId.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Debe seleccionar un bolsillo de origen',
+      path: ['sourcePocketId'],
+    });
+  }
 });
 
 export type PocketFormData = z.infer<typeof pocketSchema>;
@@ -51,6 +60,7 @@ export function usePocketForm(defaultValues?: Partial<PocketFormData>): UsePocke
     accumulatedAmount: data.accumulatedAmount,
     motivation: data.motivation,
     sourceType: data.sourceType,
+    sourcePocketId: data.sourceType === 'transfer' ? data.sourcePocketId : undefined,
   });
 
   const toUpdateDto = (data: PocketFormData): UpdatePocketDto => ({

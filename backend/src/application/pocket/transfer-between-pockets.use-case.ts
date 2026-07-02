@@ -82,20 +82,11 @@ export class TransferBetweenPocketsUseCase {
           throw new Error(`Target pocket with ID ${targetPocketId} not found`);
         }
 
-        // 2. Re-verify balance within transaction
-        const currentSourceBalance = Number(sourceEntity.accumulatedAmount);
-        if (currentSourceBalance < amount) {
-          throw new Error(
-            `Insufficient funds in source pocket. Available: $${currentSourceBalance.toFixed(2)}, Requested: $${amount.toFixed(2)}`,
-          );
-        }
-
-        // 3. Goal overflow check (same pattern as register-deposit)
-        const targetAccumulated = Number(targetEntity.accumulatedAmount);
+        // 2. Goal overflow check — use pre-fetched computed accumulated
         const targetGoal = Number(targetEntity.goal);
 
         if (targetEntity.type === "goal" && targetGoal > 0) {
-          const remaining = targetGoal - targetAccumulated;
+          const remaining = targetGoal - targetPocket.accumulatedAmount;
           if (amount > remaining) {
             // If newGoal provided and valid, extend goal
             if (newGoal && newGoal > targetGoal) {
@@ -108,22 +99,20 @@ export class TransferBetweenPocketsUseCase {
           }
         }
 
-        // 4. Debit source pocket
-        sourceEntity.accumulatedAmount = currentSourceBalance - amount;
+        // 3. Touch updatedAt on both pockets
         sourceEntity.updatedAt = new Date();
         await transactionalEntityManager.save(sourceEntity);
-
-        // 5. Credit target pocket
-        targetEntity.accumulatedAmount = targetAccumulated + amount;
         targetEntity.updatedAt = new Date();
         await transactionalEntityManager.save(targetEntity);
 
-        // 5. Create transfer record
+        // 4. Create transfer record
         const transferEntity = transactionalEntityManager.create(
           PocketTransferEntity,
           {
             sourcePocketId,
             targetPocketId,
+            sourcePocketName: sourceEntity.name,
+            targetPocketName: targetEntity.name,
             amount,
             reason,
             date,
@@ -132,7 +121,7 @@ export class TransferBetweenPocketsUseCase {
         const savedTransfer =
           await transactionalEntityManager.save(transferEntity);
 
-        // 6. Return domain entity
+        // 5. Return domain entity
         const transfer = new PocketTransfer(
           savedTransfer.sourcePocketId,
           savedTransfer.targetPocketId,

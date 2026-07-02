@@ -4,7 +4,6 @@ import { PocketRepository } from "../../domain/repositories/pocket.repository";
 import { DataSource } from "typeorm";
 import { ExpenseAllocationEntity } from "../../infrastructure/persistence/postgres/entities/expense-allocation.entity";
 import { ExpenseEntity } from "../../infrastructure/persistence/postgres/entities/expense.entity";
-import { PocketEntity } from "../../infrastructure/persistence/postgres/entities/pocket.entity";
 import { AllocationDto } from "../../infrastructure/web/dto/allocation.dto";
 
 export class UpdateExpenseUseCase {
@@ -30,10 +29,13 @@ export class UpdateExpenseUseCase {
     }
 
     // Load old allocations for Golden Rule check
-    const existingEntity = await this.dataSource.manager.findOne(ExpenseEntity, {
-      where: { id },
-      relations: ["allocations"],
-    });
+    const existingEntity = await this.dataSource.manager.findOne(
+      ExpenseEntity,
+      {
+        where: { id },
+        relations: ["allocations"],
+      },
+    );
 
     if (!existingEntity) {
       throw new Error("Expense not found");
@@ -72,8 +74,7 @@ export class UpdateExpenseUseCase {
 
       // After reverting old allocation, the pocket has (currentBalance + oldAmount)
       // We need that to be >= newAmount
-      const availableAfterRevert =
-        Number(pocket.accumulatedAmount) + oldAmount;
+      const availableAfterRevert = Number(pocket.accumulatedAmount) + oldAmount;
 
       if (availableAfterRevert < alloc.amount) {
         throw new Error(
@@ -87,20 +88,7 @@ export class UpdateExpenseUseCase {
     // With allocation changes, do everything in a transaction
     return await this.dataSource.transaction(
       async (transactionalEntityManager) => {
-        // 1. Revert old allocations (add back to pocket balances)
-        for (const oldAlloc of oldAllocations) {
-          const pocket = await transactionalEntityManager.findOne(
-            PocketEntity,
-            { where: { id: oldAlloc.pocketId } },
-          );
-          if (pocket) {
-            pocket.accumulatedAmount =
-              Number(pocket.accumulatedAmount) + Number(oldAlloc.amount);
-            await transactionalEntityManager.save(pocket);
-          }
-        }
-
-        // 2. Delete old allocations
+        // 1. Delete old allocations
         await transactionalEntityManager.delete(ExpenseAllocationEntity, {
           expenseId: id,
         });
@@ -138,19 +126,6 @@ export class UpdateExpenseUseCase {
           }),
         );
         await transactionalEntityManager.save(newAllocations);
-
-        // 5. Decrement pocket balances for new allocations
-        for (const alloc of allocations) {
-          const pocket = await transactionalEntityManager.findOne(
-            PocketEntity,
-            { where: { id: alloc.pocketId } },
-          );
-          if (pocket) {
-            pocket.accumulatedAmount =
-              Number(pocket.accumulatedAmount) - alloc.amount;
-            await transactionalEntityManager.save(pocket);
-          }
-        }
 
         return new Expense(
           existingEntity.amount,

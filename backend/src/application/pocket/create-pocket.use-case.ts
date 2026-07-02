@@ -4,6 +4,7 @@ import { DataSource } from "typeorm";
 import { PocketEntity } from "../../infrastructure/persistence/postgres/entities/pocket.entity";
 import { IncomeEntity } from "../../infrastructure/persistence/postgres/entities/income.entity";
 import { IncomeAllocationEntity } from "../../infrastructure/persistence/postgres/entities/income-allocation.entity";
+import { PocketTransferEntity } from "../../infrastructure/persistence/postgres/entities/pocket-transfer.entity";
 
 export class CreatePocketUseCase {
   constructor(
@@ -62,7 +63,6 @@ export class CreatePocketUseCase {
             name: pocket.name,
             type: pocket.type,
             goal: pocket.goal,
-            accumulatedAmount: 0,
             motivation: pocket.motivation,
             userId: pocket.userId,
           });
@@ -97,11 +97,84 @@ export class CreatePocketUseCase {
           );
           await transactionalEntityManager.save(allocationEntity);
 
-          // 3. Update pocket accumulated amount
-          savedEntity.accumulatedAmount =
-            Number(savedEntity.accumulatedAmount) + accumulatedAmount;
-          await transactionalEntityManager.save(savedEntity);
-          pocket.accumulatedAmount = accumulatedAmount;
+          return pocket;
+        },
+      );
+    }
+
+    // Transfer from another pocket (source debited atomically)
+    if (sourceType === "transfer" && accumulatedAmount > 0) {
+      if (!_sourcePocketId) {
+        throw new Error(
+          "El ID del bolsillo de origen es obligatorio cuando el origen es una transferencia",
+        );
+      }
+
+      // Pre-transaction validation
+      const sourcePocket = await this.pocketRepository.findById(
+        _sourcePocketId,
+        userId,
+      );
+      if (!sourcePocket) {
+        throw new Error(
+          `No se encontró el bolsillo de origen con ID ${_sourcePocketId}`,
+        );
+      }
+
+      if (sourcePocket.accumulatedAmount < accumulatedAmount) {
+        throw new Error(
+          `Fondos insuficientes en el bolsillo "${sourcePocket.name}". ` +
+            `Disponible: $${sourcePocket.accumulatedAmount.toFixed(2)}, ` +
+            `Solicitado: $${accumulatedAmount.toFixed(2)}`,
+        );
+      }
+
+      // Atomic transaction with pessimistic lock (mirrors TransferBetweenPocketsUseCase)
+      return await this.dataSource.transaction(
+        async (transactionalEntityManager) => {
+          // 1. Reload source pocket with pessimistic lock
+          const sourceEntity = await transactionalEntityManager
+            .createQueryBuilder(PocketEntity, "pocket")
+            .setLock("pessimistic_write")
+            .where("pocket.id = :id", { id: _sourcePocketId })
+            .getOne();
+
+          if (!sourceEntity) {
+            throw new Error(
+              `No se encontró el bolsillo de origen con ID ${_sourcePocketId}`,
+            );
+          }
+
+          // 2. Create new pocket
+          const pocketEntity = transactionalEntityManager.create(PocketEntity, {
+            name: pocket.name,
+            type: pocket.type,
+            goal: pocket.goal,
+            motivation: pocket.motivation,
+            userId: pocket.userId,
+          });
+          const savedEntity =
+            await transactionalEntityManager.save(pocketEntity);
+
+          // Map back to domain entity
+          pocket.id = savedEntity.id;
+          pocket.createdAt = savedEntity.createdAt;
+          pocket.updatedAt = savedEntity.updatedAt;
+
+          // 3. Create transfer record
+          const date = new Date();
+          const transferReason = `Monto inicial de bolsillo ${name}`;
+          const transferEntity = transactionalEntityManager.create(
+            PocketTransferEntity,
+            {
+              sourcePocketId: _sourcePocketId,
+              targetPocketId: savedEntity.id,
+              amount: accumulatedAmount,
+              reason: transferReason,
+              date,
+            },
+          );
+          await transactionalEntityManager.save(transferEntity);
 
           return pocket;
         },

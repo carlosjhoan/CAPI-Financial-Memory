@@ -11,7 +11,6 @@ export class UpdatePocketUseCase {
       name?: string;
       type?: "goal" | "deposit";
       goal?: number;
-      accumulatedAmount?: number;
       motivation?: string;
     },
   ): Promise<Pocket> {

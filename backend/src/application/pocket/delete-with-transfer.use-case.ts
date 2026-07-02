@@ -1,3 +1,4 @@
+import { Pocket } from "../../domain/entities/pocket.entity";
 import { PocketRepository } from "../../domain/repositories/pocket.repository";
 import { DataSource } from "typeorm";
 import { PocketEntity } from "../../infrastructure/persistence/postgres/entities/pocket.entity";
@@ -38,7 +39,8 @@ export class DeleteWithTransferUseCase {
       }
     }
 
-    // Validate all target pockets exist
+    // Validate all target pockets exist and cache them
+    const targetPocketMap = new Map<string, Pocket>();
     for (const d of distributions) {
       const target = await this.pocketRepository.findById(
         d.targetPocketId,
@@ -47,6 +49,7 @@ export class DeleteWithTransferUseCase {
       if (!target) {
         throw new Error(`POCKET_NOT_FOUND:${d.targetPocketId}`);
       }
+      targetPocketMap.set(d.targetPocketId, target);
     }
 
     // --- Atomic transaction ---
@@ -64,27 +67,28 @@ export class DeleteWithTransferUseCase {
         throw new Error(`POCKET_NOT_FOUND:${pocketId}`);
       }
 
-      // Re-verify balance inside transaction
-      const sourceBalance = Number(sourceEntity.accumulatedAmount);
-      if (sourceBalance < totalDist) {
-        throw new Error(`INSUFFICIENT_FUNDS:${sourceBalance}:${totalDist}`);
-      }
-
-      // 2. Debit source first (so balance reflects outgoing)
-      sourceEntity.accumulatedAmount = sourceBalance - totalDist;
+      // 2. Touch updatedAt
       sourceEntity.updatedAt = new Date();
       await em.save(sourceEntity);
 
-      // 3. Clean up old transfer records referencing this pocket (FK constraint)
-      await em.delete(PocketTransferEntity, {
-        sourcePocketId: pocketId,
-      });
-      await em.delete(PocketTransferEntity, {
-        targetPocketId: pocketId,
-      });
+      // 3. Nullify transfer records referencing this pocket (preserve financial history)
+      await em.update(
+        PocketTransferEntity,
+        { sourcePocketId: pocketId },
+        { sourcePocketId: null, sourcePocketName: sourceEntity.name },
+      );
+      await em.update(
+        PocketTransferEntity,
+        { targetPocketId: pocketId },
+        { targetPocketId: null, targetPocketName: sourceEntity.name },
+      );
 
-      // 4. Clean up income allocations referencing this pocket
-      await em.delete(IncomeAllocationEntity, { pocketId });
+      // 4. Nullify income allocations referencing this pocket
+      await em.update(
+        IncomeAllocationEntity,
+        { pocketId },
+        { pocketId: null },
+      );
 
       // 5. Process each distribution: lock target → goal check → credit → create income record
       for (const dist of distributions) {
@@ -98,11 +102,10 @@ export class DeleteWithTransferUseCase {
           throw new Error(`POCKET_NOT_FOUND:${dist.targetPocketId}`);
         }
 
-        const targetAccumulated = Number(targetEntity.accumulatedAmount);
-
-        // Goal overflow check (same pattern as register-deposit)
+        // Goal overflow check — use pre-fetched computed accumulated
+        const cachedTarget = targetPocketMap.get(dist.targetPocketId)!;
         if (targetEntity.type === "goal" && Number(targetEntity.goal) > 0) {
-          const remaining = Number(targetEntity.goal) - targetAccumulated;
+          const remaining = Number(targetEntity.goal) - cachedTarget.accumulatedAmount;
           if (dist.amount > remaining) {
             throw new Error(
               `TRANSFER_EXCEEDS_GOAL:${remaining}:${dist.amount}:${targetEntity.id}`,
@@ -110,8 +113,7 @@ export class DeleteWithTransferUseCase {
           }
         }
 
-        // Credit target
-        targetEntity.accumulatedAmount = targetAccumulated + dist.amount;
+        // Touch updatedAt
         targetEntity.updatedAt = new Date();
         await em.save(targetEntity);
 

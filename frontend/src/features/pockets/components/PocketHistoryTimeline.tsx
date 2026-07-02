@@ -11,6 +11,8 @@ export type HistoryItem = {
   direction?: 'incoming' | 'outgoing';
   sourcePocketId?: string;
   targetPocketId?: string;
+  sourcePocketName?: string | null;
+  targetPocketName?: string | null;
   reason?: string;
   description?: string;
 };
@@ -125,10 +127,10 @@ const HistoryRow: React.FC<{ item: HistoryItem; pocketNameMap: Map<string, strin
             {formatDateLabel(item.date)}{item.createdAt ? ` · ${formatTime(item.createdAt)}` : ''}
           </div>
           <p className="text-xs text-secondary-600 dark:text-secondary-300 mt-1.5">
-            {item.type === 'transfer' && item.direction === 'incoming' && item.sourcePocketId
-              ? `Procedente de ${pocketNameMap.get(item.sourcePocketId) || item.sourcePocketId.slice(0, 8)}`
-              : item.type === 'transfer' && item.direction === 'outgoing' && item.targetPocketId
-                ? `Hacia ${pocketNameMap.get(item.targetPocketId) || item.targetPocketId.slice(0, 8)}`
+            {item.type === 'transfer' && item.direction === 'incoming'
+              ? `Procedente de ${item.sourcePocketId ? (pocketNameMap.get(item.sourcePocketId) || item.sourcePocketId.slice(0, 8)) : (item.sourcePocketName ? `Bolsillo eliminado: ${item.sourcePocketName}` : 'Bolsillo eliminado')}`
+              : item.type === 'transfer' && item.direction === 'outgoing'
+                ? `Hacia ${item.targetPocketId ? (pocketNameMap.get(item.targetPocketId) || item.targetPocketId.slice(0, 8)) : (item.targetPocketName ? `Bolsillo eliminado: ${item.targetPocketName}` : 'Bolsillo eliminado')}`
                 : item.reason || ''}
           </p>
         </div>

@@ -68,17 +68,17 @@ import { GetIncomesByDateRangeUseCase } from "../../../application/income/get-in
     },
     {
       provide: UpdateIncomeUseCase,
-      useFactory: (
-        incomeService: IncomeService,
-        dataSource: DataSource,
-      ) => {
+      useFactory: (incomeService: IncomeService, dataSource: DataSource) => {
         return new UpdateIncomeUseCase(incomeService, dataSource);
       },
       inject: [IncomeService, DataSource],
     },
     {
       provide: DeleteIncomeUseCase,
-      useFactory: (incomeRepository: TypeOrmIncomeRepository, dataSource: DataSource) => {
+      useFactory: (
+        incomeRepository: TypeOrmIncomeRepository,
+        dataSource: DataSource,
+      ) => {
         return new DeleteIncomeUseCase(incomeRepository, dataSource);
       },
       inject: [{ token: "IncomeRepository", optional: false }, DataSource],

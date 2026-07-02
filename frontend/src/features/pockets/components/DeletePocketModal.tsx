@@ -7,7 +7,7 @@ import Modal from '../../../shared/components/Modal';
 import Button from '../../../shared/components/Button';
 import Select from '../../../shared/components/Select';
 import CurrencyInput from '../../../shared/components/CurrencyInput';
-import Input from '../../../shared/components/Input';
+
 
 type DeletePhase =
   | { stage: 'idle' }
@@ -15,7 +15,7 @@ type DeletePhase =
   | { stage: 'phase-1'; pocket: Pocket }
   | { stage: 'phase-2'; pocket: Pocket; distributions: DistributionItem[] }
   | { stage: 'phase-3'; pocket: Pocket }
-  | { stage: 'phase-4'; pocket: Pocket; distributions: DistributionItem[]; reason: string };
+  | { stage: 'phase-4'; pocket: Pocket; distributions: DistributionItem[] };
 
 export interface DeletePocketModalProps {
   isOpen: boolean;
@@ -35,7 +35,7 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
   const navigate = useNavigate();
   const [phase, setPhase] = useState<DeletePhase>({ stage: 'idle' });
   const [distributions, setDistributions] = useState<DistributionItem[]>([]);
-  const [reason, setReason] = useState('');
+  const reason = useMemo(() => pocket ? `Herencia de bolsillo ${pocket.name}` : '', [pocket]);
   const [goalOverflowError, setGoalOverflowError] = useState<string | null>(null);
   const [extendedGoalMap, setExtendedGoalMap] = useState<Record<string, number>>({});
   const { mutate: deleteWithTransfer, isPending: isTransferPending } = useDeleteWithTransfer();
@@ -59,7 +59,7 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
         setPhase({ stage: 'phase-1', pocket });
       }
       setDistributions([]);
-      setReason('');
+      
       setGoalOverflowError(null);
       setExtendedGoalMap({});
     } else if (!isOpen) {
@@ -104,7 +104,7 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
 
   const handleProceedToConfirm = () => {
     if (!pocket) return;
-    setPhase({ stage: 'phase-4', pocket, distributions, reason });
+    setPhase({ stage: 'phase-4', pocket, distributions });
   };
 
   const handleBackToWarn = () => {
@@ -327,11 +327,6 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1">Motivo</label>
-            <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Razón de la transferencia" />
-          </div>
-
           {goalOverflowError && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <p className="text-sm text-blue-700 dark:text-blue-300">{goalOverflowError}</p>
@@ -438,11 +433,6 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1">Motivo (opcional)</label>
-            <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Razón de las transferencias" />
-          </div>
-
           <div className="flex justify-between pt-4">
             <Button type="button" variant="outline" onClick={handleBackToWarn}>Volver</Button>
             <Button
@@ -484,12 +474,6 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
               })}
             </ul>
           </div>
-
-          {reason && (
-            <div className="text-sm text-secondary-600 dark:text-secondary-400">
-              <span className="font-medium">Motivo:</span> {reason}
-            </div>
-          )}
 
           {goalOverflowError && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">

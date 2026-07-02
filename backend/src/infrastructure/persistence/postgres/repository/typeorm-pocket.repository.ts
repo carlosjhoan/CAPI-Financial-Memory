@@ -31,7 +31,7 @@ export class TypeOrmPocketRepository implements PocketRepository {
       entity.name,
       entity.type as "goal" | "deposit",
       Number(entity.goal),
-      Number(entity.accumulatedAmount),
+      0,
       entity.motivation,
       entity.id,
     );
@@ -49,11 +49,50 @@ export class TypeOrmPocketRepository implements PocketRepository {
     entity.name = domain.name;
     entity.type = domain.type;
     entity.goal = domain.goal;
-    entity.accumulatedAmount = domain.accumulatedAmount;
     entity.motivation = domain.motivation;
     entity.createdAt = domain.createdAt;
     entity.updatedAt = domain.updatedAt;
     return entity;
+  }
+
+  private async computeAccumulatedBatch(pocketIds: string[]): Promise<Map<string, number>> {
+    if (pocketIds.length === 0) return new Map();
+
+    const rows = await this.pocketRepository.query(
+      `
+      SELECT
+        pocket_id,
+        COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0)
+        - COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0)
+        + COALESCE(SUM(CASE WHEN type = 'transfer_in' THEN amount ELSE 0 END), 0)
+        - COALESCE(SUM(CASE WHEN type = 'transfer_out' THEN amount ELSE 0 END), 0) AS accumulated
+      FROM (
+        SELECT ia."pocketId"::text AS pocket_id, ia.amount, 'income' AS type
+        FROM income_allocations ia
+        WHERE ia."pocketId"::text = ANY($1)
+        UNION ALL
+        SELECT ea."pocketId"::text, ea.amount, 'expense'
+        FROM expense_allocations ea
+        WHERE ea."pocketId"::text = ANY($1)
+        UNION ALL
+        SELECT pt."targetPocketId"::text, pt.amount, 'transfer_in'
+        FROM pocket_transfers pt
+        WHERE pt."targetPocketId"::text = ANY($1)
+        UNION ALL
+        SELECT pt."sourcePocketId"::text, pt.amount, 'transfer_out'
+        FROM pocket_transfers pt
+        WHERE pt."sourcePocketId"::text = ANY($1)
+      ) sub
+      GROUP BY pocket_id
+      `,
+      [pocketIds],
+    );
+
+    const map = new Map<string, number>();
+    for (const row of rows) {
+      map.set(row.pocket_id, parseFloat(row.accumulated || "0"));
+    }
+    return map;
   }
 
   async save(pocket: Pocket): Promise<Pocket> {
@@ -66,7 +105,10 @@ export class TypeOrmPocketRepository implements PocketRepository {
     const where: any = { id };
     if (userId) where.userId = userId;
     const entity = await this.pocketRepository.findOne({ where });
-    return entity ? this.toDomain(entity) : null;
+    if (!entity) return null;
+    const pocket = this.toDomain(entity);
+    pocket.accumulatedAmount = await this.computeAccumulated(id);
+    return pocket;
   }
 
   async findAll(userId: string): Promise<Pocket[]> {
@@ -76,16 +118,25 @@ export class TypeOrmPocketRepository implements PocketRepository {
     });
     const pockets = entities.map((entity) => this.toDomain(entity));
 
-    // Obtener últimos incomes asociados a cada pocket
     const pocketIds = pockets.map((p) => p.id);
     if (pocketIds.length > 0) {
-      const lastIncomeRows = await this.pocketRepository.query(`
+      // Compute accumulated for all pockets in one query
+      const accumulatedMap = await this.computeAccumulatedBatch(pocketIds);
+      pockets.forEach((p) => {
+        p.accumulatedAmount = accumulatedMap.get(p.id) ?? 0;
+      });
+
+      // Obtener últimos incomes asociados a cada pocket
+      const lastIncomeRows = await this.pocketRepository.query(
+        `
         SELECT i.id, i.amount, i.reason, i.date, i."createdAt", i."userId", ia."pocketId"
         FROM incomes i
         JOIN income_allocations ia ON ia."incomeId" = i.id
         WHERE ia."pocketId"::text = ANY($1)
         ORDER BY i.date DESC
-      `, [pocketIds]);
+      `,
+        [pocketIds],
+      );
 
       // Agrupar por pocketId
       const incomesByPocket = new Map<string, Income[]>();
@@ -125,25 +176,27 @@ export class TypeOrmPocketRepository implements PocketRepository {
       allTransfers.forEach((t) => {
         const domain = this.transferToDomain(t);
 
-        // Para el pocket origen → outgoing
-        const sourcePid = t.sourcePocketId;
-        if (!transfersByPocket.has(sourcePid)) {
-          transfersByPocket.set(sourcePid, []);
+        // Para el pocket origen → outgoing (skip if pocket was deleted)
+        if (t.sourcePocketId) {
+          if (!transfersByPocket.has(t.sourcePocketId)) {
+            transfersByPocket.set(t.sourcePocketId, []);
+          }
+          transfersByPocket.get(t.sourcePocketId)!.push({
+            ...domain,
+            direction: "outgoing",
+          });
         }
-        transfersByPocket.get(sourcePid)!.push({
-          ...domain,
-          direction: "outgoing",
-        });
 
-        // Para el pocket destino → incoming
-        const targetPid = t.targetPocketId;
-        if (!transfersByPocket.has(targetPid)) {
-          transfersByPocket.set(targetPid, []);
+        // Para el pocket destino → incoming (skip if pocket was deleted)
+        if (t.targetPocketId) {
+          if (!transfersByPocket.has(t.targetPocketId)) {
+            transfersByPocket.set(t.targetPocketId, []);
+          }
+          transfersByPocket.get(t.targetPocketId)!.push({
+            ...domain,
+            direction: "incoming",
+          });
         }
-        transfersByPocket.get(targetPid)!.push({
-          ...domain,
-          direction: "incoming",
-        });
       });
 
       pockets.forEach((p) => {
@@ -161,11 +214,20 @@ export class TypeOrmPocketRepository implements PocketRepository {
   }
 
   async delete(id: string, userId?: string): Promise<void> {
-    // Delete transfer records referencing this pocket (both as source and target)
-    await this.pocketTransferRepository.delete({ sourcePocketId: id });
-    await this.pocketTransferRepository.delete({ targetPocketId: id });
-    // Delete income_allocations associated with this pocket
-    await this.incomeAllocationRepository.delete({ pocketId: id });
+    // Nullify transfer records referencing this pocket (preserve financial history)
+    await this.pocketTransferRepository.update(
+      { sourcePocketId: id },
+      { sourcePocketId: null },
+    );
+    await this.pocketTransferRepository.update(
+      { targetPocketId: id },
+      { targetPocketId: null },
+    );
+    // Nullify income_allocations referencing this pocket
+    await this.incomeAllocationRepository.update(
+      { pocketId: id },
+      { pocketId: null },
+    );
     const where: any = { id };
     if (userId) where.userId = userId;
     await this.pocketRepository.delete(where);
@@ -174,18 +236,51 @@ export class TypeOrmPocketRepository implements PocketRepository {
   async getSummary(
     userId: string,
   ): Promise<{ totalAccumulated: number; totalGoal: number; count: number }> {
-    const result = await this.pocketRepository
-      .createQueryBuilder("pocket")
-      .select("SUM(pocket.accumulatedAmount)", "totalAccumulated")
-      .addSelect("SUM(pocket.goal)", "totalGoal")
-      .addSelect("COUNT(pocket.id)", "count")
-      .where("pocket.userId = :userId", { userId })
-      .getRawOne();
+    const [countResult, goalResult, accumResult] = await Promise.all([
+      this.pocketRepository.query(
+        `SELECT COUNT(id) AS count FROM pockets WHERE "userId" = $1`,
+        [userId],
+      ),
+      this.pocketRepository.query(
+        `SELECT COALESCE(SUM(goal), 0) AS total_goal FROM pockets WHERE "userId" = $1`,
+        [userId],
+      ),
+      this.pocketRepository.query(
+        `
+        SELECT COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0)
+          - COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0)
+          + COALESCE(SUM(CASE WHEN type = 'transfer_in' THEN amount ELSE 0 END), 0)
+          - COALESCE(SUM(CASE WHEN type = 'transfer_out' THEN amount ELSE 0 END), 0) AS total_accumulated
+        FROM (
+          SELECT ia.amount, 'income' AS type
+          FROM income_allocations ia
+          JOIN pockets p ON p.id::text = ia."pocketId"::text
+          WHERE p."userId" = $1
+          UNION ALL
+          SELECT ea.amount, 'expense'
+          FROM expense_allocations ea
+          JOIN pockets p ON p.id::text = ea."pocketId"::text
+          WHERE p."userId" = $1
+          UNION ALL
+          SELECT pt.amount, 'transfer_in'
+          FROM pocket_transfers pt
+          JOIN pockets p ON p.id::text = pt."targetPocketId"::text
+          WHERE p."userId" = $1
+          UNION ALL
+          SELECT pt.amount, 'transfer_out'
+          FROM pocket_transfers pt
+          JOIN pockets p ON p.id::text = pt."sourcePocketId"::text
+          WHERE p."userId" = $1
+        ) sub
+        `,
+        [userId],
+      ),
+    ]);
 
     return {
-      totalAccumulated: parseFloat(result?.totalAccumulated || 0),
-      totalGoal: parseFloat(result?.totalGoal || 0),
-      count: parseInt(result?.count || 0),
+      totalAccumulated: parseFloat(accumResult[0]?.total_accumulated || "0"),
+      totalGoal: parseFloat(goalResult[0]?.total_goal || "0"),
+      count: parseInt(countResult[0]?.count || "0", 10),
     };
   }
 
@@ -275,7 +370,8 @@ export class TypeOrmPocketRepository implements PocketRepository {
 
     const unionQuery = `
       SELECT id, type, amount, date, "createdAt",
-             reason, direction, "sourcePocketId", "targetPocketId"
+             reason, direction, "sourcePocketId", "targetPocketId",
+             "sourcePocketName", "targetPocketName"
       FROM (
         SELECT
           e.id,
@@ -287,6 +383,8 @@ export class TypeOrmPocketRepository implements PocketRepository {
           NULL::text AS direction,
           NULL::uuid AS "sourcePocketId",
           NULL::uuid AS "targetPocketId",
+          NULL::text AS "sourcePocketName",
+          NULL::text AS "targetPocketName",
           e.date AS sort_date,
           e."createdAt" AS sort_created
         FROM expenses e
@@ -305,6 +403,8 @@ export class TypeOrmPocketRepository implements PocketRepository {
           NULL::text AS direction,
           NULL::uuid AS "sourcePocketId",
           NULL::uuid AS "targetPocketId",
+          NULL::text AS "sourcePocketName",
+          NULL::text AS "targetPocketName",
           i.date AS sort_date,
           i."createdAt" AS sort_created
         FROM incomes i
@@ -323,6 +423,8 @@ export class TypeOrmPocketRepository implements PocketRepository {
           CASE WHEN pt."targetPocketId"::text = $1 THEN 'incoming' ELSE 'outgoing' END AS direction,
           pt."sourcePocketId",
           pt."targetPocketId",
+          pt."sourcePocketName",
+          pt."targetPocketName",
           pt.date AS sort_date,
           pt."createdAt" AS sort_created
         FROM pocket_transfers pt
@@ -358,6 +460,29 @@ export class TypeOrmPocketRepository implements PocketRepository {
     const total = parseInt(countResult[0]?.total || "0", 10);
 
     return { items, total };
+  }
+
+  async computeAccumulated(pocketId: string): Promise<number> {
+    const result = await this.pocketRepository.query(
+      `
+      SELECT
+        COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0)
+        - COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0)
+        + COALESCE(SUM(CASE WHEN type = 'transfer_in' THEN amount ELSE 0 END), 0)
+        - COALESCE(SUM(CASE WHEN type = 'transfer_out' THEN amount ELSE 0 END), 0) AS accumulated
+      FROM (
+        SELECT 'income' AS type, amount FROM income_allocations WHERE "pocketId" = $1
+        UNION ALL
+        SELECT 'expense' AS type, amount FROM expense_allocations WHERE "pocketId" = $1
+        UNION ALL
+        SELECT 'transfer_in' AS type, amount FROM pocket_transfers WHERE "targetPocketId" = $1
+        UNION ALL
+        SELECT 'transfer_out' AS type, amount FROM pocket_transfers WHERE "sourcePocketId" = $1
+      ) sub
+      `,
+      [pocketId],
+    );
+    return parseFloat(result[0]?.accumulated || "0");
   }
 
   async saveTransfer(transfer: PocketTransfer): Promise<PocketTransfer> {

@@ -3,7 +3,6 @@ import { IncomeService } from "../../domain/services/income.service";
 import { DataSource } from "typeorm";
 import { IncomeAllocationEntity } from "../../infrastructure/persistence/postgres/entities/income-allocation.entity";
 import { IncomeEntity } from "../../infrastructure/persistence/postgres/entities/income.entity";
-import { PocketEntity } from "../../infrastructure/persistence/postgres/entities/pocket.entity";
 import { AllocationDto } from "../../infrastructure/web/dto/allocation.dto";
 
 export class UpdateIncomeUseCase {
@@ -48,26 +47,7 @@ export class UpdateIncomeUseCase {
           throw new Error("Income not found");
         }
 
-        // 2. Load old allocation entities and revert pocket balances
-        const oldAllocations = await transactionalEntityManager.find(
-          IncomeAllocationEntity,
-          {
-            where: { incomeId: id },
-          },
-        );
-
-        for (const oldAlloc of oldAllocations) {
-          const pocket = await transactionalEntityManager.findOne(PocketEntity, {
-            where: { id: oldAlloc.pocketId },
-          });
-          if (pocket) {
-            pocket.accumulatedAmount =
-              Number(pocket.accumulatedAmount) - Number(oldAlloc.amount);
-            await transactionalEntityManager.save(pocket);
-          }
-        }
-
-        // 3. Delete old allocations
+        // 2. Delete old allocations
         await transactionalEntityManager.delete(IncomeAllocationEntity, {
           incomeId: id,
         });
@@ -105,18 +85,6 @@ export class UpdateIncomeUseCase {
           }),
         );
         await transactionalEntityManager.save(newAllocations);
-
-        // 6. Increment pocket balances for new allocations
-        for (const alloc of allocations) {
-          const pocket = await transactionalEntityManager.findOne(PocketEntity, {
-            where: { id: alloc.pocketId },
-          });
-          if (pocket) {
-            pocket.accumulatedAmount =
-              Number(pocket.accumulatedAmount) + alloc.amount;
-            await transactionalEntityManager.save(pocket);
-          }
-        }
 
         return new Income(
           existingEntity.amount,
