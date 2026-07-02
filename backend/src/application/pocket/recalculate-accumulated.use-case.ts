@@ -1,5 +1,4 @@
 import { PocketRepository } from "../../domain/repositories/pocket.repository";
-import { Pocket } from "../../domain/entities/pocket.entity";
 
 interface PocketResult {
   id: string;
