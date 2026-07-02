@@ -9,6 +9,9 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     services:
       postgres:
         image: postgres:15
@@ -46,8 +49,22 @@ jobs:
       - run: npm run migration:run -w backend
       - run: npm run test:e2e -w backend
 
+      - name: Crear issue si falla
+        if: failure() && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "CI Failure: backend (${{ github.workflow }} #${{ github.run_number }})" \
+            --body "Falló el job **backend** en el commit ${{ github.sha }} (rama ${{ github.ref_name }}).
+          Logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --label "ci-failure"
+
   frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -58,3 +75,14 @@ jobs:
       - run: npm run lint -w frontend
       - run: npm run test -w frontend
       - run: npm run build -w frontend
+
+      - name: Crear issue si falla
+        if: failure() && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "CI Failure: frontend (${{ github.workflow }} #${{ github.run_number }})" \
+            --body "Falló el job **frontend** en el commit ${{ github.sha }} (rama ${{ github.ref_name }}).
+          Logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --label "ci-failure"
