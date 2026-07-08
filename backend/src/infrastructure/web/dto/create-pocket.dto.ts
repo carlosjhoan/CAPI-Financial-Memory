@@ -15,12 +15,12 @@ export class CreatePocketDto {
   @ApiProperty({
     description: "Nombre del bolsillo",
     example: "Efectivo libre",
-    minLength: 1,
-    maxLength: 100,
+    minLength: 5,
+    maxLength: 50,
   })
   @IsString()
-  @MinLength(1, { message: "Name must be at least 1 character long" })
-  @MaxLength(100, { message: "Name cannot be longer than 100 characters" })
+  @MinLength(5, { message: "Name must be at least 5 characters long" })
+  @MaxLength(50, { message: "Name cannot be longer than 50 characters" })
   name: string;
 
   @ApiProperty({
@@ -48,12 +48,12 @@ export class CreatePocketDto {
     description:
       "Motivación del bolsillo (opcional, valor por defecto si no se envía)",
     example: "Para ahorrar para un viaje",
-    minLength: 1,
+    minLength: 20,
     maxLength: 100,
   })
   @IsOptional()
   @IsString()
-  @MinLength(1, { message: "Motivation is required" })
+  @MinLength(20, { message: "Motivation must be at least 20 characters long" })
   @MaxLength(100, {
     message: "Motivation cannot be longer than 100 characters",
   })

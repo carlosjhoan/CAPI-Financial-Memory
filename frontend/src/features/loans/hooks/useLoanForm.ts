@@ -18,8 +18,9 @@ const loanSchema = z.object({
     .max(999999999.99, 'La cuota no puede exceder $999.999.999,99'),
   debtor: z
     .string({ required_error: 'El deudor es requerido' })
-    .min(1, 'El deudor es requerido')
-    .max(255, 'El nombre del deudor no puede exceder 255 caracteres'),
+    .trim()
+    .min(5, 'El deudor debe tener al menos 5 caracteres')
+    .max(100, 'El nombre del deudor no puede exceder 100 caracteres'),
   date: dateSchema,
 });
 

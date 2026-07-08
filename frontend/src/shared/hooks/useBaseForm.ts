@@ -44,6 +44,7 @@ export function useBaseForm<T extends FieldValues>({
     resolver: zodResolver(activeSchema as any),
     defaultValues,
     mode: 'onChange',
+    delayError: 2000,
   });
 }
 

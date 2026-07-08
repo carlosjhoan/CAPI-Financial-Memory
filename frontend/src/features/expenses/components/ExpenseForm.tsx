@@ -180,6 +180,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
               required
               disabled={isLoading || isSubmitting}
               accent="expense"
+              maxLength={100}
             />
           </>
         )}

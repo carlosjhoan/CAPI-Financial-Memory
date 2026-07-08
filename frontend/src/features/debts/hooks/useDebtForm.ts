@@ -10,8 +10,9 @@ const debtSchema = z.object({
     .max(999999999.99, 'El monto no puede exceder $999.999.999,99'),
   lender: z
     .string({ required_error: 'El acreedor es requerido' })
-    .min(1, 'El acreedor es requerido')
-    .max(255, 'El nombre del acreedor no puede exceder 255 caracteres'),
+    .trim()
+    .min(5, 'El acreedor debe tener al menos 5 caracteres')
+    .max(100, 'El nombre del acreedor no puede exceder 100 caracteres'),
   months: z
     .number({ required_error: 'El número de meses es requerido' })
     .int('Debe ser un número entero')
@@ -25,6 +26,8 @@ const debtSchema = z.object({
   finalAmount: z.number().positive().optional(),
   reason: z
     .string()
+    .trim()
+    .min(20, 'El motivo debe tener al menos 20 caracteres')
     .max(100, 'El motivo no puede exceder 100 caracteres')
     .optional(),
 });
@@ -36,8 +39,9 @@ const debtUpdateSchema = z.object({
     .max(999999999.99, 'El monto no puede exceder $999.999.999,99'),
   lender: z
     .string({ required_error: 'El acreedor es requerido' })
-    .min(1, 'El acreedor es requerido')
-    .max(255, 'El nombre del acreedor no puede exceder 255 caracteres'),
+    .trim()
+    .min(5, 'El acreedor debe tener al menos 5 caracteres')
+    .max(100, 'El nombre del acreedor no puede exceder 100 caracteres'),
   months: z
     .number({ required_error: 'El número de meses es requerido' })
     .int('Debe ser un número entero')
@@ -54,6 +58,8 @@ const debtUpdateSchema = z.object({
   finalAmount: z.number().min(0).optional(),
   reason: z
     .string()
+    .trim()
+    .min(20, 'El motivo debe tener al menos 20 caracteres')
     .max(100, 'El motivo no puede exceder 100 caracteres')
     .optional(),
 });

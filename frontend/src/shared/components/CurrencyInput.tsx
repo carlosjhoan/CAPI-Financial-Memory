@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useId } from 'react';
 import { cn } from '../../core/utils/format';
 import { parseCurrencyCOP } from '../utils/currency';
+import { FORM_ACCENT, type FormAccent } from '../utils/formAccent';
 
 export interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onChange'> {
   label?: string;
@@ -12,6 +13,7 @@ export interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLI
   fullWidth?: boolean;
   decimals?: number; // Número de decimales (por defecto 2)
   emitOnChange?: boolean; // Emitir valor mientras se escribe (antes de blur)
+  accent?: FormAccent;
 }
 
 const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
@@ -26,6 +28,7 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
     fullWidth = false,
     decimals = 2,
     emitOnChange = false,
+    accent = 'primary',
     id,
     disabled,
     ...props 
@@ -34,6 +37,7 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
     const inputId = id || generatedId;
     const [displayValue, setDisplayValue] = useState('');
     const [isFocused, setIsFocused] = useState(false);
+    const accentCls = FORM_ACCENT[accent];
 
     // Inicializar displayValue cuando cambia el value prop
     useEffect(() => {
@@ -243,13 +247,15 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
             'relative rounded-lg border transition-all duration-200',
             error
               ? 'border-red-300 focus-within:border-red-500 dark:border-red-600'
-              : 'border-secondary-300 dark:border-secondary-600 focus-within:border-primary-500 dark:focus-within:border-primary-400',
-            !error && 'focus-within:ring-0',
+              : `border-secondary-300 dark:border-secondary-600 ${accentCls.border}`,
+            isFocused && !error && 'ring-0',
           )}
-          style={!error ? {
-            '--glow-rgb': '99, 102, 241',
-            boxShadow: `0 0 0 2px rgba(var(--glow-rgb, 99, 102, 241), 0.4), 0 0 24px rgba(var(--glow-rgb, 99, 102, 241), 0.2), 0 0 56px rgba(var(--glow-rgb, 99, 102, 241), 0.12), 0 0 96px rgba(var(--glow-rgb, 99, 102, 241), 0.06)`,
-          } as React.CSSProperties : undefined}
+          style={{
+            '--glow-rgb': error ? '239, 68, 68' : accentCls.glowRGB,
+            ...(error || isFocused ? {
+              boxShadow: `0 0 0 2px rgba(var(--glow-rgb), 0.4), 0 0 24px rgba(var(--glow-rgb), 0.2), 0 0 56px rgba(var(--glow-rgb), 0.12), 0 0 96px rgba(var(--glow-rgb), 0.06)`,
+            } : {}),
+          } as React.CSSProperties}
         >
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
             <span className="text-secondary-500 dark:text-secondary-400">

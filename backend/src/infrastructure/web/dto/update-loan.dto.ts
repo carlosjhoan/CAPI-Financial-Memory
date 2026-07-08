@@ -2,6 +2,7 @@ import {
   IsNumber,
   IsString,
   Min,
+  MinLength,
   Max,
   MaxLength,
   IsOptional,
@@ -38,12 +39,13 @@ export class UpdateLoanDto {
   @ApiPropertyOptional({
     description: "Nombre del deudor",
     example: "Juan Pérez",
-    maxLength: 255,
+    maxLength: 100,
   })
   @IsOptional()
   @IsString()
-  @MaxLength(255, {
-    message: "Debtor name cannot be longer than 255 characters",
+  @MinLength(5, { message: "Debtor name must be at least 5 characters long" })
+  @MaxLength(100, {
+    message: "Debtor name cannot be longer than 100 characters",
   })
   debtor?: string;
 }

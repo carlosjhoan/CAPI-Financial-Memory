@@ -6,8 +6,9 @@ import type { CreatePocketDto, UpdatePocketDto } from '../types/pocket.types';
 export const pocketSchema = z.object({
   name: z
     .string({ required_error: 'El nombre es requerido' })
-    .min(1, 'El nombre es requerido')
-    .max(100, 'El nombre no puede exceder 100 caracteres'),
+    .trim()
+    .min(5, 'El nombre debe tener al menos 5 caracteres')
+    .max(50, 'El nombre no puede exceder 50 caracteres'),
   type: z.enum(['goal', 'deposit'], {
     required_error: 'El tipo de bolsillo es requerido',
   }),
@@ -19,7 +20,8 @@ export const pocketSchema = z.object({
     .min(0, 'El valor acumulado no puede ser negativo'),
   motivation: z
     .string({ required_error: 'La motivación es requerida' })
-    .min(1, 'La motivación es requerida')
+    .trim()
+    .min(20, 'La motivación debe tener al menos 20 caracteres')
     .max(100, 'La motivación no puede exceder 100 caracteres'),
   sourceType: z.enum(['external', 'transfer']).optional(),
   sourcePocketId: z.string().optional(),
@@ -66,8 +68,7 @@ export function usePocketForm(defaultValues?: Partial<PocketFormData>): UsePocke
   const toUpdateDto = (data: PocketFormData): UpdatePocketDto => ({
     name: data.name,
     type: data.type,
-    goal: data.type === 'goal' ? data.goal : 0,
-    accumulatedAmount: data.accumulatedAmount,
+    ...(data.type === 'goal' ? { goal: data.goal } : {}),
     motivation: data.motivation,
   });
 

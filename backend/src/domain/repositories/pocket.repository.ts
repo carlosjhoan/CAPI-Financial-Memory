@@ -6,6 +6,7 @@ import { PocketTransfer } from "../entities/pocket-transfer.entity";
 export interface PocketRepository {
   save(pocket: Pocket): Promise<Pocket>;
   findById(id: string, userId?: string): Promise<Pocket | null>;
+  findByName(name: string, userId: string): Promise<Pocket | null>;
   findAll(userId: string): Promise<Pocket[]>;
   update(pocket: Pocket): Promise<Pocket>;
   delete(id: string, userId?: string): Promise<void>;

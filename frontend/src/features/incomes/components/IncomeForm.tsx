@@ -161,6 +161,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
               required
               disabled={isLoading || isSubmitting}
               accent="income"
+              maxLength={100}
             />
           </>
         )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { Pocket } from '../types/pocket.types';
 import { usePocketForm, type PocketFormData } from '../hooks/usePocketForm';
 import { usePockets } from '../hooks/usePockets';
@@ -16,11 +16,13 @@ export interface PocketFormProps {
   isLoading?: boolean;
 }
 
-const STEPS = [
+const CREATE_STEPS = [
   { label: 'Identidad', fields: ['name', 'motivation'] as const },
   { label: 'Tipo', fields: ['type'] as const },
   { label: 'Apertura', fields: ['accumulatedAmount'] as const },
 ];
+
+const EDIT_STEPS = CREATE_STEPS.slice(0, 2);
 
 const PocketForm: React.FC<PocketFormProps> = ({
   pocket,
@@ -29,6 +31,7 @@ const PocketForm: React.FC<PocketFormProps> = ({
 }) => {
   const isEditMode = !!pocket;
   const [currentStep, setCurrentStep] = useState<number>(0);
+  const steps = isEditMode ? EDIT_STEPS : CREATE_STEPS;
 
   const {
     handleSubmit,
@@ -52,6 +55,8 @@ const PocketForm: React.FC<PocketFormProps> = ({
   const pocketType = watch('type');
   const accumulatedAmount = watch('accumulatedAmount');
   const sourceType = watch('sourceType');
+  const nameValue = watch('name');
+  const motivationValue = watch('motivation');
 
   const { data: pocketsData } = usePockets();
 
@@ -59,17 +64,30 @@ const PocketForm: React.FC<PocketFormProps> = ({
     (p) => p.accumulatedAmount >= (accumulatedAmount || 0),
   );
 
-  const isLastStep = currentStep === STEPS.length - 1;
+  const isLastStep = currentStep === steps.length - 1;
 
-  // Auto-default sourceType to 'external' when accumulatedAmount becomes positive in create mode
+  // Auto-default sourceType to 'external' when accumulatedAmount becomes positive in create mode.
+  // Clear sourceType when amount goes back to 0.
   useEffect(() => {
-    if (!isEditMode && accumulatedAmount > 0 && !sourceType) {
-      setValue('sourceType', 'external', { shouldValidate: true });
+    if (!isEditMode) {
+      if (accumulatedAmount > 0 && !sourceType) {
+        setValue('sourceType', 'external', { shouldValidate: true });
+      } else if (accumulatedAmount === 0 && sourceType) {
+        setValue('sourceType', undefined, { shouldValidate: true });
+      }
     }
   }, [accumulatedAmount, isEditMode, sourceType, setValue]);
 
+  // Per-step validation for canContinue
+  const stepValid = useMemo(() => {
+    if (currentStep === 0) {
+      return (nameValue?.length ?? 0) > 5 && (motivationValue?.length ?? 0) > 5;
+    }
+    return true;
+  }, [currentStep, nameValue, motivationValue]);
+
   const validateStep = async (): Promise<boolean> => {
-    const stepFields = STEPS[currentStep].fields;
+    const stepFields = steps[currentStep].fields;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return trigger(stepFields as any);
   };
@@ -94,14 +112,14 @@ const PocketForm: React.FC<PocketFormProps> = ({
     await onSubmit(data);
   };
 
-  const canContinue = !isLoading && !isSubmitting;
+  const canContinue = !isLoading && !isSubmitting && stepValid;
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)}>
       <FormStepIndicator
         currentStep={currentStep}
-        totalSteps={STEPS.length}
-        currentLabel={STEPS[currentStep].label}
+        totalSteps={steps.length}
+        currentLabel={steps[currentStep].label}
         barColor="bg-purple-500"
       />
 
@@ -117,6 +135,7 @@ const PocketForm: React.FC<PocketFormProps> = ({
               required
               disabled={isLoading || isSubmitting}
               accent="pocket"
+              maxLength={50}
             />
 
             <FormFloatInput
@@ -128,6 +147,7 @@ const PocketForm: React.FC<PocketFormProps> = ({
               required
               disabled={isLoading || isSubmitting}
               accent="pocket"
+              maxLength={100}
             />
           </>
         )}
@@ -246,6 +266,7 @@ const PocketForm: React.FC<PocketFormProps> = ({
               control={control}
               label="Monto de apertura"
               helperText="Monto inicial (puede ser 0)"
+              emitOnChange
               fullWidth
               required
               accent="pocket"
@@ -308,7 +329,7 @@ const PocketForm: React.FC<PocketFormProps> = ({
                         }
                         defaultValue=""
                         disabled={isLoading || isSubmitting}
-                        className="block w-full rounded-lg border border-secondary-300 bg-white px-4 py-2.5 text-sm text-secondary-900 focus:border-purple-500 focus:ring-purple-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-secondary-600 dark:bg-secondary-800 dark:text-secondary-100 dark:focus:border-purple-400"
+                        className="block w-full rounded-lg border border-secondary-300 bg-white px-4 py-2.5 text-sm text-secondary-900 focus:border-purple-500 focus:ring-purple-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-secondary-600 dark:bg-secondary-800 dark:text-secondary-100 dark:[color-scheme:dark] dark:focus:border-purple-400"
                       >
                         <option value="" disabled>
                           Seleccioná un bolsillo...
@@ -339,7 +360,7 @@ const PocketForm: React.FC<PocketFormProps> = ({
 
       <StepActions
         currentStep={currentStep}
-        totalSteps={STEPS.length}
+        totalSteps={steps.length}
         onBack={handleGoBack}
         onContinue={handleContinue}
         canContinue={canContinue}

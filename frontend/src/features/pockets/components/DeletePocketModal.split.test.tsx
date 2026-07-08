@@ -74,7 +74,7 @@ describe('DeletePocketModal — Split Sum Validator', () => {
       <DeletePocketModal isOpen={true} onClose={vi.fn()} pocket={pocket} />,
     );
 
-    // Phase-1 should show split button
-    expect(screen.getByText('Dividir entre varios bolsillos')).toBeDefined();
+    // Phase-1 should show split option
+    expect(screen.getByText('Entre varios bolsillos')).toBeDefined();
   });
 });

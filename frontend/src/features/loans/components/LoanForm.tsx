@@ -162,6 +162,7 @@ const LoanForm: React.FC<LoanFormProps> = ({
               required
               disabled={isLoading || isSubmitting}
               accent="loan"
+              maxLength={100}
             />
           </>
         )}

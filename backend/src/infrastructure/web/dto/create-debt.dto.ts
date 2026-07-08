@@ -24,11 +24,13 @@ export class CreateDebtDto {
   @ApiProperty({
     description: "Nombre del prestamista o entidad que otorgó la deuda",
     example: "Banco XYZ",
-    maxLength: 255,
+    maxLength: 100,
+    minLength: 5,
   })
   @IsString()
-  @MaxLength(255, {
-    message: "Lender name cannot be longer than 255 characters",
+  @MinLength(5, { message: "Lender name must be at least 5 characters long" })
+  @MaxLength(100, {
+    message: "Lender name cannot be longer than 100 characters",
   })
   lender: string;
 
@@ -67,12 +69,12 @@ export class CreateDebtDto {
   @ApiPropertyOptional({
     description:
       "Motivo de la deuda (opcional, valor por defecto si no se envía)",
-    example: "Para pagar estudios",
+    example: "Para pagar estudios universitarios",
     maxLength: 100,
   })
   @IsOptional()
   @IsString()
-  @MinLength(1, { message: "Reason is required" })
+  @MinLength(20, { message: "Reason must be at least 20 characters long" })
   @MaxLength(100, { message: "Reason cannot be longer than 100 characters" })
   reason?: string;
 
