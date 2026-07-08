@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import type { Pocket, DistributionItem } from '../types/pocket.types';
 import { formatCurrency } from '../../../core/utils/format';
 import { usePockets, useDeletePocket, useDeleteWithTransfer } from '../hooks/usePockets';
@@ -7,6 +8,8 @@ import Modal from '../../../shared/components/Modal';
 import Button from '../../../shared/components/Button';
 import Select from '../../../shared/components/Select';
 import CurrencyInput from '../../../shared/components/CurrencyInput';
+import FormStepIndicator from '../../../shared/components/forms/FormStepIndicator';
+import StepActions from '../../../shared/components/forms/StepActions';
 
 
 type DeletePhase =
@@ -25,6 +28,12 @@ export interface DeletePocketModalProps {
   isLoading?: boolean;
 }
 
+const DELETE_STEPS = [
+  { label: 'Método' },
+  { label: 'Distribución' },
+  { label: 'Confirmar' },
+];
+
 const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
   isOpen,
   onClose,
@@ -33,7 +42,9 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
   isLoading: _isLoading,
 }) => {
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<DeletePhase>({ stage: 'idle' });
+  const setPhase = useState<DeletePhase>({ stage: 'idle' })[1];
+  const [currentStep, setCurrentStep] = useState(0);
+  const [method, setMethod] = useState<'transferir' | 'dividir' | null>(null);
   const [distributions, setDistributions] = useState<DistributionItem[]>([]);
   const reason = useMemo(() => pocket ? `Herencia de bolsillo ${pocket.name}` : '', [pocket]);
   const [goalOverflowError, setGoalOverflowError] = useState<string | null>(null);
@@ -49,23 +60,28 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
   }, [pocketsList, pocket]);
 
   const isLoading = isDeleting || isTransferPending;
+  const isSimplified = pocket && pocket.accumulatedAmount === 0;
+  const steps = isSimplified ? [{ label: 'Confirmar' }] : DELETE_STEPS;
 
   // Reset to idle when modal opens/closes
   useEffect(() => {
     if (isOpen && pocket) {
+      setCurrentStep(0);
+      setMethod(null);
       if (pocket.accumulatedAmount === 0) {
         setPhase({ stage: 'phase-0', pocket });
       } else {
         setPhase({ stage: 'phase-1', pocket });
       }
       setDistributions([]);
-      
       setGoalOverflowError(null);
       setExtendedGoalMap({});
     } else if (!isOpen) {
       setPhase({ stage: 'idle' });
+      setCurrentStep(0);
+      setMethod(null);
     }
-  }, [isOpen, pocket]);
+  }, [isOpen, pocket, setPhase]);
 
   // ── Handlers ──
 
@@ -79,20 +95,20 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
     });
   };
 
-  const handleTransferAll = () => {
+  const handleMethodSelect = (selectedMethod: 'transferir' | 'dividir') => {
     if (!pocket) return;
-    const firstTarget = compatiblePockets[0];
-    const dist: DistributionItem[] = firstTarget
-      ? [{ targetPocketId: firstTarget.id, amount: pocket.accumulatedAmount }]
-      : [];
-    setDistributions(dist);
-    setPhase({ stage: 'phase-2', pocket, distributions: dist });
-  };
-
-  const handleSplitMode = () => {
-    if (!pocket) return;
-    setDistributions([]);
-    setPhase({ stage: 'phase-3', pocket });
+    setMethod(selectedMethod);
+    if (selectedMethod === 'transferir') {
+      const firstTarget = compatiblePockets[0];
+      const dist: DistributionItem[] = firstTarget
+        ? [{ targetPocketId: firstTarget.id, amount: pocket.accumulatedAmount }]
+        : [];
+      setDistributions(dist);
+      setPhase({ stage: 'phase-2', pocket, distributions: dist });
+    } else {
+      setDistributions([]);
+      setPhase({ stage: 'phase-3', pocket });
+    }
   };
 
   const handleSingleDistChange = (targetPocketId: string, amount: number) => {
@@ -105,16 +121,12 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
   const handleProceedToConfirm = () => {
     if (!pocket) return;
     setPhase({ stage: 'phase-4', pocket, distributions });
+    setCurrentStep(2);
   };
 
-  const handleBackToWarn = () => {
-    if (!pocket) return;
-    setPhase({ stage: 'phase-1', pocket });
-  };
-
-  const handleBackToSingle = () => {
-    if (!pocket) return;
-    setPhase({ stage: 'phase-2', pocket, distributions });
+  const handleGoBack = () => {
+    if (currentStep === 0) return;
+    setCurrentStep((s) => s - 1);
   };
 
   const handleConfirmDeleteWithTransfer = () => {
@@ -209,300 +221,439 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
     setDistributions((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // ── Render phases ──
+  const handleContinue = () => {
+    if (currentStep === 0) {
+      if (!method) return;
+      setCurrentStep(1);
+      return;
+    }
+    if (currentStep === 1) {
+      if (method === 'transferir') {
+        const currentDist = distributions[0];
+        if (!currentDist?.targetPocketId || currentDist.amount <= 0) return;
+      } else if (method === 'dividir') {
+        if (!isSumValid || distributions.length === 0) return;
+      }
+      handleProceedToConfirm();
+      return;
+    }
+    setCurrentStep((s) => s + 1);
+  };
+
+  const canContinue = useMemo(() => {
+    if (currentStep === 0) return !!method;
+    if (currentStep === 1) {
+      if (method === 'transferir') {
+        const d = distributions[0];
+        return !!d?.targetPocketId && d.amount > 0;
+      }
+      if (method === 'dividir') {
+        return isSumValid && distributions.length > 0;
+      }
+      return false;
+    }
+    return true;
+  }, [currentStep, method, distributions, isSumValid]);
 
   if (!pocket) return null;
 
-  // Phase 0: accumulatedAmount === 0 — existing delete confirmation
-  if (phase.stage === 'phase-0') {
+  // ═══════════════════════════════════════════
+  // SIMPLIFIED VIEW (accumulatedAmount === 0)
+  // ═══════════════════════════════════════════
+  if (isSimplified) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Eliminar Bolsillo" description="¿Estás seguro de eliminar este bolsillo?" size="md">
-        <div className="space-y-4">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <Modal isOpen={isOpen} onClose={onClose} title={"Eliminar bolsillo: " + pocket.name} showCloseButton={false}>
+        <form
+          onSubmit={(e) => { e.preventDefault(); handlePhase0Delete(); }}
+        >
+          <FormStepIndicator
+            currentStep={0}
+            totalSteps={1}
+            currentLabel="Confirmar"
+            barColor="bg-purple-500"
+          />
+          <div className="space-y-4">
+            {/* Info badge */}
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <svg className="h-5 w-5 mt-0.5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Esta acción no se puede deshacer</h3>
-                <div className="mt-2 text-sm text-red-700 dark:text-red-300">
-                  <p>El bolsillo será eliminado permanentemente del sistema junto con todos sus datos.</p>
+                <div>
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                    Se eliminará <strong>{pocket.name}</strong>
+                  </p>
+                  <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                    Este bolsillo no tiene fondos acumulados.
+                  </p>
+                  {pocket.type === 'goal' && (
+                    <p className="text-sm text-red-700 dark:text-red-300">
+                      Meta: {formatCurrency(pocket.goal)}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-secondary-700 dark:text-secondary-300">Nombre:</span>
-              <span className="text-base font-semibold text-secondary-900 dark:text-white">{pocket.name}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-secondary-700 dark:text-secondary-300">Valor Acumulado:</span>
-              <span className="text-lg font-semibold text-purple-600 dark:text-purple-400">{formatCurrency(pocket.accumulatedAmount)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-secondary-700 dark:text-secondary-300">Meta:</span>
-              <span className="text-sm text-secondary-900 dark:text-white">{formatCurrency(pocket.goal)}</span>
-            </div>
-          </div>
-          <div className="flex items-center justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>Cancelar</Button>
-            <Button type="button" variant="danger" onClick={handlePhase0Delete} isLoading={isDeleting} disabled={isLoading}>
-              Eliminar
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    );
-  }
 
-  // Phase 1: accumulatedAmount > 0 — warning + option buttons
-  if (phase.stage === 'phase-1') {
-    return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Transferir antes de eliminar" size="md">
-        <div className="space-y-4">
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            {/* Warning text */}
+            <div className="text-center">
+              <p className="text-sm font-medium text-secondary-700 dark:text-secondary-300">
+                ¿Estás seguro de eliminar este bolsillo?
+              </p>
+              <p className="text-xs text-secondary-500 dark:text-secondary-400 mt-1">
+                Esta acción no se puede deshacer
+              </p>
+            </div>
+
+            {/* Decision buttons */}
+            <div className="flex items-center justify-center gap-5 pt-6">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isLoading}
+                className="flex items-center gap-2 rounded-full border border-secondary-300 dark:border-secondary-600 px-4 py-2 text-sm font-medium text-secondary-600 dark:text-secondary-400 transition-colors hover:bg-secondary-100 dark:hover:bg-secondary-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-amber-800 dark:text-amber-200">Fondos disponibles</h3>
-                <div className="mt-2 text-sm text-amber-700 dark:text-amber-300">
-                  <p>Este bolsillo tiene <strong>{formatCurrency(pocket.accumulatedAmount)}</strong> en fondos. Debes transferirlos antes de eliminar.</p>
-                </div>
-              </div>
+                No, mejor no
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Sí, muy seguro
+              </button>
             </div>
           </div>
-          <div className="space-y-3">
-            <p className="text-sm text-secondary-600 dark:text-secondary-400">¿Cómo deseas distribuir los fondos?</p>
-            <Button type="button" variant="primary" className="w-full" onClick={handleTransferAll} disabled={compatiblePockets.length === 0}>
-              Transferir todo a un bolsillo
-            </Button>
-            <Button type="button" variant="outline" className="w-full" onClick={handleSplitMode}>
-              Dividir entre varios bolsillos
-            </Button>
-          </div>
-          <div className="flex justify-end pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          </div>
-        </div>
+        </form>
       </Modal>
     );
   }
 
-  // Phase 2: Single transfer form
-  if (phase.stage === 'phase-2') {
-    const currentDist = distributions[0] || { targetPocketId: '', amount: 0 };
-    return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Transferir fondos" size="md">
+  // ═══════════════════════════════════════════
+  // MULTI-STEP VIEW (accumulatedAmount > 0)
+  // ═══════════════════════════════════════════
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={"Eliminar bolsillo: " + pocket.name} showCloseButton={false}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (currentStep === steps.length - 1) {
+            handleConfirmDeleteWithTransfer();
+          }
+        }}
+      >
+        <FormStepIndicator
+          currentStep={currentStep}
+          totalSteps={steps.length}
+          currentLabel={steps[currentStep].label}
+          barColor="bg-purple-500"
+        />
+
         <div className="space-y-4">
-          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-            <p className="text-sm text-purple-700 dark:text-purple-300">
-              Transferirás <strong>{formatCurrency(pocket.accumulatedAmount)}</strong> a un solo bolsillo.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1">Bolsillo destino</label>
-            <Select
-              value={currentDist.targetPocketId}
-              onChange={(e) => handleSingleDistChange(e.target.value, pocket.accumulatedAmount)}
-              options={compatiblePockets.map((p) => ({
-                label: `${p.name} (${formatCurrency(p.accumulatedAmount)})`,
-                value: p.id,
-              }))}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1">Monto</label>
-            <CurrencyInput
-              value={currentDist.amount}
-              onChange={(val) => handleSingleDistChange(currentDist.targetPocketId, val)}
-            />
-          </div>
-
-          {goalOverflowError && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-              <p className="text-sm text-blue-700 dark:text-blue-300">{goalOverflowError}</p>
-              <div className="flex gap-2 mt-2">
-                <Button type="button" variant="primary" size="sm" onClick={handleAcceptGoalExtension}>Aceptar y continuar</Button>
-                <Button type="button" variant="outline" size="sm" onClick={handleDismissGoalError}>Cancelar</Button>
+          {/* ═══ Step 0: Method selector ═══ */}
+          {currentStep === 0 && (
+            <>
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-amber-800 dark:text-amber-200">Fondos disponibles</h3>
+                    <div className="mt-2 text-sm text-amber-700 dark:text-amber-300">
+                      <p>Este bolsillo tiene <strong>{formatCurrency(pocket.accumulatedAmount)}</strong> en fondos. Debes transferirlos antes de eliminar.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
 
-          <div className="flex justify-between pt-4">
-            <Button type="button" variant="outline" onClick={handleBackToWarn}>Volver</Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={handleProceedToConfirm}
-              disabled={!currentDist.targetPocketId || currentDist.amount <= 0}
-            >
-              Continuar
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    );
-  }
+              <p className="text-sm text-secondary-600 dark:text-secondary-400">¿Cómo deseas distribuir los fondos?</p>
 
-  // Phase 3: Split mode
-  if (phase.stage === 'phase-3') {
-    return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Dividir fondos" size="lg">
-        <div className="space-y-4">
-          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-            <p className="text-sm text-purple-700 dark:text-purple-300">
-              Distribuye los <strong>{formatCurrency(pocket.accumulatedAmount)}</strong> entre uno o más bolsillos.
-            </p>
-          </div>
-
-          {/* Running sum */}
-          <div className="flex justify-between items-center px-1">
-            <span className="text-sm font-medium text-secondary-700 dark:text-secondary-300">
-              Total distribuido: <span className={isSumValid ? 'text-green-600' : 'text-amber-600'}>{formatCurrency(totalDistributed)}</span>
-            </span>
-            <span className="text-sm text-secondary-500">
-              Restante: {formatCurrency(remainingDist)}
-            </span>
-          </div>
-
-          {/* Distribution rows */}
-          <div className="space-y-3 max-h-80 overflow-y-auto">
-            {distributions.map((dist, index) => (
-              <div key={index} className="flex items-end gap-2 p-2 border border-secondary-200 dark:border-secondary-700 rounded-lg">
-                <div className="flex-1">
-                  <label className="block text-xs font-medium text-secondary-600 dark:text-secondary-400 mb-1">Destino</label>
-                  <Select
-                    value={dist.targetPocketId}
-                    onChange={(e) => updateSplitRow(index, 'targetPocketId', e.target.value)}
-                    options={compatiblePockets.map((p) => ({
-                      label: p.name,
-                      value: p.id,
-                    }))}
-                  />
-                </div>
-                <div className="w-32">
-                  <label className="block text-xs font-medium text-secondary-600 dark:text-secondary-400 mb-1">Monto</label>
-                  <CurrencyInput
-                    value={dist.amount}
-                    onChange={(val) => updateSplitRow(index, 'amount', val)}
-                  />
-                </div>
-                <Button
+              <div className="grid grid-cols-2 gap-3">
+                {/* Todo a un bolsillo card */}
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeSplitRow(index)}
-                  disabled={distributions.length <= 1}
-                  className="mb-0.5"
+                  onClick={() => handleMethodSelect('transferir')}
+                  className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${
+                    method === 'transferir'
+                      ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300'
+                      : 'border-secondary-200 bg-white text-secondary-600 hover:border-purple-300 dark:border-secondary-700 dark:bg-secondary-800 dark:text-secondary-400 dark:hover:border-purple-600'
+                  }`}
                 >
-                  ✕
-                </Button>
-              </div>
-            ))}
-          </div>
+                  <PaperAirplaneIcon className="h-6 w-6" />
+                  <span className="text-sm font-medium">Todo a un bolsillo</span>
+                  <span className="text-center text-xs text-secondary-500 dark:text-secondary-400">
+                    Se transfiere todo a un solo bolsillo
+                  </span>
+                </button>
 
-          {/* Add row button */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addSplitRow}
-            disabled={distributions.length >= 10}
-            className="w-full"
-          >
-            + Agregar bolsillo ({distributions.length}/10)
-          </Button>
-
-          {/* Goal overflow */}
-          {goalOverflowError && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-              <p className="text-sm text-blue-700 dark:text-blue-300">{goalOverflowError}</p>
-              <div className="flex gap-2 mt-2">
-                <Button type="button" variant="primary" size="sm" onClick={handleAcceptGoalExtension}>Aceptar y continuar</Button>
-                <Button type="button" variant="outline" size="sm" onClick={handleDismissGoalError}>Cancelar</Button>
+                {/* Entre varios bolsillos card */}
+                <button
+                  type="button"
+                  onClick={() => handleMethodSelect('dividir')}
+                  className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${
+                    method === 'dividir'
+                      ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300'
+                      : 'border-secondary-200 bg-white text-secondary-600 hover:border-purple-300 dark:border-secondary-700 dark:bg-secondary-800 dark:text-secondary-400 dark:hover:border-purple-600'
+                  }`}
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M12 3l3 3-3 3M12 15l3 3-3 3" />
+                  </svg>
+                  <span className="text-sm font-medium">Entre varios bolsillos</span>
+                  <span className="text-center text-xs text-secondary-500 dark:text-secondary-400">
+                    Se divide el valor entre varios bolsillos
+                  </span>
+                </button>
               </div>
-            </div>
+            </>
           )}
 
-          <div className="flex justify-between pt-4">
-            <Button type="button" variant="outline" onClick={handleBackToWarn}>Volver</Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={handleProceedToConfirm}
-              disabled={!isSumValid || distributions.length === 0}
-            >
-              Continuar
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    );
-  }
-
-  // Phase 4: Confirm summary
-  if (phase.stage === 'phase-4') {
-    return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Confirmar eliminación" size="md">
-        <div className="space-y-4">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Resumen de la operación</h3>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-sm text-secondary-700 dark:text-secondary-300">
-              Se eliminará <strong>{pocket.name}</strong> y se transferirán <strong>{formatCurrency(pocket.accumulatedAmount)}</strong> a:
-            </p>
-            <ul className="space-y-1">
-              {distributions.map((dist, i) => {
-                const targetPocket = compatiblePockets.find((p) => p.id === dist.targetPocketId);
+          {/* ═══ Step 1: Distribution — single transfer ═══ */}
+          {currentStep === 1 && method === 'transferir' && (
+            <>
+              {(() => {
+                const currentDist = distributions[0] || { targetPocketId: '', amount: 0 };
                 return (
-                  <li key={i} className="flex justify-between text-sm bg-secondary-50 dark:bg-secondary-800 p-2 rounded">
-                    <span>{targetPocket?.name || dist.targetPocketId}</span>
-                    <span className="font-semibold text-purple-600 dark:text-purple-400">{formatCurrency(dist.amount)}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+                  <>
+                    <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                      <p className="text-sm text-purple-700 dark:text-purple-300">
+                        Transferirás <strong>{formatCurrency(pocket.accumulatedAmount)}</strong> a un solo bolsillo.
+                      </p>
+                    </div>
 
-          {goalOverflowError && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-              <p className="text-sm text-blue-700 dark:text-blue-300">{goalOverflowError}</p>
-              <div className="flex gap-2 mt-2">
-                <Button type="button" variant="primary" size="sm" onClick={handleAcceptGoalExtension}>Aceptar y continuar</Button>
-                <Button type="button" variant="outline" size="sm" onClick={handleDismissGoalError}>Cancelar</Button>
-              </div>
-            </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1">Bolsillo destino</label>
+                      <Select
+                        accent="pocket"
+                        value={currentDist.targetPocketId}
+                        onChange={(e) => handleSingleDistChange(e.target.value, pocket.accumulatedAmount)}
+                        options={compatiblePockets.map((p) => ({
+                          label: `${p.name} (${formatCurrency(p.accumulatedAmount)})`,
+                          value: p.id,
+                        }))}
+                      />
+                    </div>
+
+                    {goalOverflowError && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                        <p className="text-sm text-blue-700 dark:text-blue-300">{goalOverflowError}</p>
+                        <div className="flex gap-2 mt-2">
+                          <Button type="button" variant="primary" size="sm" onClick={handleAcceptGoalExtension}>Aceptar y continuar</Button>
+                          <Button type="button" variant="outline" size="sm" onClick={handleDismissGoalError}>Cancelar</Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </>
           )}
 
-          <div className="flex justify-between pt-4">
-            <Button type="button" variant="outline" onClick={handleBackToSingle} disabled={isLoading}>Volver</Button>
-            <Button
-              type="button"
-              variant="danger"
-              onClick={handleConfirmDeleteWithTransfer}
-              isLoading={isTransferPending}
-              disabled={isLoading}
-            >
-              Confirmar y eliminar
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    );
-  }
+          {/* ═══ Step 1: Distribution — split mode ═══ */}
+          {currentStep === 1 && method === 'dividir' && (
+            <>
+              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                <p className="text-sm text-purple-700 dark:text-purple-300">
+                  Distribuye los <strong>{formatCurrency(pocket.accumulatedAmount)}</strong> entre uno o más bolsillos.
+                </p>
+              </div>
 
-  return null;
+              {/* Running sum */}
+              <div className="flex justify-between items-center px-1">
+                <span className="text-sm font-medium text-secondary-700 dark:text-secondary-300">
+                  Total distribuido: <span className={isSumValid ? 'text-green-600' : 'text-amber-600'}>{formatCurrency(totalDistributed)}</span>
+                </span>
+                <span className="text-sm text-secondary-500">
+                  Restante: {formatCurrency(remainingDist)}
+                </span>
+              </div>
+
+              {/* Distribution rows */}
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {distributions.map((dist, index) => (
+                  <div key={index} className="flex items-end gap-2 p-2 border border-secondary-200 dark:border-secondary-700 rounded-lg">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-secondary-600 dark:text-secondary-400 mb-1">Destino</label>
+                      <Select
+                        accent="pocket"
+                        value={dist.targetPocketId}
+                        onChange={(e) => updateSplitRow(index, 'targetPocketId', e.target.value)}
+                        options={compatiblePockets.map((p) => ({
+                          label: p.name,
+                          value: p.id,
+                        }))}
+                      />
+                    </div>
+                    <div className="w-32">
+                      <label className="block text-xs font-medium text-secondary-600 dark:text-secondary-400 mb-1">Monto</label>
+                      <CurrencyInput
+                        accent="pocket"
+                        value={dist.amount}
+                        onChange={(val) => updateSplitRow(index, 'amount', val)}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeSplitRow(index)}
+                      disabled={distributions.length <= 1}
+                      className="mb-0.5"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add row button */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSplitRow}
+                disabled={distributions.length >= 10}
+                className="w-full"
+              >
+                + Agregar bolsillo ({distributions.length}/10)
+              </Button>
+
+              {/* Goal overflow */}
+              {goalOverflowError && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">{goalOverflowError}</p>
+                  <div className="flex gap-2 mt-2">
+                    <Button type="button" variant="primary" size="sm" onClick={handleAcceptGoalExtension}>Aceptar y continuar</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={handleDismissGoalError}>Cancelar</Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ═══ Step 2: Confirmar eliminación ═══ */}
+          {currentStep === 2 && (
+            <>
+              {/* Info badge — qué va a pasar */}
+              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <svg className="h-5 w-5 mt-0.5 text-purple-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium text-secondary-900 dark:text-white">
+                      Se eliminará <strong>{pocket.name}</strong>
+                    </p>
+                    <p className="mt-1 text-sm text-secondary-700 dark:text-secondary-300">
+                      Sus fondos se transferirán a:
+                    </p>
+                  </div>
+                </div>
+                <div className="divide-y divide-purple-200 dark:divide-purple-800">
+                  {distributions.map((dist, i) => {
+                    const targetPocket = compatiblePockets.find((p) => p.id === dist.targetPocketId);
+                    return (
+                      <div key={i} className="flex justify-between items-center py-2 first:pt-0 last:pb-0">
+                        <span className="text-sm font-bold text-secondary-900 dark:text-white">
+                          {targetPocket?.name || dist.targetPocketId}
+                        </span>
+                        <span className="text-sm font-bold text-purple-600 dark:text-purple-400">
+                          {formatCurrency(dist.amount)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Warning text */}
+              <div className="text-center">
+                <p className="text-sm font-medium text-secondary-700 dark:text-secondary-300">
+                  ¿Estás seguro de eliminar este bolsillo?
+                </p>
+                <p className="text-xs text-secondary-500 dark:text-secondary-400 mt-1">
+                  Esta acción no se puede deshacer
+                </p>
+              </div>
+
+              {goalOverflowError && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">{goalOverflowError}</p>
+                  <div className="flex gap-2 mt-2">
+                    <Button type="button" variant="primary" size="sm" onClick={handleAcceptGoalExtension}>Aceptar y continuar</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={handleDismissGoalError}>Cancelar</Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ═══ Step actions: custom for step 2, StepActions for 0-1 ═══ */}
+        {currentStep === 2 ? (
+          <div className="flex items-center justify-center gap-5 pt-6">
+            {currentStep > 0 && (
+              <button
+                type="button"
+                onClick={handleGoBack}
+                disabled={isLoading}
+                className="flex h-11 w-11 items-center justify-center rounded-full text-secondary-400 transition-colors hover:bg-secondary-100 hover:text-secondary-600 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-secondary-700 dark:hover:text-secondary-300"
+                aria-label="Atrás"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="flex items-center gap-2 rounded-full border border-secondary-300 dark:border-secondary-600 px-4 py-2 text-sm font-medium text-secondary-600 dark:text-secondary-400 transition-colors hover:bg-secondary-100 dark:hover:bg-secondary-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              No, mejor no
+            </button>
+
+            <button
+              type="button"
+              onClick={handleConfirmDeleteWithTransfer}
+              disabled={isLoading}
+              className="flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Sí, muy seguro
+            </button>
+          </div>
+        ) : (
+          <StepActions
+            currentStep={currentStep}
+            totalSteps={steps.length}
+            onBack={handleGoBack}
+            onContinue={handleContinue}
+            canContinue={canContinue}
+            disabled={isLoading}
+            checkClassName="text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+            submitLabel="Confirmar y eliminar"
+          />
+        )}
+      </form>
+    </Modal>
+  );
 };
 
 export default DeletePocketModal;

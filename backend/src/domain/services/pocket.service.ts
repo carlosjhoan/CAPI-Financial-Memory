@@ -75,7 +75,12 @@ export class PocketService {
       if (!updates.name || updates.name.trim().length === 0) {
         throw new Error("Name cannot be empty");
       }
-      pocket.name = updates.name;
+      // Unique name check (exclude current pocket)
+      const existingPocket = await this.pocketRepository.findByName(updates.name.trim(), userId);
+      if (existingPocket && existingPocket.id !== id) {
+        throw new Error("DUPLICATE_NAME:Ya existe un bolsillo con ese nombre");
+      }
+      pocket.name = updates.name.trim();
     }
 
     if (updates.type !== undefined) {
@@ -102,7 +107,7 @@ export class PocketService {
       if (!updates.motivation || updates.motivation.trim().length === 0) {
         throw new Error("Motivation cannot be empty");
       }
-      pocket.motivation = updates.motivation;
+      pocket.motivation = updates.motivation.trim();
     }
 
     pocket.updatedAt = new Date();

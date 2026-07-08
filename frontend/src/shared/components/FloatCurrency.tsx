@@ -191,10 +191,12 @@ const FloatCurrency = React.forwardRef<HTMLInputElement, FloatCurrencyProps>(
               : `border-secondary-300 dark:border-secondary-600 ${accentCls.border}`,
             isFocused && !error && 'ring-0',
           )}
-          style={(isFocused && !error) ? {
-            '--glow-rgb': accentCls.glowRGB,
-            boxShadow: `0 0 0 2px rgba(var(--glow-rgb, 99, 102, 241), 0.4), 0 0 24px rgba(var(--glow-rgb, 99, 102, 241), 0.2), 0 0 56px rgba(var(--glow-rgb, 99, 102, 241), 0.12), 0 0 96px rgba(var(--glow-rgb, 99, 102, 241), 0.06)`,
-          } as React.CSSProperties : undefined}
+          style={{
+            '--glow-rgb': error ? '239, 68, 68' : accentCls.glowRGB,
+            boxShadow: (error || isFocused)
+              ? `0 0 0 2px rgba(var(--glow-rgb), 0.4), 0 0 24px rgba(var(--glow-rgb), 0.2), 0 0 56px rgba(var(--glow-rgb), 0.12), 0 0 96px rgba(var(--glow-rgb), 0.06)`
+              : undefined,
+          } as React.CSSProperties}
         >
           {/* Currency symbol */}
           <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3">

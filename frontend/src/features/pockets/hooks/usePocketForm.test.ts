@@ -91,11 +91,11 @@ describe('usePocketForm', () => {
 
     it('passes validation without sourcePocketId when sourceType is external', () => {
       const result = pocketSchema.safeParse({
-        name: 'Test',
+        name: 'Test Pocket',
         type: 'goal',
         goal: 1000,
         accumulatedAmount: 500,
-        motivation: 'Save',
+        motivation: 'Save for a trip to Paris!',
         sourceType: 'external',
       });
       expect(result.success).toBe(true);

@@ -12,8 +12,9 @@ const incomeSchema = z
       .max(999999999.99, 'El monto no puede exceder $999.999.999,99'),
     reason: z
       .string({ required_error: 'El motivo es requerido' })
-      .min(1, 'El motivo es requerido')
-      .max(255, 'El motivo no puede exceder 255 caracteres'),
+      .trim()
+      .min(20, 'El motivo debe tener al menos 20 caracteres')
+      .max(100, 'El motivo no puede exceder 100 caracteres'),
     date: dateSchema,
     allocations: z
       .array(
@@ -40,8 +41,9 @@ const incomeUpdateSchema = z
       .max(999999999.99, 'El monto no puede exceder $999.999.999,99'),
     reason: z
       .string({ required_error: 'El motivo es requerido' })
-      .min(1, 'El motivo es requerido')
-      .max(255, 'El motivo no puede exceder 255 caracteres'),
+      .trim()
+      .min(20, 'El motivo debe tener al menos 20 caracteres')
+      .max(100, 'El motivo no puede exceder 100 caracteres'),
     date: z
       .string({ required_error: 'La fecha es requerida' })
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener el formato YYYY-MM-DD'),

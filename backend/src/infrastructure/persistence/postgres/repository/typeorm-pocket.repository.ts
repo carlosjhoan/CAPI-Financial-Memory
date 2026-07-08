@@ -111,6 +111,16 @@ export class TypeOrmPocketRepository implements PocketRepository {
     return pocket;
   }
 
+  async findByName(name: string, userId: string): Promise<Pocket | null> {
+    const entity = await this.pocketRepository.findOne({
+      where: { name, userId },
+    });
+    if (!entity) return null;
+    const pocket = this.toDomain(entity);
+    pocket.accumulatedAmount = await this.computeAccumulated(pocket.id);
+    return pocket;
+  }
+
   async findAll(userId: string): Promise<Pocket[]> {
     const entities = await this.pocketRepository.find({
       where: { userId },
@@ -127,9 +137,10 @@ export class TypeOrmPocketRepository implements PocketRepository {
       });
 
       // Obtener últimos incomes asociados a cada pocket
+      // Usamos ia.amount (lo que realmente se asignó a este pocket), no i.amount
       const lastIncomeRows = await this.pocketRepository.query(
         `
-        SELECT i.id, i.amount, i.reason, i.date, i."createdAt", i."userId", ia."pocketId"
+        SELECT i.id, ia.amount, i.reason, i.date, i."createdAt", i."userId", ia."pocketId"
         FROM incomes i
         JOIN income_allocations ia ON ia."incomeId" = i.id
         WHERE ia."pocketId"::text = ANY($1)
@@ -300,7 +311,18 @@ export class TypeOrmPocketRepository implements PocketRepository {
       where: { pocketId },
       relations: ["income"],
     });
-    return allocations.map((a) => this.incomeToDomain(a.income));
+    // Usamos a.amount (lo asignado a este pocket), no a.income.amount
+    return allocations.map((a) => {
+      const income = new Income(
+        Number(a.amount),
+        a.income.reason,
+        a.income.date,
+        a.income.id,
+        a.income.userId,
+      );
+      income.createdAt = a.income.createdAt;
+      return income;
+    });
   }
 
   private incomeToDomain(entity: IncomeEntity): Income {

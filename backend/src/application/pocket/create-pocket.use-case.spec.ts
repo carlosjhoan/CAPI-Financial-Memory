@@ -11,6 +11,7 @@ describe("CreatePocketUseCase", () => {
     mockRepo = {
       save: jest.fn(),
       findById: jest.fn(),
+      findByName: jest.fn(),
     } as any;
     mockDataSource = {
       transaction: jest.fn(),

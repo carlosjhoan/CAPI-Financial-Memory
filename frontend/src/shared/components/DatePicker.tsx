@@ -40,10 +40,10 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
               : 'border-secondary-300 dark:border-secondary-600 focus-within:border-primary-500 dark:focus-within:border-primary-400',
             !error && 'focus-within:ring-0',
           )}
-          style={!error ? {
-            '--glow-rgb': '99, 102, 241',
-            boxShadow: `0 0 0 2px rgba(var(--glow-rgb, 99, 102, 241), 0.4), 0 0 24px rgba(var(--glow-rgb, 99, 102, 241), 0.2), 0 0 56px rgba(var(--glow-rgb, 99, 102, 241), 0.12), 0 0 96px rgba(var(--glow-rgb, 99, 102, 241), 0.06)`,
-          } as React.CSSProperties : undefined}
+          style={{
+            '--glow-rgb': error ? '239, 68, 68' : '99, 102, 241',
+            boxShadow: `0 0 0 2px rgba(var(--glow-rgb), 0.4), 0 0 24px rgba(var(--glow-rgb), 0.2), 0 0 56px rgba(var(--glow-rgb), 0.12), 0 0 96px rgba(var(--glow-rgb), 0.06)`,
+          } as React.CSSProperties}
         >
           <input
             ref={ref}

@@ -46,9 +46,13 @@ describe('DeletePocketModal — Phase State Machine', () => {
     render(
       <DeletePocketModal isOpen={true} onClose={vi.fn()} pocket={pocket} />,
     );
-    expect(screen.getByText('Eliminar Bolsillo')).toBeDefined();
+    expect(screen.getByText('Eliminar bolsillo: Vacaciones')).toBeDefined();
     expect(screen.getByText('Esta acción no se puede deshacer')).toBeDefined();
-    expect(screen.getByText('Eliminar')).toBeDefined();
+    expect(screen.getByText('Sí, muy seguro')).toBeDefined();
+    expect(screen.getByText('No, mejor no')).toBeDefined();
+    // Simplified view: should NOT show accumulated amount or meta for deposit
+    expect(screen.queryByText('Valor Acumulado')).toBeNull();
+    expect(screen.queryByText(/Meta:/)).toBeNull();
   });
 
   it('should show phase-1 (warning + options) when accumulatedAmount > 0', () => {
@@ -56,9 +60,8 @@ describe('DeletePocketModal — Phase State Machine', () => {
     render(
       <DeletePocketModal isOpen={true} onClose={vi.fn()} pocket={pocket} />,
     );
-    expect(screen.getByText('Transferir antes de eliminar')).toBeDefined();
-    expect(screen.getByText('Transferir todo a un bolsillo')).toBeDefined();
-    expect(screen.getByText('Dividir entre varios bolsillos')).toBeDefined();
+    expect(screen.getByText('Todo a un bolsillo')).toBeDefined();
+    expect(screen.getByText('Entre varios bolsillos')).toBeDefined();
   });
 
   it('should show "Fondos disponibles" warning with balance amount', () => {
@@ -74,7 +77,7 @@ describe('DeletePocketModal — Phase State Machine', () => {
     render(
       <DeletePocketModal isOpen={true} onClose={vi.fn()} pocket={pocket} />,
     );
-    fireEvent.click(screen.getByText('Eliminar'));
+    fireEvent.click(screen.getByText('Sí, muy seguro'));
     expect(mockDeletePocket.mutate).toHaveBeenCalledWith(
       'pocket-1',
       expect.any(Object),

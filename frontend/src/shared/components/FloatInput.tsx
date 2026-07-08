@@ -25,6 +25,7 @@ const FloatInput = React.forwardRef<HTMLInputElement, FloatInputProps>(
       value,
       onFocus,
       onBlur,
+      maxLength,
       ...props
     },
     ref,
@@ -58,10 +59,12 @@ const FloatInput = React.forwardRef<HTMLInputElement, FloatInputProps>(
               : `border-secondary-300 dark:border-secondary-600 ${accentCls.border}`,
             isFocused && !error && 'ring-0',
           )}
-          style={(isFocused && !error) ? {
-            '--glow-rgb': accentCls.glowRGB,
-            boxShadow: `0 0 0 2px rgba(var(--glow-rgb, 99, 102, 241), 0.4), 0 0 24px rgba(var(--glow-rgb, 99, 102, 241), 0.2), 0 0 56px rgba(var(--glow-rgb, 99, 102, 241), 0.12), 0 0 96px rgba(var(--glow-rgb, 99, 102, 241), 0.06)`,
-          } as React.CSSProperties : undefined}
+          style={{
+            '--glow-rgb': error ? '239, 68, 68' : accentCls.glowRGB,
+            boxShadow: (error || isFocused)
+              ? `0 0 0 2px rgba(var(--glow-rgb), 0.4), 0 0 24px rgba(var(--glow-rgb), 0.2), 0 0 56px rgba(var(--glow-rgb), 0.12), 0 0 96px rgba(var(--glow-rgb), 0.06)`
+              : undefined,
+          } as React.CSSProperties}
         >
           <input
             ref={ref}
@@ -70,6 +73,7 @@ const FloatInput = React.forwardRef<HTMLInputElement, FloatInputProps>(
             onFocus={handleFocus}
             onBlur={handleBlur}
             placeholder=" "
+            maxLength={maxLength}
             className={cn(
               'block w-full rounded-lg border-0 bg-transparent',
               'px-3 pb-2 pt-5 text-secondary-900 dark:text-white dark:[color-scheme:dark]',
@@ -115,24 +119,41 @@ const FloatInput = React.forwardRef<HTMLInputElement, FloatInputProps>(
           </label>
         </div>
 
-        {error && (
-          <p
-            id={`${inputId}-error`}
-            className="mt-1.5 text-xs text-red-600 dark:text-red-400"
-            role="alert"
-          >
-            {error}
-          </p>
-        )}
+        <div className="mt-1.5 flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            {error && (
+              <p
+                id={`${inputId}-error`}
+                className="text-xs text-red-600 dark:text-red-400"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
 
-        {helperText && !error && (
-          <p
-            id={`${inputId}-helper`}
-            className="mt-1.5 text-xs text-secondary-500 dark:text-secondary-400"
-          >
-            {helperText}
-          </p>
-        )}
+            {helperText && !error && (
+              <p
+                id={`${inputId}-helper`}
+                className="text-xs text-secondary-500 dark:text-secondary-400"
+              >
+                {helperText}
+              </p>
+            )}
+          </div>
+
+          {maxLength !== undefined && (
+            <p
+              className={cn(
+                'flex-shrink-0 text-xs',
+                String(value ?? '').length > maxLength
+                  ? 'text-red-500'
+                  : 'text-secondary-400 dark:text-secondary-500',
+              )}
+            >
+              {String(value ?? '').length}/{maxLength}
+            </p>
+          )}
+        </div>
       </div>
     );
   },

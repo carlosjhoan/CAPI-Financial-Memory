@@ -3,6 +3,7 @@ import {
   IsString,
   IsDateString,
   Min,
+  MinLength,
   Max,
   MaxLength,
 } from "class-validator";
@@ -25,10 +26,11 @@ export class CreateLoanDto {
   @Min(0.01, { message: "Installment must be greater than 0" })
   installment: number;
 
-  @ApiProperty({ description: "Nombre del deudor", example: "Juan Pérez" })
+  @ApiProperty({ description: "Nombre del deudor", example: "Juan Pérez", minLength: 5, maxLength: 100 })
   @IsString()
-  @MaxLength(255, {
-    message: "Debtor name cannot be longer than 255 characters",
+  @MinLength(5, { message: "Debtor name must be at least 5 characters long" })
+  @MaxLength(100, {
+    message: "Debtor name cannot be longer than 100 characters",
   })
   debtor: string;
 

@@ -117,7 +117,11 @@ const PocketDetailPage: React.FC = () => {
 
   const handleUpdate = async (data: PocketFormData) => {
     if (!pocket) return;
-    await updatePocketMutation.mutateAsync({ id: pocket.id, data });
+    const { accumulatedAmount: _acc, sourceType: _src, sourcePocketId: _srcId, goal, ...rest } = data;
+    const updateData = data.type === 'goal'
+      ? { ...rest, goal }
+      : rest;
+    await updatePocketMutation.mutateAsync({ id: pocket.id, data: updateData });
     setIsEditModalOpen(false);
   };
 

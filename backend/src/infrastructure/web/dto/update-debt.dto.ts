@@ -2,6 +2,7 @@ import {
   IsNumber,
   IsString,
   Min,
+  MinLength,
   MaxLength,
   IsOptional,
 } from "class-validator";
@@ -23,12 +24,13 @@ export class UpdateDebtDto {
   @ApiPropertyOptional({
     description: "Nombre del prestamista o entidad que otorgó la deuda",
     example: "Banco XYZ",
-    maxLength: 255,
+    maxLength: 100,
   })
   @IsOptional()
   @IsString()
-  @MaxLength(255, {
-    message: "Lender name cannot be longer than 255 characters",
+  @MinLength(5, { message: "Lender name must be at least 5 characters long" })
+  @MaxLength(100, {
+    message: "Lender name cannot be longer than 100 characters",
   })
   lender?: string;
 
@@ -74,6 +76,7 @@ export class UpdateDebtDto {
   })
   @IsOptional()
   @IsString()
+  @MinLength(20, { message: "Reason must be at least 20 characters long" })
   @MaxLength(100, { message: "Reason cannot be longer than 100 characters" })
   reason?: string;
 }

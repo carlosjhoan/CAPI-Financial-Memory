@@ -26,6 +26,13 @@ export class CreatePocketUseCase {
       throw new Error("Name is required");
     }
 
+    const existingPocket = await this.pocketRepository.findByName(name.trim(), userId);
+    if (existingPocket) {
+      throw new Error("DUPLICATE_NAME:Ya existe un bolsillo con ese nombre");
+    }
+
+    const trimmedName = name.trim();
+
     if (type !== "goal" && type !== "deposit") {
       throw new Error("Type must be 'goal' or 'deposit'");
     }
@@ -44,7 +51,7 @@ export class CreatePocketUseCase {
         : "Quiero ahorrar para algo que aún no sé qué es";
 
     const pocket = new Pocket(
-      name,
+      trimmedName,
       type,
       goal,
       accumulatedAmount,
@@ -76,7 +83,7 @@ export class CreatePocketUseCase {
 
           // 2. Create income + allocation in the SAME transaction
           const date = new Date();
-          const incomeReason = `Monto inicial de bolsillo ${name}`;
+          const incomeReason = `Monto inicial de bolsillo ${trimmedName}`;
 
           const incomeEntity = transactionalEntityManager.create(IncomeEntity, {
             amount: accumulatedAmount,
@@ -163,7 +170,7 @@ export class CreatePocketUseCase {
 
           // 3. Create transfer record
           const date = new Date();
-          const transferReason = `Monto inicial de bolsillo ${name}`;
+          const transferReason = `Monto inicial de bolsillo ${trimmedName}`;
           const transferEntity = transactionalEntityManager.create(
             PocketTransferEntity,
             {

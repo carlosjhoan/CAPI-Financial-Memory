@@ -13,13 +13,13 @@ export class UpdatePocketDto {
   @ApiPropertyOptional({
     description: "Nombre del bolsillo",
     example: "Efectivo libre",
-    minLength: 1,
-    maxLength: 100,
+    minLength: 5,
+    maxLength: 50,
   })
   @IsOptional()
   @IsString()
-  @MinLength(1, { message: "Name must be at least 1 character long" })
-  @MaxLength(100, { message: "Name cannot be longer than 100 characters" })
+  @MinLength(5, { message: "Name must be at least 5 characters long" })
+  @MaxLength(50, { message: "Name cannot be longer than 50 characters" })
   name?: string;
 
   @ApiPropertyOptional({

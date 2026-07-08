@@ -12,6 +12,7 @@ import {
   HttpStatus,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   ParseUUIDPipe,
   UseGuards,
 } from "@nestjs/common";
@@ -101,6 +102,14 @@ export class PocketController {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
+      if (error.message.startsWith("DUPLICATE_NAME")) {
+        throw new ConflictException({
+          statusCode: HttpStatus.CONFLICT,
+          error: "Conflict",
+          message: error.message.replace("DUPLICATE_NAME:", ""),
+          timestamp: new Date().toISOString(),
+        });
+      }
       throw new BadRequestException({
         statusCode: HttpStatus.BAD_REQUEST,
         error: "Bad Request",
@@ -335,6 +344,13 @@ export class PocketController {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
+      if (error.message.startsWith("DUPLICATE_NAME")) {
+        return new ErrorResponse(
+          HttpStatus.CONFLICT,
+          "Conflict",
+          error.message.replace("DUPLICATE_NAME:", ""),
+        );
+      }
       return new ErrorResponse(
         HttpStatus.BAD_REQUEST,
         "Bad Request",

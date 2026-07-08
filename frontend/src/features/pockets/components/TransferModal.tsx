@@ -5,11 +5,11 @@ import { z } from 'zod';
 import { ArrowsRightLeftIcon } from '@heroicons/react/24/solid';
 import { usePockets, useTransfer } from '../hooks/usePockets';
 import Modal from '../../../shared/components/Modal';
-import Button from '../../../shared/components/Button';
 import FloatSelect from '../../../shared/components/FloatSelect';
 import FloatCurrency from '../../../shared/components/FloatCurrency';
 import FloatInput from '../../../shared/components/FloatInput';
-import FloatDatePicker from '../../../shared/components/FloatDatePicker';
+import FormStepIndicator from '../../../shared/components/forms/FormStepIndicator';
+import StepActions from '../../../shared/components/forms/StepActions';
 import { formatCurrency, cn } from '../../../core/utils/format';
 
 interface TransferModalProps {
@@ -28,12 +28,18 @@ interface TransferResult {
   amount: number;
 }
 
+const STEPS = [
+  { label: 'Destino', fields: ['targetPocketId'] as const },
+  { label: 'Monto', fields: ['amount', 'reason'] as const },
+];
+
 const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, onClose }) => {
   const { data: pockets } = usePockets();
   const { mutate: transfer, isPending } = useTransfer();
   const sourcePocket = pockets?.find((p) => p.id === sourcePocketId);
-
   const maxAmount = sourcePocket?.accumulatedAmount || 0;
+
+  const [currentStep, setCurrentStep] = useState(0);
 
   // ── Success state + animation ──
   const [transferResult, setTransferResult] = useState<TransferResult | null>(null);
@@ -53,15 +59,14 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
     onClose();
   };
 
-  // ── Schema ──
+  // ── Schema (sin date — se manda la actual al submit) ──
   const transferSchema = useMemo(() => z.object({
     targetPocketId: z.string().min(1, 'El bolsillo destino es requerido'),
     amount: z
       .number({ required_error: 'El monto es requerido' })
       .positive('El monto debe ser positivo')
-      .max(maxAmount, `El monto no puede exceder $${maxAmount.toFixed(2)}`),
+      .max(maxAmount, `El monto no puede exceder ${formatCurrency(maxAmount)}`),
     reason: z.string().min(3, 'El motivo debe tener al menos 3 caracteres'),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato inválido (YYYY-MM-DD)'),
   }), [maxAmount]);
 
   type TransferFormData = z.infer<typeof transferSchema>;
@@ -71,6 +76,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
     handleSubmit,
     setValue,
     watch,
+    trigger,
     formState: { errors },
     reset,
   } = useForm({
@@ -79,14 +85,12 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
       targetPocketId: '',
       amount: 0,
       reason: '',
-      date: new Date().toISOString().split('T')[0],
     },
   });
 
   const watchedAmount = watch('amount');
   const watchedTargetId = watch('targetPocketId');
   const watchedReason = watch('reason');
-  const watchedDate = watch('date');
 
   const targetPocket = pockets?.find((p) => p.id === watchedTargetId);
 
@@ -100,13 +104,34 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
       }));
   }, [pockets, sourcePocketId]);
 
+  const isLastStep = currentStep === STEPS.length - 1;
+
+  const validateStep = async (): Promise<boolean> => {
+    const stepFields = STEPS[currentStep].fields;
+    return trigger(stepFields as unknown as ('targetPocketId' | 'amount' | 'reason')[]);
+  };
+
+  const handleContinue = async () => {
+    if (isLastStep) {
+      handleSubmit(handleFormSubmit)();
+      return;
+    }
+    const valid = await validateStep();
+    if (!valid) return;
+    setCurrentStep((s) => s + 1);
+  };
+
+  const handleGoBack = () => {
+    setCurrentStep((s) => s - 1);
+  };
+
   // ── Submit → capture result → show success ──
-  const onSubmit = (data: TransferFormData) => {
+  const handleFormSubmit = (data: TransferFormData) => {
     const targetAtSubmit = pockets?.find((p) => p.id === data.targetPocketId);
     if (!sourcePocket || !targetAtSubmit) return;
 
     transfer(
-      { ...data, sourcePocketId },
+      { ...data, sourcePocketId, date: new Date().toISOString().split('T')[0] },
       {
         onSuccess: () => {
           setTransferResult({
@@ -119,13 +144,14 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
             amount: data.amount,
           });
           reset();
+          setCurrentStep(0);
         },
       },
     );
   };
 
   // ═══════════════════════════════════════════
-  // SUCCESS VIEW (post-transfer animation)
+  // SUCCESS VIEW
   // ═══════════════════════════════════════════
   if (transferResult) {
     const r = transferResult;
@@ -138,7 +164,6 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
       `}</style>
       <Modal isOpen={isOpen} onClose={handleCloseSuccess} showCloseButton={false} glassBackdrop glass>
         <div className="space-y-5 relative">
-          {/* ═══ Head: ✅ Transferido (aparece en fase 2) ═══ */}
           {animPhase >= 1 && (
             <div className="flex justify-center pt-4 animate-[badge-enter_0.4s_ease-out]">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
@@ -152,12 +177,9 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
             </div>
           )}
 
-          {/* ═══ CAPI + Names + Current Balances ═══ */}
           <div className={`flex items-center justify-center gap-4 select-none ${animPhase >= 1 ? 'pt-2' : 'pt-8'}`}>
-            {/* ── Source ── */}
             <div className="flex flex-col items-center gap-2">
               <div className="relative w-32 h-32">
-                {/* Neon glow — red */}
                 <div
                   className="absolute inset-0 rounded-full dark:hidden"
                   style={{
@@ -183,15 +205,12 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
               </span>
             </div>
 
-            {/* ═══ Transfer Icon ═══ */}
             <div className="flex items-center justify-center w-11 h-11 rounded-full bg-purple-100 dark:bg-purple-900/40 flex-shrink-0 shadow-md drop-shadow-[0_0_8px_rgba(147,51,234,0.35)]">
               <ArrowsRightLeftIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             </div>
 
-            {/* ── Target ── */}
             <div className="flex flex-col items-center gap-2">
               <div className="relative w-32 h-32">
-                {/* Neon glow — green */}
                 <div
                   className="absolute inset-0 rounded-full dark:hidden"
                   style={{
@@ -218,16 +237,13 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
             </div>
           </div>
 
-          {/* ═══ Balance Cards (fase 2+) ═══ */}
           <div
             className={cn(
               'grid grid-cols-2 gap-3 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
               animPhase >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none',
             )}
           >
-            {/* ── Source Card ── */}
             <div className="rounded-xl px-3 py-3 border border-red-200 dark:border-red-500/20 bg-red-50/60 dark:bg-red-950/30 text-center">
-
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] text-red-500 dark:text-red-400">
                   Antes: <span className="text-xs font-bold text-red-600">{formatCurrency(r.sourceBefore)}</span>
@@ -241,9 +257,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
               </div>
             </div>
 
-            {/* ── Target Card ── */}
             <div className="rounded-xl px-3 py-3 border border-green-200 dark:border-green-500/20 bg-green-50/60 dark:bg-green-950/30 text-center">
-
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] text-green-500 dark:text-green-400">
                   Antes: <span className="text-xs font-bold text-green-600">{formatCurrency(r.targetBefore)}</span>
@@ -258,7 +272,6 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
             </div>
           </div>
 
-          {/* ═══ Close button with X icon ═══ */}
           <div className="flex justify-center pb-1">
             <button
               type="button"
@@ -281,10 +294,17 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
   // ═══════════════════════════════════════════
   return (
     <Modal isOpen={isOpen} onClose={onClose} showCloseButton={false}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
+        {/* ═══ Step indicator ═══ */}
+        <FormStepIndicator
+          currentStep={currentStep}
+          totalSteps={STEPS.length}
+          currentLabel={STEPS[currentStep].label}
+          barColor="bg-purple-500"
+        />
+
         {/* ═══ De ↔️ Para Header ═══ */}
         <div className="flex items-center gap-3 pt-2 pb-1 select-none">
-          {/* Source */}
           <div className="flex-1 text-right">
             <div className="text-[10px] font-semibold uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">
               De
@@ -297,12 +317,10 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
             </div>
           </div>
 
-          {/* Transfer icon */}
           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/40 flex-shrink-0">
             <ArrowsRightLeftIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           </div>
 
-          {/* Target */}
           <div className="flex-1 text-left">
             <div className="text-[10px] font-semibold uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">
               Para
@@ -324,60 +342,59 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
           </div>
         </div>
 
-        <div>
-          <FloatSelect
-            label="Bolsillo Destino"
-            accent="pocket"
-            options={targetOptions}
-            error={errors.targetPocketId?.message}
-            value={watchedTargetId}
-            helperText={
-              targetPocket
-                ? `Saldo actual del destino: ${formatCurrency(targetPocket.accumulatedAmount)}`
-                : undefined
-            }
-            {...register('targetPocketId')}
-          />
-        </div>
-
+        {/* ═══ Step content ═══ */}
         <div className="space-y-4">
-            <FloatCurrency
-              label="Monto"
+          {currentStep === 0 && (
+            <FloatSelect
+              label="Bolsillo Destino"
               accent="pocket"
-              currency="COP"
-              value={watchedAmount}
-              onChange={(val) => setValue('amount', val, { shouldValidate: true })}
-              error={errors.amount?.message}
-              helperText={`Disponible para transferir: ${formatCurrency(maxAmount)}`}
-              fullWidth
+              options={targetOptions}
+              error={errors.targetPocketId?.message}
+              value={watchedTargetId}
+              helperText={
+                targetPocket
+                  ? `Saldo actual del destino: ${formatCurrency(targetPocket.accumulatedAmount)}`
+                  : undefined
+              }
+              {...register('targetPocketId')}
             />
-            <FloatInput
-              label="Motivo"
-              accent="pocket"
-              error={errors.reason?.message}
-              value={watchedReason}
-              fullWidth
-              {...register('reason')}
-            />
-            <FloatDatePicker
-              label="Fecha"
-              accent="pocket"
-              error={errors.date?.message}
-              value={watchedDate}
-              fullWidth
-              {...register('date')}
-            />
-          </div>
+          )}
 
-        {/* ═══ Actions ═══ */}
-        <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" isLoading={isPending}>
-            Transferir
-          </Button>
+          {currentStep === 1 && (
+            <>
+              <FloatCurrency
+                label="Monto"
+                accent="pocket"
+                currency="COP"
+                value={watchedAmount}
+                onChange={(val) => setValue('amount', val, { shouldValidate: true })}
+                error={errors.amount?.message}
+                helperText={`Disponible para transferir: ${formatCurrency(maxAmount)}`}
+                fullWidth
+              />
+              <FloatInput
+                label="Motivo"
+                accent="pocket"
+                error={errors.reason?.message}
+                value={watchedReason}
+                fullWidth
+                {...register('reason')}
+              />
+            </>
+          )}
         </div>
+
+        {/* ═══ Step actions ═══ */}
+        <StepActions
+          currentStep={currentStep}
+          totalSteps={STEPS.length}
+          onBack={handleGoBack}
+          onContinue={handleContinue}
+          canContinue={true}
+          disabled={isPending}
+          checkClassName="text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+          submitLabel="Transferir"
+        />
       </form>
     </Modal>
   );

@@ -3,6 +3,7 @@ import {
   IsString,
   IsDateString,
   Min,
+  MinLength,
   MaxLength,
   IsArray,
   ArrayMinSize,
@@ -21,10 +22,11 @@ export class CreateIncomeDto {
 
   @ApiProperty({
     description: "Razón o descripción del ingreso",
-    example: "Salario mensual",
+    example: "Salario mensual completo",
   })
   @IsString()
-  @MaxLength(255, { message: "Reason cannot be longer than 255 characters" })
+  @MinLength(20, { message: "Reason must be at least 20 characters long" })
+  @MaxLength(100, { message: "Reason cannot be longer than 100 characters" })
   reason: string;
 
   @ApiProperty({

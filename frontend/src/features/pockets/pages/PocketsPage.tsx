@@ -22,9 +22,13 @@ const PocketsPage: React.FC = () => {
   const handleUpdatePocket = async (data: PocketFormData) => {
     if (!pocketToEdit) return;
 
+    const { accumulatedAmount: _acc, sourceType: _src, sourcePocketId: _srcId, goal, ...rest } = data;
+    const updateData = data.type === 'goal'
+      ? { ...rest, goal }
+      : rest;
     await updatePocketMutation.mutateAsync({
       id: pocketToEdit.id,
-      data,
+      data: updateData,
     });
     setPocketToEdit(null);
   };

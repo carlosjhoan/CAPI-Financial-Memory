@@ -63,7 +63,6 @@ export interface UpdatePocketDto {
   name?: string;
   type?: 'goal' | 'deposit';
   goal?: number;
-  accumulatedAmount?: number;
   motivation?: string;
 }
 

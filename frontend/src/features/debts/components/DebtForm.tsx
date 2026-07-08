@@ -124,6 +124,7 @@ const DebtForm: React.FC<DebtFormProps> = ({
               required
               disabled={isLoading || isSubmitting}
               accent="debt"
+              maxLength={100}
             />
           </>
         )}
@@ -213,6 +214,7 @@ const DebtForm: React.FC<DebtFormProps> = ({
               fullWidth
               disabled={isLoading || isSubmitting}
               accent="debt"
+              maxLength={100}
             />
           </>
         )}
