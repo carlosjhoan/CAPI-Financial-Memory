@@ -81,7 +81,7 @@ const DeletePocketModal: React.FC<DeletePocketModalProps> = ({
       setCurrentStep(0);
       setMethod(null);
     }
-  }, [isOpen, pocket]);
+  }, [isOpen, pocket, setPhase]);
 
   // ── Handlers ──
 

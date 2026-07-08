@@ -8,7 +8,7 @@ describe("CreatePocketDto", () => {
     dto.type = "goal";
     dto.goal = 1000;
     dto.accumulatedAmount = 500;
-    dto.motivation = "Save for a trip";
+    dto.motivation = "Save for a trip to Paris!";
     return Object.assign(dto, overrides);
   }
 
