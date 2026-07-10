@@ -6,7 +6,6 @@ import { PocketEntity } from "../../infrastructure/persistence/postgres/entities
 import { PocketTransferEntity } from "../../infrastructure/persistence/postgres/entities/pocket-transfer.entity";
 import { IncomeAllocationEntity } from "../../infrastructure/persistence/postgres/entities/income-allocation.entity";
 
-
 function createMockPocket(
   id: string,
   accumulatedAmount: number,

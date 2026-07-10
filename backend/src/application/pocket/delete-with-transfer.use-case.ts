@@ -5,7 +5,6 @@ import { PocketEntity } from "../../infrastructure/persistence/postgres/entities
 import { PocketTransferEntity } from "../../infrastructure/persistence/postgres/entities/pocket-transfer.entity";
 import { IncomeAllocationEntity } from "../../infrastructure/persistence/postgres/entities/income-allocation.entity";
 
-
 export class DeleteWithTransferUseCase {
   constructor(
     private readonly pocketRepository: PocketRepository,
@@ -82,11 +81,7 @@ export class DeleteWithTransferUseCase {
       );
 
       // 4. Nullify income allocations referencing this pocket
-      await em.update(
-        IncomeAllocationEntity,
-        { pocketId },
-        { pocketId: null },
-      );
+      await em.update(IncomeAllocationEntity, { pocketId }, { pocketId: null });
 
       // 5. Process each distribution: lock target → goal check
       for (const dist of distributions) {
@@ -103,7 +98,8 @@ export class DeleteWithTransferUseCase {
         // Goal overflow check — use pre-fetched computed accumulated
         const cachedTarget = targetPocketMap.get(dist.targetPocketId)!;
         if (targetEntity.type === "goal" && Number(targetEntity.goal) > 0) {
-          const remaining = Number(targetEntity.goal) - cachedTarget.accumulatedAmount;
+          const remaining =
+            Number(targetEntity.goal) - cachedTarget.accumulatedAmount;
           if (dist.amount > remaining) {
             throw new Error(
               `TRANSFER_EXCEEDS_GOAL:${remaining}:${dist.amount}:${targetEntity.id}`,

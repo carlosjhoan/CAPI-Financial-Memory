@@ -21,7 +21,10 @@ import { GetIncomesByDateRangeUseCase } from "../../../application/income/get-in
 import { PocketModule } from "./pocket.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([IncomeEntity, IncomeAllocationEntity]), PocketModule],
+  imports: [
+    TypeOrmModule.forFeature([IncomeEntity, IncomeAllocationEntity]),
+    PocketModule,
+  ],
   controllers: [IncomeController],
   exports: [IncomeService],
   providers: [
@@ -74,7 +77,11 @@ import { PocketModule } from "./pocket.module";
         pocketRepository: any,
         dataSource: DataSource,
       ) => {
-        return new UpdateIncomeUseCase(incomeService, pocketRepository, dataSource);
+        return new UpdateIncomeUseCase(
+          incomeService,
+          pocketRepository,
+          dataSource,
+        );
       },
       inject: [IncomeService, "PocketRepository", DataSource],
     },

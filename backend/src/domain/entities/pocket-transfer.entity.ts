@@ -4,10 +4,16 @@ export class PocketTransfer {
   @ApiProperty({ description: "ID único de la transferencia (UUID)" })
   id: string;
 
-  @ApiProperty({ description: "ID del bolsillo de origen (null si el bolsillo fue eliminado)" })
+  @ApiProperty({
+    description:
+      "ID del bolsillo de origen (null si el bolsillo fue eliminado)",
+  })
   sourcePocketId: string | null;
 
-  @ApiProperty({ description: "ID del bolsillo de destino (null si el bolsillo fue eliminado)" })
+  @ApiProperty({
+    description:
+      "ID del bolsillo de destino (null si el bolsillo fue eliminado)",
+  })
   targetPocketId: string | null;
 
   @ApiProperty({ description: "Monto transferido", example: 50.0 })

@@ -3,6 +3,7 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { FilterProvider } from '../../../core/contexts/FilterContext';
+import type { Expense } from '../types/expense.types';
 import ExpensesPage from './ExpensesPage';
 
 // Mock browser APIs used by TimelineFeed (rendered via ExpenseList → EntityFinancialSection → TimelineFeed)
@@ -60,7 +61,7 @@ vi.mock('../../../core/hooks/useExpenseSection', () => ({
     items: [],
     paginationMeta: { total: 0, page: 1, limit: 6, totalPages: 0 },
     error: null, viewMode: 'all',
-    card: { renderCard: () => null, getKey: (e: any) => e.id, accentColor: 'orange' },
+    card: { renderCard: () => null, getKey: (e: Expense) => e.id, accentColor: 'orange' },
     summary: { monthly: null, yearly: null, overall: null },
     monthlyBreakdown: { selectedMonth: null, onMonthSelect: vi.fn(), selectedItems: [], onSelectedPageChange: vi.fn() },
     onPageChange: vi.fn(),

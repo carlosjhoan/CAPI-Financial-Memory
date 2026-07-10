@@ -148,11 +148,11 @@ const ExpensesPage: React.FC = () => {
   useEffect(() => {
     if (justLoadedMoreRef.current) {
       justLoadedMoreRef.current = false;
-      const existingIds = new Set(accumulatedItems.map((i) => i.id));
-      const fresh = gestionItems.filter((i) => !existingIds.has(i.id));
-      if (fresh.length > 0) {
-        setAccumulatedItems((prev) => [...prev, ...fresh]);
-      }
+      setAccumulatedItems((prev) => {
+        const existingIds = new Set(prev.map((i) => i.id));
+        const fresh = gestionItems.filter((i) => !existingIds.has(i.id));
+        return fresh.length > 0 ? [...prev, ...fresh] : prev;
+      });
     } else {
       setAccumulatedItems(gestionItems);
     }
@@ -162,7 +162,7 @@ const ExpensesPage: React.FC = () => {
   useEffect(() => {
     justLoadedMoreRef.current = false;
     setAccumulatedItems(gestionItems);
-  }, [debouncedFilters, filterType]);
+  }, [debouncedFilters, filterType, gestionItems]);
 
   const monthGroups = useMemo(() => {
     const groups = new Map<string, Expense[]>();

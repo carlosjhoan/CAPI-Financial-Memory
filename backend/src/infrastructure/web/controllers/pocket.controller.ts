@@ -505,9 +505,7 @@ export class PocketController {
     description: "Reporte de verificación",
     type: ApiResponseDto,
   })
-  async recalculate(
-    @Req() req: RequestWithUser,
-  ): Promise<ApiResponseDto<any>> {
+  async recalculate(@Req() req: RequestWithUser): Promise<ApiResponseDto<any>> {
     const result = await this.recalculateAccumulatedUseCase.execute(
       req.user.id,
     );

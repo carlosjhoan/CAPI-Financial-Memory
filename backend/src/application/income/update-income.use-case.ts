@@ -79,7 +79,6 @@ export class UpdateIncomeUseCase {
           if (newGoal && newGoal > pocket.goal) {
             goalsToExtend.set(pocketId, newGoal);
           } else {
-            const remaining = pocket.goal - pocket.accumulatedAmount;
             throw new Error(
               `INCOME_EDIT_EXCEEDS_GOAL:${pocketId}:${pocket.name}:${pocket.goal}:${wouldBeAccumulated}`,
             );

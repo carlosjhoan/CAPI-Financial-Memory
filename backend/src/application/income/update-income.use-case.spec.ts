@@ -21,7 +21,11 @@ describe("UpdateIncomeUseCase", () => {
       transaction: jest.fn(),
       manager: {} as any,
     } as any;
-    useCase = new UpdateIncomeUseCase(mockService, mockPocketRepo, mockDataSource);
+    useCase = new UpdateIncomeUseCase(
+      mockService,
+      mockPocketRepo,
+      mockDataSource,
+    );
   });
 
   it("should call incomeService.updateIncome with the correct id and updates", async () => {
