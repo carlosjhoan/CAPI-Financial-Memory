@@ -614,7 +614,7 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
             const pctY = (pt.y / SVG_HEIGHT) * 100;
             const d = new Date(dataPoints[i].date);
             const label = isToday(d) ? 'Hoy' : isFirst24h
-              ? d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
+              ? d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false })
               : `${d.getDate()} ${d.toLocaleDateString('es', { month: 'short' }).toUpperCase()}`;
             return (
               <div key={i}>
@@ -653,7 +653,7 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
           const pctY = (pt.y / SVG_HEIGHT) * 100;
           const isRightHalf = pctX > 60;
           const d = new Date(p.date);
-          const dateStr = isToday(d) ? 'HOY' : d.toLocaleDateString('es-ES', {
+          const dateStr = isToday(d) ? 'HOY' : d.toLocaleDateString('es-CO', {
             day: '2-digit', month: 'short', year: 'numeric',
           }).toUpperCase();
           return (
@@ -712,7 +712,7 @@ const HistorySparkline: React.FC<HistorySparklineProps> = React.memo(({ pocket, 
           const pctY = (svgPt.y / SVG_HEIGHT) * 100;
           const isRightHalf = pctX > 60;
           const d = new Date(dataPt.date);
-          const dateStr = isToday(d) ? 'HOY' : d.toLocaleDateString('es-ES', {
+          const dateStr = isToday(d) ? 'HOY' : d.toLocaleDateString('es-CO', {
             day: '2-digit', month: 'short', year: 'numeric',
           }).toUpperCase();
           return (

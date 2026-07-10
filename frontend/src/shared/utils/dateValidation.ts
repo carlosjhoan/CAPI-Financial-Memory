@@ -9,9 +9,17 @@ export interface DateConstraints {
 
 export function getDateConstraints(): DateConstraints {
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${y}-${m}-${d}`;
+
   const minDate = new Date(today.getTime() - 15 * MS_PER_DAY);
-  const minDateStr = minDate.toISOString().split('T')[0];
+  const minY = minDate.getFullYear();
+  const minM = String(minDate.getMonth() + 1).padStart(2, '0');
+  const minD = String(minDate.getDate()).padStart(2, '0');
+  const minDateStr = `${minY}-${minM}-${minD}`;
+
   return { minDate: minDateStr, maxDate: todayStr };
 }
 

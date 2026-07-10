@@ -362,6 +362,8 @@ export class IncomeController {
       }
       if (updateIncomeDto.allocations !== undefined)
         updateData.allocations = updateIncomeDto.allocations;
+      if (updateIncomeDto.goals !== undefined)
+        updateData.goals = updateIncomeDto.goals;
 
       const income = await this.updateIncomeUseCase.execute(
         req.user.id,
