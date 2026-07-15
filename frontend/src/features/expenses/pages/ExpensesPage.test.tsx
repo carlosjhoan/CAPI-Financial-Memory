@@ -56,19 +56,24 @@ vi.mock('../../hooks/useExpenses', () => ({
   useOverallSummary: () => ({ data: null }),
 }));
 
-vi.mock('../../../core/hooks/useExpenseSection', () => ({
-  useExpenseSection: () => ({
-    items: [],
-    paginationMeta: { total: 0, page: 1, limit: 6, totalPages: 0 },
-    error: null, viewMode: 'all',
-    card: { renderCard: () => null, getKey: (e: Expense) => e.id, accentColor: 'orange' },
-    summary: { monthly: null, yearly: null, overall: null },
-    monthlyBreakdown: { selectedMonth: null, onMonthSelect: vi.fn(), selectedItems: [], onSelectedPageChange: vi.fn() },
-    onPageChange: vi.fn(),
-    layout: { accentColor: 'orange', sectionName: 'Gastos', title: '', totalLabel: 'Total:', emptyMessage: 'No hay gastos', emptyActionLabel: 'Crear Primer Gasto', createButtonLabel: 'Nuevo', gridColumns: 3, emptyIcon: null },
-    timelineNavigation: { availableMonths: [], currentMonthIndex: 0, currentMonth: null, goToNextMonth: vi.fn(), transitioning: false, monthItems: [] },
-  }),
-}));
+const stableUseExpenseSection = vi.hoisted(() => {
+  const stableItems: Expense[] = [];
+  return {
+    useExpenseSection: () => ({
+      items: stableItems,
+      paginationMeta: { total: 0, page: 1, limit: 6, totalPages: 0 },
+      error: null, viewMode: 'all' as const,
+      card: { renderCard: () => null, getKey: (e: Expense) => e.id, accentColor: 'orange' as const },
+      summary: { monthly: null, yearly: null, overall: null },
+      monthlyBreakdown: { selectedMonth: null, onMonthSelect: () => {}, selectedItems: stableItems, onSelectedPageChange: () => {} },
+      onPageChange: () => {},
+      layout: { accentColor: 'orange' as const, sectionName: 'Gastos', title: '', totalLabel: 'Total:', emptyMessage: 'No hay gastos', emptyActionLabel: 'Crear Primer Gasto', createButtonLabel: 'Nuevo', gridColumns: 3, emptyIcon: null },
+      timelineNavigation: { availableMonths: [] as string[], currentMonthIndex: 0, currentMonth: null, goToNextMonth: () => {}, transitioning: false, monthItems: stableItems },
+    }),
+  };
+});
+
+vi.mock('../../../core/hooks/useExpenseSection', () => stableUseExpenseSection);
 
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
