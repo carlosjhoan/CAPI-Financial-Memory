@@ -65,6 +65,7 @@ jobs:
             Revisa el log del fallo y el código relevante.
 
             Reglas estrictas:
+            - NO leas /proc/meminfo ni ningún archivo en /proc/.
             - Haz SOLO el cambio mínimo necesario para corregir el fallo puntual.
             - No refactorices ni toques archivos fuera del alcance del error.
             - No modifiques tests para "hacerlos pasar"; si el fix implica
