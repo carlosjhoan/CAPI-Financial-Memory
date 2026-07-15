@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -378,11 +379,7 @@ export class IncomeController {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      return new ErrorResponse(
-        HttpStatus.BAD_REQUEST,
-        "Bad Request",
-        error.message,
-      );
+      throw new BadRequestException(error.message);
     }
   }
 
