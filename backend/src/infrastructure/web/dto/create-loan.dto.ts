@@ -26,7 +26,12 @@ export class CreateLoanDto {
   @Min(0.01, { message: "Installment must be greater than 0" })
   installment: number;
 
-  @ApiProperty({ description: "Nombre del deudor", example: "Juan Pérez", minLength: 5, maxLength: 100 })
+  @ApiProperty({
+    description: "Nombre del deudor",
+    example: "Juan Pérez",
+    minLength: 5,
+    maxLength: 100,
+  })
   @IsString()
   @MinLength(5, { message: "Debtor name must be at least 5 characters long" })
   @MaxLength(100, {

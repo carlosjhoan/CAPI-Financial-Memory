@@ -18,9 +18,13 @@ import { GetMonthlySummaryUseCase } from "../../../application/income/get-monthl
 import { GetYearlySummaryUseCase } from "../../../application/income/get-yearly-summary.use-case";
 import { GetIncomesByDateRangePaginatedUseCase } from "../../../application/income/get-incomes-by-date-range-paginated.use-case";
 import { GetIncomesByDateRangeUseCase } from "../../../application/income/get-incomes-by-date-range.use-case";
+import { PocketModule } from "./pocket.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([IncomeEntity, IncomeAllocationEntity])],
+  imports: [
+    TypeOrmModule.forFeature([IncomeEntity, IncomeAllocationEntity]),
+    PocketModule,
+  ],
   controllers: [IncomeController],
   exports: [IncomeService],
   providers: [
@@ -68,10 +72,18 @@ import { GetIncomesByDateRangeUseCase } from "../../../application/income/get-in
     },
     {
       provide: UpdateIncomeUseCase,
-      useFactory: (incomeService: IncomeService, dataSource: DataSource) => {
-        return new UpdateIncomeUseCase(incomeService, dataSource);
+      useFactory: (
+        incomeService: IncomeService,
+        pocketRepository: any,
+        dataSource: DataSource,
+      ) => {
+        return new UpdateIncomeUseCase(
+          incomeService,
+          pocketRepository,
+          dataSource,
+        );
       },
-      inject: [IncomeService, DataSource],
+      inject: [IncomeService, "PocketRepository", DataSource],
     },
     {
       provide: DeleteIncomeUseCase,

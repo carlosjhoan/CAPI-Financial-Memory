@@ -56,6 +56,13 @@ export interface TimelineConfig<T> {
   /** Optional focus card renderer — shown with glassmorphism overlay when a dot explodes */
   renderFocusCard?: (item: T) => React.ReactNode;
 
+  // ── Variant (glass overlay / inline panel) ──
+  variant?: 'glass' | 'inline';
+  /** When variant='inline', called when user clicks a timeline dot */
+  onFocusItemClick?: (item: T) => void;
+  /** If false, skip the RAF reveal animation — items all visible immediately */
+  animated?: boolean;
+
   // ── Month navigation (timeline-buffer) ──
   currentMonth?: { month: number; year: number; monthName: string } | null;
   onMonthEnd?: () => void;
@@ -128,6 +135,9 @@ export interface EntityFinancialSectionProps<T> {
 
   /** Acciones del header (filtros + botón crear) que se renderizan dentro del mismo background tintado */
   headerActions?: React.ReactNode;
+
+  /** Si es true, omite el hero band (gradient + total/badge) — usado cuando el hero se renderiza a nivel página */
+  hideHero?: boolean;
 }
 
 function EntityFinancialSection<T>({
@@ -144,6 +154,7 @@ function EntityFinancialSection<T>({
   dateRangeContext,
   timeline,
   headerActions,
+  hideHero = false,
 }: EntityFinancialSectionProps<T>) {
 
   const {
@@ -467,6 +478,9 @@ function EntityFinancialSection<T>({
           monthName={timeline.currentMonth?.monthName ?? ''}
           onMonthEnd={timeline.onMonthEnd}
           transitioning={timeline.transitioning ?? false}
+          variant={timeline.variant}
+          onFocusItemClick={timeline.onFocusItemClick}
+          animated={timeline.animated}
         />
       );
     }
@@ -480,7 +494,7 @@ function EntityFinancialSection<T>({
   return (
     <div className={`space-y-3 ${className}`} style={{ '--focus-card-accent-rgb': accentRgb } as React.CSSProperties}>
       {/* ═══ TINTED HEADER BAND — full-viewport bg via absolute layer, content stays in flow ═══ */}
-      {currentSummary && !isAllEmpty && !isMonthlyEmpty && (
+      {!hideHero && currentSummary && !isAllEmpty && !isMonthlyEmpty && (
         <div className="relative -mt-8">
           {/* Full-viewport-width background layer — extendido 2rem arriba por -mt-8 */}
           <div className="absolute inset-x-0 -top-8 bottom-0 w-screen ml-[calc(-50vw_+_50%)]" style={heroBgStyle} />
@@ -598,6 +612,8 @@ function EntityFinancialSection<T>({
                 monthName={timeline.currentMonth?.monthName ?? ''}
                 onMonthEnd={timeline.onMonthEnd}
                 transitioning={true}
+                variant={timeline.variant}
+                animated={timeline.animated}
               />
             ) : viewMode === 'dateRange' ? (
               <div className="text-center py-8 sm:py-10 md:py-12">

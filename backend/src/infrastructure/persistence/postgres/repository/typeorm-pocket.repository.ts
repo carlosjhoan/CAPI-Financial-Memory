@@ -55,7 +55,9 @@ export class TypeOrmPocketRepository implements PocketRepository {
     return entity;
   }
 
-  private async computeAccumulatedBatch(pocketIds: string[]): Promise<Map<string, number>> {
+  private async computeAccumulatedBatch(
+    pocketIds: string[],
+  ): Promise<Map<string, number>> {
     if (pocketIds.length === 0) return new Map();
 
     const rows = await this.pocketRepository.query(

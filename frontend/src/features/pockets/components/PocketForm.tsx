@@ -336,7 +336,7 @@ const PocketForm: React.FC<PocketFormProps> = ({
                         </option>
                         {eligiblePockets.map((p) => (
                           <option key={p.id} value={p.id}>
-                            {p.name} — ${Number(p.accumulatedAmount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {p.name} — ${Number(p.accumulatedAmount).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </option>
                         ))}
                       </select>

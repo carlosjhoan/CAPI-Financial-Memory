@@ -91,7 +91,7 @@ function formatTime(dateStr: string | undefined | null): string {
   if (!dateStr) return '';
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 function matchesFilter(item: HistoryItem, filter: FilterType): boolean {

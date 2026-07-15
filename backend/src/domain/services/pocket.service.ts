@@ -76,7 +76,10 @@ export class PocketService {
         throw new Error("Name cannot be empty");
       }
       // Unique name check (exclude current pocket)
-      const existingPocket = await this.pocketRepository.findByName(updates.name.trim(), userId);
+      const existingPocket = await this.pocketRepository.findByName(
+        updates.name.trim(),
+        userId,
+      );
       if (existingPocket && existingPocket.id !== id) {
         throw new Error("DUPLICATE_NAME:Ya existe un bolsillo con ese nombre");
       }

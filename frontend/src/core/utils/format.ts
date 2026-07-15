@@ -139,3 +139,64 @@ export function getMonthNumber(monthName: string): number {
   const index = monthNames.findIndex(m => lowerName.startsWith(m.toLowerCase()));
   return index >= 0 ? index + 1 : 0;
 }
+
+// Upper-case Spanish month names for headers (e.g. "JULIO 2026")
+export const MONTHS_SPANISH_UPPER = [
+  'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+  'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE',
+] as const;
+
+/** Extract a "MES AÑO" grouping key from a YYYY-MM-DD date string */
+export function getMonthYearKey(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return `${MONTHS_SPANISH_UPPER[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** Format ISO timestamp to HH:MM (Argentina time) */
+export function formatTime(isoStr: string | undefined | null): string {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function localDateStr(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/** Show "HOY", "AYER", or the day number for a YYYY-MM-DD date string */
+export function formatDayLabel(dateStr: string): string {
+  const today = localDateStr();
+  if (dateStr === today) return 'HOY';
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (dateStr === localDateStr(yesterday)) return 'AYER';
+
+  return dateStr.split('-')[2];
+}
+
+/** Format createdAt ISO timestamp → date label: "HOY", "AYER", or "10 jul 2026" */
+export function formatCreatedAtDateLabel(isoStr: string): string {
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return '';
+
+  const datePart = localDateStr(d);
+  const today = localDateStr();
+
+  if (datePart === today) return 'HOY';
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (datePart === localDateStr(yesterday)) return 'AYER';
+
+  return new Intl.DateTimeFormat('es-ES', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(d);
+}

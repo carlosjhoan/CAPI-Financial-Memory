@@ -57,7 +57,7 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
             ? `${formattedInteger},${decimalPart}`
             : formattedInteger;
         } else {
-          formatted = new Intl.NumberFormat('es-ES', {
+          formatted = new Intl.NumberFormat('es-CO', {
             style: 'decimal',
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,

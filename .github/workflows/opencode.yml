@@ -35,18 +35,6 @@ jobs:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         with:
           model: opencode/deepseek-v4-flash-free
-          prompt: |
-            Diagnosticá y fixeá el fallo de CI que disparó este comentario.
-
-            Reglas estrictas:
-            - NO ejecutes npm install, npm run build, npm run test, ni npm run lint.
-            - NO leas /proc/meminfo ni ningún archivo en /proc/.
-            - NO optimices workers ni configures nada de tests.
-            - NO sobreescribas package-lock.json ni node_modules.
-            - Lee el log del workflow que falló (gh run view --log),
-              entendé el error, y aplicá el cambio mínimo en 1-3 archivos.
-            - Crea una rama con prefijo opencode/ y abrí un PR.
-            - NO hagas merge.
 
   opencode-ci-triage:
     if: |

@@ -31,6 +31,7 @@ export interface UpdateIncomeDto {
   reason?: string;
   date?: string;
   allocations?: Allocation[];
+  goals?: Record<string, number>; // pocketId → newGoal, para extender metas goal
 }
 
 // IncomeFilters extiende BaseFilters (startDate, endDate, year, month)

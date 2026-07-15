@@ -84,7 +84,7 @@ const PocketDetailPage: React.FC = () => {
   const activeSince = useMemo(() => {
     if (!pocket) return '';
     return new Date(pocket.createdAt)
-      .toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+      .toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
       .toUpperCase();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pocket?.createdAt]);

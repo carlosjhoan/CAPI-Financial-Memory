@@ -3,7 +3,6 @@ import { PocketRepository } from "../../domain/repositories/pocket.repository";
 import { DataSource } from "typeorm";
 import { PocketEntity } from "../../infrastructure/persistence/postgres/entities/pocket.entity";
 import { PocketTransferEntity } from "../../infrastructure/persistence/postgres/entities/pocket-transfer.entity";
-import { IncomeEntity } from "../../infrastructure/persistence/postgres/entities/income.entity";
 import { IncomeAllocationEntity } from "../../infrastructure/persistence/postgres/entities/income-allocation.entity";
 
 export class DeleteWithTransferUseCase {
@@ -18,7 +17,7 @@ export class DeleteWithTransferUseCase {
     distributions: { targetPocketId: string; amount: number }[],
     reason: string,
     date: Date,
-  ): Promise<{ deletedPocketId: string; transfersCreated: number }> {
+  ): Promise<{ deletedPocketId: string }> {
     // --- Pre-transaction validations ---
     const sourcePocket = await this.pocketRepository.findById(pocketId, userId);
     if (!sourcePocket) {
@@ -54,8 +53,6 @@ export class DeleteWithTransferUseCase {
 
     // --- Atomic transaction ---
     return await this.dataSource.transaction(async (em) => {
-      let transfersCreated = 0;
-
       // 1. Lock source pocket
       const sourceEntity = await em
         .createQueryBuilder(PocketEntity, "p")
@@ -84,13 +81,9 @@ export class DeleteWithTransferUseCase {
       );
 
       // 4. Nullify income allocations referencing this pocket
-      await em.update(
-        IncomeAllocationEntity,
-        { pocketId },
-        { pocketId: null },
-      );
+      await em.update(IncomeAllocationEntity, { pocketId }, { pocketId: null });
 
-      // 5. Process each distribution: lock target → goal check → credit → create income record
+      // 5. Process each distribution: lock target → goal check
       for (const dist of distributions) {
         const targetEntity = await em
           .createQueryBuilder(PocketEntity, "p")
@@ -105,7 +98,8 @@ export class DeleteWithTransferUseCase {
         // Goal overflow check — use pre-fetched computed accumulated
         const cachedTarget = targetPocketMap.get(dist.targetPocketId)!;
         if (targetEntity.type === "goal" && Number(targetEntity.goal) > 0) {
-          const remaining = Number(targetEntity.goal) - cachedTarget.accumulatedAmount;
+          const remaining =
+            Number(targetEntity.goal) - cachedTarget.accumulatedAmount;
           if (dist.amount > remaining) {
             throw new Error(
               `TRANSFER_EXCEEDS_GOAL:${remaining}:${dist.amount}:${targetEntity.id}`,
@@ -117,30 +111,22 @@ export class DeleteWithTransferUseCase {
         targetEntity.updatedAt = new Date();
         await em.save(targetEntity);
 
-        // Create income + allocation on target pocket (so KPIs and history reflect the transfer)
-        const depositReason = `Transferencia desde "${sourceEntity.name}" (bolsillo eliminado)`;
-
-        const incomeEntity = em.create(IncomeEntity, {
-          userId: sourceEntity.userId,
+        // Create pocket transfer for this distribution (source pocket is about to be deleted)
+        const transferEntity = em.create(PocketTransferEntity, {
+          sourcePocketId: null,
+          sourcePocketName: sourceEntity.name,
+          targetPocketId: dist.targetPocketId,
           amount: dist.amount,
-          reason: depositReason,
+          reason,
           date,
         });
-        const savedIncome = await em.save(incomeEntity);
-
-        const allocationEntity = em.create(IncomeAllocationEntity, {
-          incomeId: savedIncome.id,
-          pocketId: dist.targetPocketId,
-          amount: dist.amount,
-        });
-        await em.save(allocationEntity);
-        transfersCreated++;
+        await em.save(transferEntity);
       }
 
       // 6. Delete the pocket itself
       await em.delete(PocketEntity, pocketId);
 
-      return { deletedPocketId: pocketId, transfersCreated };
+      return { deletedPocketId: pocketId };
     });
   }
 }

@@ -84,9 +84,7 @@ import { RecalculateAccumulatedUseCase } from "../../../application/pocket/recal
     },
     {
       provide: RecalculateAccumulatedUseCase,
-      useFactory: (
-        pocketRepository: TypeOrmPocketRepository,
-      ) => {
+      useFactory: (pocketRepository: TypeOrmPocketRepository) => {
         return new RecalculateAccumulatedUseCase(pocketRepository);
       },
       inject: ["PocketRepository"],

@@ -31,3 +31,14 @@ export { default as FormFloatDatePicker } from './forms/FormFloatDatePicker';
 // ── Multi-step form components ──
 export { default as FormStepIndicator } from './forms/FormStepIndicator';
 export { default as StepActions } from './forms/StepActions';
+
+// ── Page-level components ──
+export { default as PageGradient } from './PageGradient';
+export { default as GlassCard } from './GlassCard';
+export { default as AllocationBreakdownModal } from './AllocationBreakdownModal';
+
+// ── Inline edit/delete components ──
+export { default as KebabPopover } from './KebabPopover';
+export type { KebabAction, KebabPopoverProps } from './KebabPopover';
+export { default as SplitPanelLayout } from './SplitPanelLayout';
+export type { SplitPanelLayoutProps } from './SplitPanelLayout';

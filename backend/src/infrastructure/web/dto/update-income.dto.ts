@@ -8,6 +8,7 @@ import {
   IsOptional,
   ValidateNested,
   IsArray,
+  IsObject,
 } from "class-validator";
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
@@ -47,4 +48,13 @@ export class UpdateIncomeDto {
   @ValidateNested({ each: true })
   @Type(() => AllocationDto)
   allocations?: AllocationDto[];
+
+  @ApiPropertyOptional({
+    description:
+      "Nuevas metas para bolsillos tipo goal (pocketId → nuevoGoal), se usa cuando la edición supera la meta restante",
+    example: { "pocket-uuid": 15000 },
+  })
+  @IsOptional()
+  @IsObject()
+  goals?: Record<string, number>;
 }

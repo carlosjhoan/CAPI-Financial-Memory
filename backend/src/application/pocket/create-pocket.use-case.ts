@@ -26,7 +26,10 @@ export class CreatePocketUseCase {
       throw new Error("Name is required");
     }
 
-    const existingPocket = await this.pocketRepository.findByName(name.trim(), userId);
+    const existingPocket = await this.pocketRepository.findByName(
+      name.trim(),
+      userId,
+    );
     if (existingPocket) {
       throw new Error("DUPLICATE_NAME:Ya existe un bolsillo con ese nombre");
     }

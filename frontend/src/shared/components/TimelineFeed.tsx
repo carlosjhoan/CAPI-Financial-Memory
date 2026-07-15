@@ -8,6 +8,8 @@ import './TimelineFeed.css';
 // TYPES
 // ==========================================
 
+export type TimelineFeedVariant = 'glass' | 'inline';
+
 export interface TimelineFeedProps<T> {
   items: T[];
   renderRow: (item: T, index: number) => React.ReactNode;
@@ -21,8 +23,15 @@ export interface TimelineFeedProps<T> {
   renderValue?: (item: T) => React.ReactNode;
   /** Optional focus card renderer — shown with glassmorphism overlay when a dot explodes */
   renderFocusCard?: (item: T) => React.ReactNode;
-  /** Accent RGB para la corriente del borde — ej: "22,163,74" para verde */
+  /** Accent RGB para la corriente eléctrica del borde — como "22,163,74" para verde */
   accentRgb?: string;
+
+  // ── Variant: 'glass' (default, overlay) or 'inline' (no overlay, signals parent) ──
+  variant?: TimelineFeedVariant;
+  /** When variant='inline', called when a dot is clicked — parent renders the card in SplitPanelLayout */
+  onFocusItemClick?: (item: T) => void;
+  /** When false, skip the RAF reveal animation — all items visible immediately. Default true. */
+  animated?: boolean;
 
   // ── Month identity (replaces internal groups computation) ──
   /** 0-indexed month number */
@@ -69,6 +78,9 @@ function TimelineFeed<T>({
   monthName,
   onMonthEnd,
   transitioning = false,
+  variant = 'glass',
+  onFocusItemClick,
+  animated = true,
 }: TimelineFeedProps<T>) {
 
   // ── Refs ────────────────────────────────────
@@ -159,7 +171,9 @@ function TimelineFeed<T>({
     itemsGenerationRef.current += 1;
   }, [items, month, yearProp]);
 
-  const animateSlides = !reducedMotion;
+  // animated=false gates the entire RAF reveal loop (items render instantly)
+  // reducedMotion also disables animation regardless of animated=true
+  const animateSlides = !reducedMotion && animated;
   const totalItems = items.length;
 
   // ── Immediate first-item reveal ─────────────
@@ -666,14 +680,22 @@ function TimelineFeed<T>({
                   key={getKey(item)}
                   data-revealed={animateSlides && isRevealed ? 'true' : undefined}
                   data-item-key={animateSlides ? getKey(item) : undefined}
-                  className={`relative pl-9 py-2.5 rounded-lg hover:bg-secondary-50 dark:hover:bg-secondary-800/50 transition-colors${
+                  className={`relative pl-9 py-2.5 rounded-lg transition-colors${
                     animateSlides ? ' auto-slide' : ''
-                  }${isRevealed ? ' active' : ''}`}
+                  }${isRevealed ? ' active' : ''}${
+                    variant === 'inline' ? ' hover:bg-secondary-50 dark:hover:bg-secondary-800/50 cursor-pointer' : ''
+                  }`}
+                  onClick={variant === 'inline' && isRevealed && !transitioning
+                    ? () => onFocusItemClick?.(item)
+                    : undefined
+                  }
                 >
                   {/* Dot */}
                   <div
                     data-dot-anchor="true"
-                    className={`absolute left-[17px] top-1/2 -translate-y-1/2 z-10 pointer-events-none transition-all duration-300${
+                    className={`absolute left-[17px] top-1/2 -translate-y-1/2 z-10 ${
+                      variant === 'inline' ? '' : 'pointer-events-none'
+                    } transition-all duration-300${
                     isRevealed || isItemExploded ? ' opacity-100 scale-100' : ' opacity-0 scale-0'
                   }`}>
                     <div
@@ -742,42 +764,44 @@ function TimelineFeed<T>({
         </div>
       </div>
 
-      {/* ── Viewport blur overlay — fade in/out sincronizado con la card ── */}
-      {focusItemKey && (
-        <div className={`absolute inset-0 z-[21] pointer-events-none ${
-          isCardExiting ? 'focus-overlay-exit' : 'focus-overlay-enter'
-        }`} />
-      )}
+      {/* ── RecordFocusCard overlay — only in 'glass' variant ── */}
+      {variant === 'glass' && focusItemKey && (
+        <>
+          {/* Viewport blur overlay */}
+          <div className={`absolute inset-0 z-[21] pointer-events-none ${
+            isCardExiting ? 'focus-overlay-exit' : 'focus-overlay-enter'
+          }`} />
 
-      {/* ── RecordFocusCard overlay — contextual, anclado al item explotado ── */}
-      {renderFocusCard && focusItemKey && cardPosition && items.find((item) => getKey(item) === focusItemKey) && (
-        <div
-          className="absolute z-30 pointer-events-none"
-          style={{
-            top: cardPosition.top,
-            left: cardPosition.left,
-            maxWidth: 380,
-            width: `calc(100% - ${cardPosition.left + 16}px)`,
-          }}
-        >
-          <div className="relative" key={focusItemKey}>
-            {/* Corriente SVG — stroke-dashoffset animado sobre un solo rect */}
-            <div className="focus-card-glow">
-              <BeamSvg
-                accentRgb={accentRgb || '96,165,250'}
-                onCycleComplete={() => setIsCardExiting(true)}
-              />
+          {/* Contextual focus card */}
+          {renderFocusCard && cardPosition && items.find((item) => getKey(item) === focusItemKey) && (
+            <div
+              className="absolute z-30 pointer-events-none"
+              style={{
+                top: cardPosition.top,
+                left: cardPosition.left,
+                maxWidth: 380,
+                width: `calc(100% - ${cardPosition.left + 16}px)`,
+              }}
+            >
+              <div className="relative" key={focusItemKey}>
+                <div className="focus-card-glow">
+                  <BeamSvg
+                    accentRgb={accentRgb || '96,165,250'}
+                    onCycleComplete={() => setIsCardExiting(true)}
+                  />
+                </div>
+                <RecordFocusCard
+                  item={items.find((item) => getKey(item) === focusItemKey)!}
+                  renderDetail={renderFocusCard}
+                  isExiting={isCardExiting}
+                  onDismiss={handleFocusCardDismiss}
+                  monthName={monthName}
+                  year={yearProp}
+                />
+              </div>
             </div>
-            <RecordFocusCard
-              item={items.find((item) => getKey(item) === focusItemKey)!}
-              renderDetail={renderFocusCard}
-              isExiting={isCardExiting}
-              onDismiss={handleFocusCardDismiss}
-              monthName={monthName}
-              year={yearProp}
-            />
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );

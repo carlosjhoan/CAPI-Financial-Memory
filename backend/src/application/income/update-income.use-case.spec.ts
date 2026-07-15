@@ -2,21 +2,30 @@ import { UpdateIncomeUseCase } from "./update-income.use-case";
 import { IncomeService } from "../../domain/services/income.service";
 import { Income } from "../../domain/entities/income.entity";
 import { DataSource } from "typeorm";
+import { PocketRepository } from "../../domain/repositories/pocket.repository";
 
 describe("UpdateIncomeUseCase", () => {
   let useCase: UpdateIncomeUseCase;
   let mockService: jest.Mocked<IncomeService>;
+  let mockPocketRepo: jest.Mocked<PocketRepository>;
   let mockDataSource: jest.Mocked<DataSource>;
 
   beforeEach(() => {
     mockService = {
       updateIncome: jest.fn(),
     } as any;
+    mockPocketRepo = {
+      findById: jest.fn(),
+    } as any;
     mockDataSource = {
       transaction: jest.fn(),
       manager: {} as any,
     } as any;
-    useCase = new UpdateIncomeUseCase(mockService, mockDataSource);
+    useCase = new UpdateIncomeUseCase(
+      mockService,
+      mockPocketRepo,
+      mockDataSource,
+    );
   });
 
   it("should call incomeService.updateIncome with the correct id and updates", async () => {
