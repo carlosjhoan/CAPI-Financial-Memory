@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      pull-requests: write
     services:
       postgres:
         image: postgres:15
@@ -49,7 +50,7 @@ jobs:
       - run: npm run migration:run -w backend
       - run: npm run test:e2e -w backend
 
-      - name: Crear issue si falla
+      - name: Crear issue si falla (push a master)
         if: failure() && github.event_name == 'push'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,11 +61,21 @@ jobs:
           Logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --label "ci-failure"
 
+      - name: Activar opencode si falla en PR
+        if: failure() && github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'opencode-attempted')
+        env:
+          GH_TOKEN: ${{ secrets.PAT_OPENCODE }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "/oc el CI falló en el job **backend** de este PR (run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}). Vuelve a correr el lint/tests localmente para ver el error exacto, aplica el fix mínimo necesario, y commitea directo en esta misma rama."
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "opencode-attempted"
+
   frontend:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -76,7 +87,7 @@ jobs:
       - run: npm run test -w frontend
       - run: npm run build -w frontend
 
-      - name: Crear issue si falla
+      - name: Crear issue si falla (push a master)
         if: failure() && github.event_name == 'push'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -86,3 +97,12 @@ jobs:
             --body "Falló el job **frontend** en el commit ${{ github.sha }} (rama ${{ github.ref_name }}).
           Logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --label "ci-failure"
+
+      - name: Activar opencode si falla en PR
+        if: failure() && github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'opencode-attempted')
+        env:
+          GH_TOKEN: ${{ secrets.PAT_OPENCODE }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "/oc el CI falló en el job **frontend** de este PR (run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}). Vuelve a correr el lint/tests localmente para ver el error exacto, aplica el fix mínimo necesario, y commitea directo en esta misma rama."
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "opencode-attempted"
