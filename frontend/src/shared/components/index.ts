@@ -36,6 +36,7 @@ export { default as StepActions } from './forms/StepActions';
 export { default as PageGradient } from './PageGradient';
 export { default as GlassCard } from './GlassCard';
 export { default as AllocationBreakdownModal } from './AllocationBreakdownModal';
+export { EntityManagement } from './entity-management';
 
 // ── Inline edit/delete components ──
 export { default as KebabPopover } from './KebabPopover';
