@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { FinancialEntity, EntityConfig, GoalExceededState } from '../../../core/types/financial-entity.types';
+import type { FinancialEntity, EntityConfig, GoalExceededState, CreateEntityDto, UpdateEntityDto } from '../../../core/types/financial-entity.types';
 import type { TimelineConfig } from '../EntityFinancialSection';
 import { SessionFilterType } from '../SessionFilters';
 import Modal from '../Modal';
@@ -166,7 +166,7 @@ function EntityManagement<T extends FinancialEntity>({
   // ── CRUD handlers ──
   const handleCreate = useCallback(
     async (data: unknown) => {
-      await createMutation.mutateAsync(data);
+      await createMutation.mutateAsync(data as CreateEntityDto);
       setIsCreateModalOpen(false);
     },
     [createMutation],
@@ -176,7 +176,7 @@ function EntityManagement<T extends FinancialEntity>({
     async (data: unknown) => {
       if (!itemToEdit) return;
       try {
-        await updateMutation.mutateAsync({ id: itemToEdit.id, data });
+        await updateMutation.mutateAsync({ id: itemToEdit.id, data: data as UpdateEntityDto });
         setItemToEdit(null);
       } catch (err) {
         if (config.onUpdateError) {
@@ -204,9 +204,9 @@ function EntityManagement<T extends FinancialEntity>({
     await updateMutation.mutateAsync({
       id: itemToEdit.id,
       data: {
-        ...(goalExceeded.formData as Record<string, unknown>),
+        ...(goalExceeded.formData as UpdateEntityDto),
         goals,
-      },
+      } as UpdateEntityDto,
     });
     setItemToEdit(null);
     setGoalExceeded(null);

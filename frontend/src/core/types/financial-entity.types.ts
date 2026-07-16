@@ -202,11 +202,11 @@ export interface EntityConfig<T extends FinancialEntity> {
       layout?: Partial<LayoutConfig>;
     }) => SectionReturn<T>;
     useCreate: () => {
-      mutateAsync: (data: any) => Promise<T>;
+      mutateAsync: (data: CreateEntityDto) => Promise<T>;
       isPending: boolean;
     };
     useUpdate: () => {
-      mutateAsync: (args: { id: string; data: any }) => Promise<T>;
+      mutateAsync: (args: { id: string; data: UpdateEntityDto }) => Promise<T>;
       isPending: boolean;
     };
     useDelete: () => {

@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import type { Expense } from './types/expense.types';
 import type { EntityConfig, FormComponentProps, DeleteModalProps } from '../../core/types/financial-entity.types';
 import { useExpenseSection } from '../../core/hooks/useExpenseSection';
