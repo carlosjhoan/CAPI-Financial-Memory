@@ -21,4 +21,6 @@ export const envValidationSchema = Joi.object({
     .default("http://localhost:3000/api/auth/google/callback"),
 
   CORS_ORIGIN: Joi.string().default("http://localhost:5173"),
+
+  SENTRY_DSN: Joi.string().uri().optional(),
 });
