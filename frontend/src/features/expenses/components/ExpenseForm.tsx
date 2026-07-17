@@ -152,7 +152,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
   const canContinue = !isLoading && !isSubmitting;
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} onKeyDown={(e) => {
+    <form onKeyDown={(e) => {
         if (e.key === 'Enter' && !isLastStep) e.preventDefault();
       }}>
       <FormStepIndicator

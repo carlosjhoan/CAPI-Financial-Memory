@@ -404,6 +404,7 @@ function EntityManagement<T extends FinancialEntity>({
         onClose={closeEdit}
         title={config.labels.editTitle}
         size="lg"
+        preventCloseOnBackdrop
       >
         {itemToEdit && (
           <Form
