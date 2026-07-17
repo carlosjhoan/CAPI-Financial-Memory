@@ -88,7 +88,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
   useEffect(() => {
     if (allocationMode === 'single' && fields.length === 0) {
       replace([{
-        pocketId: initialPocketId && !isEditMode ? initialPocketId : '',
+        pocketId: initialPocketId || '',
         amount,
       }]);
     }
@@ -131,7 +131,9 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
   const canContinue = !isLoading && !isSubmitting;
 
   return (
-      <form onSubmit={handleSubmit(handleFormSubmit)}>
+      <form onSubmit={handleSubmit(handleFormSubmit)} onKeyDown={(e) => {
+        if (e.key === 'Enter' && !isLastStep) e.preventDefault();
+      }}>
       <FormStepIndicator
         currentStep={currentStep}
         totalSteps={STEPS.length}

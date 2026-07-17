@@ -17,6 +17,7 @@ export interface ExpenseFormProps {
   onSubmit: (data: ExpenseFormData) => Promise<void>;
   onCancel?: () => void;
   isLoading?: boolean;
+  initialPocketId?: string;
 }
 
 const STEPS = [
@@ -29,6 +30,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
   expense,
   onSubmit,
   isLoading = false,
+  initialPocketId,
 }) => {
   const isEditMode = !!expense;
   const [currentStep, setCurrentStep] = useState(0);
@@ -110,9 +112,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
   // Inicializar asignación única en modo single si no hay entries
   useEffect(() => {
     if (allocationMode === 'single' && fields.length === 0) {
-      replace([{ pocketId: '', amount }]);
+      replace([{ pocketId: initialPocketId || '', amount }]);
     }
-  }, [allocationMode, fields.length, replace, amount]);
+  }, [allocationMode, fields.length, replace, amount, initialPocketId]);
 
   const validateStep = async (): Promise<boolean> => {
     const fields = STEPS[currentStep].fields;
@@ -150,7 +152,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
   const canContinue = !isLoading && !isSubmitting;
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)}>
+    <form onSubmit={handleSubmit(handleFormSubmit)} onKeyDown={(e) => {
+        if (e.key === 'Enter' && !isLastStep) e.preventDefault();
+      }}>
       <FormStepIndicator
         currentStep={currentStep}
         totalSteps={STEPS.length}

@@ -408,6 +408,7 @@ function EntityManagement<T extends FinancialEntity>({
         {itemToEdit && (
           <Form
             entity={itemToEdit}
+            initialPocketId={itemToEdit?.allocations?.[0]?.pocketId}
             onSubmit={handleUpdate}
             isLoading={updateMutation.isPending}
             onCancel={closeEdit}
