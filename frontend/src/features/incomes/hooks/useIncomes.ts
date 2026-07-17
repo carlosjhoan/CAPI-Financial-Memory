@@ -83,6 +83,7 @@ export function useUpdateIncome() {
       success('Ingreso actualizado', `El ingreso ha sido actualizado exitosamente`);
     },
     onError: (err: Error) => {
+      if (err.message?.startsWith('INCOME_EDIT_EXCEEDS_GOAL')) return;
       showError('Error al actualizar ingreso', err.message || 'No se pudo actualizar el ingreso');
     },
   });
