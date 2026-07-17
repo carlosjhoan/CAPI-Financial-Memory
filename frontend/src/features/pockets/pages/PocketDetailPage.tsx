@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowsRightLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { usePockets, usePocket, useUpdatePocket, useDeletePocket, usePocketHistory } from '../hooks/usePockets';
@@ -22,7 +22,7 @@ const PocketDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { data: pocket, isLoading, error } = usePocket(id || '');
+  const { data: pocket, isLoading, isFetching, error } = usePocket(id || '');
   const { data: pocketsList } = usePockets();
   const historyQuery = usePocketHistory(id || '');
   const updatePocketMutation = useUpdatePocket();
@@ -39,7 +39,7 @@ const PocketDetailPage: React.FC = () => {
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   // Primer visita en la sesión: animación + KPIs ocultos; repetidas: sin animación + KPIs visibles
   const isFirstView = !animatedPockets.has(pocket?.id || '');
-  const [animate] = useState(() => isFirstView);
+  const [animate] = useState(() => isFirstView && !(isFetching && !isLoading));
   const [showKPIs, setShowKPIs] = useState(() => !isFirstView);
 
   // ── Cálculos derivados (ANTES de early returns) ──
@@ -60,6 +60,20 @@ const PocketDetailPage: React.FC = () => {
     + outgoingTransfers.reduce((sum, t) => sum + t.amount, 0);
 
   const netAmount = pocket?.accumulatedAmount || 0;
+  const goalProgress = isGoal && (pocket?.goal ?? 0) > 0
+    ? (netAmount / (pocket?.goal ?? 1)) * 100
+    : 100;
+
+  // Reset celebration state when goal drops below 100%, so a future re-attainment
+  // triggers a fresh animation + confetti.
+  const wasFullRef = useRef(goalProgress >= 100);
+  useEffect(() => {
+    const nowFull = goalProgress >= 100;
+    if (wasFullRef.current && !nowFull) {
+      if (pocket?.id) animatedPockets.delete(pocket.id);
+    }
+    wasFullRef.current = nowFull;
+  }, [goalProgress, pocket?.id]);
 
   const efficiency = useMemo(() => {
     return totalDeposited > 0
@@ -398,7 +412,9 @@ const PocketDetailPage: React.FC = () => {
             goal={pocket.goal}
             animate={animate}
             onReady={() => {
-              if (pocket?.id) animatedPockets.add(pocket.id);
+              // Solo marcar si realmente está al 100% — si no,
+              // la próxima visita con meta al 100% es "primera vez".
+              if (pocket?.id && goalProgress >= 100) animatedPockets.add(pocket.id);
               setShowKPIs(true);
             }}
           />
@@ -407,7 +423,7 @@ const PocketDetailPage: React.FC = () => {
             pocket={pocket}
             animate={animate}
             onReady={() => {
-              if (pocket?.id) animatedPockets.add(pocket.id);
+              if (pocket?.id && goalProgress >= 100) animatedPockets.add(pocket.id);
               setShowKPIs(true);
             }}
           />

@@ -164,8 +164,13 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
                   <span className="text-sm font-medium text-secondary-600 dark:text-secondary-400">
                     {percentage.toFixed(2)}%
                   </span>
-                  <span className="text-xs text-secondary-500 dark:text-secondary-400">
+                  <span className="text-xs text-secondary-500 dark:text-secondary-400 inline-flex items-center gap-1">
                     Meta: {formatCurrency(pocket.goal)}
+                    {isGoalReached && (
+                      <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
                   </span>
                 </div>
               </div>
@@ -192,6 +197,9 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
           </div>
         </div>
 
+      {/* bottom spacer — mantiene el contenido separado del borde inferior */}
+      <div className="h-7" />
+
       {/* ═══ Nuevo bolsillo badge (≤ 7 días) ═══ */}
       {(() => {
         const daysOld = Math.floor((Date.now() - new Date(pocket.createdAt).getTime()) / 86400000);
@@ -210,15 +218,7 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
         </span>
       )}
 
-      {/* ═══ Footer: Meta alcanzada badge (invisible reserva espacio) ═══ */}
-      <div className={`flex items-center justify-center px-4 py-2 ${isGoalReached ? 'visible' : 'invisible'}`}>
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Meta alcanzada
-        </span>
-      </div>
+
     </div>
   );
 };

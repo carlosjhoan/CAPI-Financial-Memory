@@ -105,7 +105,7 @@ const IncomeForm: React.FC<IncomeFormProps> = ({
 
   const handleContinue = async () => {
     if (isLastStep) {
-      handleSubmit(handleFormSubmit)();
+      await handleSubmit(handleFormSubmit)();
       return;
     }
 

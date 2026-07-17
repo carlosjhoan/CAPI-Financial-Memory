@@ -38,7 +38,7 @@ const AllocationBreakdownModal: React.FC<AllocationBreakdownModalProps> = ({
             {allocations.map((a, i) => (
               <tr key={i}>
                 <td className="py-2 text-secondary-900 dark:text-white">{a.pocketName}</td>
-                <td className="py-2 text-right font-medium text-secondary-900 dark:text-white">
+                <td className="py-2 text-right font-medium" style={{ color: `rgba(${accentColor},0.65)` }}>
                   {formatCurrency(a.amount)}
                 </td>
               </tr>
@@ -47,7 +47,7 @@ const AllocationBreakdownModal: React.FC<AllocationBreakdownModalProps> = ({
           <tfoot>
             <tr className="border-t-2 border-secondary-300 dark:border-secondary-600 font-semibold">
               <td className="py-2 text-secondary-900 dark:text-white">Total</td>
-              <td className="py-2 text-right text-secondary-900 dark:text-white">
+              <td className="py-2 text-right font-semibold" style={{ color: `rgb(${accentColor})` }}>
                 {formatCurrency(total)}
               </td>
             </tr>

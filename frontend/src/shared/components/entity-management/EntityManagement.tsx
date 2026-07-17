@@ -10,6 +10,7 @@ import { GestionTab, HistoriaTab } from './tabs';
 import { useFilterContext } from '../../../core/contexts';
 import { useTheme } from '../../../core/hooks/useTheme';
 import { formatCurrency } from '../../../core/utils/format';
+import { usePockets } from '../../../features/pockets/hooks/usePockets';
 
 // ==========================================
 // TYPES
@@ -70,12 +71,16 @@ function EntityManagement<T extends FinancialEntity>({
   const [itemForBreakdown, setItemForBreakdown] = useState<T | null>(null);
   const [goalExceeded, setGoalExceeded] =
     useState<GoalExceededState<T> | null>(null);
+  const [goalUnreached, setGoalUnreached] = useState<T | null>(null);
+  const [pendingUpdate, setPendingUpdate] = useState<unknown>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // ── Mutations ──
   const createMutation = config.hooks.useCreate();
   const updateMutation = config.hooks.useUpdate();
   const deleteMutation = config.hooks.useDelete();
+
+  const { data: pockets } = usePockets();
 
   // Open create modal when pocketId is in URL
   useEffect(() => {
@@ -175,22 +180,40 @@ function EntityManagement<T extends FinancialEntity>({
   const handleUpdate = useCallback(
     async (data: unknown) => {
       if (!itemToEdit) return;
-      try {
-        await updateMutation.mutateAsync({ id: itemToEdit.id, data: data as UpdateEntityDto });
-        setItemToEdit(null);
-      } catch (err) {
-        if (config.onUpdateError) {
-          await config.onUpdateError(err, {
+
+      // Goal pocket pre-check: if the pocket is Goal and the new amount exceeds its target,
+      // show the confirmation dialog BEFORE calling the API.
+      const pocketId = (data as UpdateEntityDto).allocations?.[0]?.pocketId
+        ?? itemToEdit.allocations?.[0]?.pocketId;
+      const pocket = pocketId ? pockets?.find(p => p.id === pocketId) : undefined;
+      if (pocket?.type === 'goal' && pocket.goal > 0) {
+        const newAmount = Number((data as UpdateEntityDto).amount ?? itemToEdit.amount);
+        const diff = newAmount - itemToEdit.amount;
+        const newAccumulated = pocket.accumulatedAmount + diff;
+        if (newAccumulated > pocket.goal) {
+          setGoalExceeded({
+            pocketId: pocket.id,
+            pocketName: pocket.name,
+            currentGoal: pocket.goal,
+            wouldBeAccumulated: newAccumulated,
             entity: itemToEdit,
             formData: data,
-            setGoalExceeded,
           });
-          return;
+          return; // stop — dialog will handle the update on confirm
         }
-        throw err;
+
+        // Reverse case: goal was reached and the user reduces it so it's no longer reached
+        if (pocket.accumulatedAmount >= pocket.goal && newAccumulated < pocket.goal) {
+          setGoalUnreached(itemToEdit);
+          setPendingUpdate(data);
+          return; // stop — dialog will handle the update on confirm
+        }
       }
+
+      await updateMutation.mutateAsync({ id: itemToEdit.id, data: data as UpdateEntityDto });
+      setItemToEdit(null);
     },
-    [itemToEdit, updateMutation, config],
+    [itemToEdit, updateMutation, config, pockets],
   );
 
   const handleExtendGoal = useCallback(async () => {
@@ -211,6 +234,19 @@ function EntityManagement<T extends FinancialEntity>({
     setItemToEdit(null);
     setGoalExceeded(null);
   }, [itemToEdit, goalExceeded, updateMutation]);
+
+  const handleGoalUnreachedConfirm = useCallback(async () => {
+    if (!itemToEdit || !pendingUpdate) return;
+    setGoalUnreached(null);
+    setPendingUpdate(null);
+    await updateMutation.mutateAsync({ id: itemToEdit.id, data: pendingUpdate as UpdateEntityDto });
+    setItemToEdit(null);
+  }, [itemToEdit, pendingUpdate, updateMutation]);
+
+  const handleGoalUnreachedCancel = useCallback(() => {
+    setGoalUnreached(null);
+    setPendingUpdate(null);
+  }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!itemToDelete) return;
@@ -431,8 +467,8 @@ function EntityManagement<T extends FinancialEntity>({
         accentColor={config.colors.allocationAccent}
       />
 
-      {/* Goal Exceeded modal — income-only */}
-      {config.onUpdateError && goalExceeded && (
+      {/* Goal Exceeded modal */}
+      {goalExceeded && (
         <Modal
           isOpen={!!goalExceeded}
           onClose={() => setGoalExceeded(null)}
@@ -505,7 +541,45 @@ function EntityManagement<T extends FinancialEntity>({
           </div>
         </Modal>
       )}
-    </>
+
+      {/* Goal Unreached modal */}
+      {goalUnreached && (
+        <Modal
+          isOpen={!!goalUnreached}
+          onClose={handleGoalUnreachedCancel}
+          title="Meta ya no alcanzada"
+          description="Al reducir este ingreso, la meta de ahorro dejará de estar alcanzada."
+          size="sm"
+          glass
+          glassBackdrop
+          accentColor={config.colors.accentRGB}
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-secondary-600 dark:text-secondary-400 text-center">
+              ¿Estás seguro de que querés continuar? El ingreso se
+              actualizará y la meta quedará pendiente.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleGoalUnreachedCancel}
+                className="flex-1 px-4 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-600 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-50 dark:hover:bg-secondary-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleGoalUnreachedConfirm}
+                disabled={updateMutation.isPending}
+                className="flex-1 px-4 py-2 text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </>   
   );
 }
 

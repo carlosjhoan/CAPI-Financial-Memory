@@ -73,7 +73,6 @@ export const expenseEntityConfig: EntityConfig<Expense> = {
   },
 
   hasPocketFilter: false,
-  onUpdateError: undefined,
   showLoadMore: true,
   createModalAccent: undefined,
 };

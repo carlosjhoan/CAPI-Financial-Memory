@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { Expense } from '../types/expense.types';
 import { useExpenseForm, type ExpenseFormData } from '../hooks/useExpenseForm';
 import { usePockets } from '../../pockets/hooks/usePockets';
+import { formatCurrency } from '../../../core/utils/format';
+import { useDebounce } from '../../../core/hooks/useDebounce';
 import {
   FormFloatCurrency,
   FormFloatInput,
@@ -84,6 +86,13 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
   const hasAllocationErrors = Object.keys(allocationErrors).length > 0;
   const isLastStep = currentStep === STEPS.length - 1;
 
+  const totalAvailable = useMemo(
+    () => pockets?.reduce((sum, p) => sum + p.accumulatedAmount, 0) ?? 0,
+    [pockets],
+  );
+  const debouncedAmount = useDebounce(amount, 1000);
+  const insufficientTotal = debouncedAmount > 0 && debouncedAmount > totalAvailable;
+
   const [allocationMode, setAllocationMode] = useState<'single' | 'multiple'>('single');
 
   // Re-validate allocations when remaining changes (clears stale refine error)
@@ -135,21 +144,22 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
     setCurrentStep((s) => s + 1);
   };
 
-  const handleGoBack = () => {
-    setCurrentStep((s) => s - 1);
-  };
-
   const handleFormSubmit = async (data: ExpenseFormData) => {
     await onSubmit(data);
+  };
+
+  const handleGoBack = () => {
+    setCurrentStep((s) => s - 1);
   };
 
   const canSubmit =
     !isLoading &&
     !isSubmitting &&
     Math.abs(remaining) > 0.001 === false &&
-    !hasAllocationErrors;
+    !hasAllocationErrors &&
+    !insufficientTotal;
 
-  const canContinue = !isLoading && !isSubmitting;
+  const canContinue = !isLoading && !isSubmitting && !insufficientTotal;
 
   return (
     <form onKeyDown={(e) => {
@@ -173,19 +183,35 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
               fullWidth
               required
               accent="expense"
+              emitOnChange
+              className={insufficientTotal ? 'text-red-500 dark:text-red-400' : undefined}
             />
 
-            <FormFloatInput
-              name="reason"
-              control={control}
-              label="Motivo"
-              helperText="Ej: Comida, Transporte, etc."
-              fullWidth
-              required
-              disabled={isLoading || isSubmitting}
-              accent="expense"
-              maxLength={100}
-            />
+            {insufficientTotal ? (
+              <div className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/20 p-4 text-center">
+                <svg className="w-8 h-8 mx-auto mb-2 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                <p className="text-sm text-orange-700 dark:text-orange-300">
+                  No cuentas con el dinero suficiente para realizar este gasto.
+                </p>
+                <p className="text-xs text-orange-500 dark:text-orange-400 mt-1">
+                  Disponible: {formatCurrency(totalAvailable)} &middot; Intenta con un monto menor.
+                </p>
+              </div>
+            ) : (
+              <FormFloatInput
+                name="reason"
+                control={control}
+                label="Motivo"
+                helperText="Ej: Comida, Transporte, etc."
+                fullWidth
+                required
+                disabled={isLoading || isSubmitting}
+                accent="expense"
+                maxLength={100}
+              />
+            )}
           </>
         )}
 
@@ -239,20 +265,30 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
               </p>
             )}
 
-            {/* Single mode: selector sin monto */}
+            {/* Single mode: selector con saldo disponible */}
             {allocationMode === 'single' && (
-              <FloatSelect
-                label="Bolsillo"
-                value={allocations[0]?.pocketId ?? ''}
-                onChange={(e) =>
-                  setValue('allocations.0.pocketId', e.target.value, {
-                    shouldValidate: true,
-                  })
-                }
-                options={pockets?.map((p) => ({ label: p.name, value: p.id })) || []}
-                fullWidth
-                accent="expense"
-              />
+              <>
+                <FloatSelect
+                  label="Bolsillo"
+                  value={allocations[0]?.pocketId ?? ''}
+                  onChange={(e) =>
+                    setValue('allocations.0.pocketId', e.target.value, {
+                      shouldValidate: true,
+                    })
+                  }
+                  options={pockets?.map((p) => ({
+                    label: `${p.name} (${formatCurrency(p.accumulatedAmount)})`,
+                    value: p.id,
+                  })) || []}
+                  fullWidth
+                  accent="expense"
+                />
+                {allocationErrors[0] && (
+                  <p className="text-xs text-orange-600 dark:text-orange-400" role="alert">
+                    {allocationErrors[0]}
+                  </p>
+                )}
+              </>
             )}
 
             {/* Multiple mode: field array con montos + golden rule */}
