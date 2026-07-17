@@ -31,7 +31,8 @@ const HistoryProgressArc: React.FC<HistoryProgressArcProps> = React.memo(({
       setDisplayProgress(percentage);
       setAnimProgress(percentage);
       setBarComplete(true);
-      if (percentage >= 100) setShowConfetti(true);
+      // No hay confeti sin animación — si los datos están stale
+      // (refetch en progreso) mostraríamos confeti fantasma.
       return;
     }
 

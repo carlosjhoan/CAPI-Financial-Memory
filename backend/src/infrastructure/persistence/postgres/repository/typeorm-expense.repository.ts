@@ -25,7 +25,7 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
     if (entity.allocations) {
       expense.allocations = entity.allocations.map((alloc) => ({
         pocketId: alloc.pocketId,
-        pocketName: alloc.pocket?.name ?? "Sin bolsillo",
+        pocketName: alloc.pocket?.name ?? "Bolsillo eliminado",
         amount: Number(alloc.amount),
       }));
     }

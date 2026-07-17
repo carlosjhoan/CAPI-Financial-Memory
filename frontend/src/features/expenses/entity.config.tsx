@@ -7,13 +7,16 @@ import { useCreateExpense, useUpdateExpense, useDeleteExpense } from './hooks/us
 import ExpenseForm from './components/ExpenseForm';
 import DeleteExpenseModal from './components/DeleteExpenseModal';
 
-// ponytail: ExpenseForm doesn't have initialPocketId — strip it here
 const ExpenseFormWrapper = ({
   entity,
-  initialPocketId: _p,
+  initialPocketId,
   ...props
 }: FormComponentProps<Expense>) =>
-  entity ? <ExpenseForm expense={entity} {...props} /> : <ExpenseForm {...props} />;
+  entity ? (
+    <ExpenseForm expense={entity} initialPocketId={initialPocketId} {...props} />
+  ) : (
+    <ExpenseForm initialPocketId={initialPocketId} {...props} />
+  );
 
 const DeleteExpenseModalWrapper = ({
   entity,
@@ -70,7 +73,6 @@ export const expenseEntityConfig: EntityConfig<Expense> = {
   },
 
   hasPocketFilter: false,
-  onUpdateError: undefined,
   showLoadMore: true,
   createModalAccent: undefined,
 };

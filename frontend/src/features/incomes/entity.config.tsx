@@ -78,23 +78,6 @@ export const incomeEntityConfig: EntityConfig<Income> = {
 
   hasPocketFilter: true,
 
-  onUpdateError: (err, { entity, formData, setGoalExceeded }) => {
-    const msg = err instanceof Error ? err.message : String(err);
-    const match = msg.match(/^INCOME_EDIT_EXCEEDS_GOAL:(.+?):(.+?):([\d.]+):([\d.]+)$/);
-    if (match) {
-      setGoalExceeded({
-        pocketId: match[1],
-        pocketName: match[2],
-        currentGoal: Number(match[3]),
-        wouldBeAccumulated: Number(match[4]),
-        entity,
-        formData,
-      });
-      return; // handled — don't re-throw
-    }
-    throw err; // not a goal-exceeded error — propagate
-  },
-
   showLoadMore: true,
   createModalAccent: '34,197,94',
 };

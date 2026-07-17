@@ -81,9 +81,9 @@ export interface DeleteModalProps<T extends FinancialEntity> {
 // ==========================================
 
 /**
- * State for the income-only "goal exceeded" modal.
- * Triggered via EntityConfig.onUpdateError when the backend
- * returns INCOME_EDIT_EXCEEDS_GOAL.
+ * State for the "goal exceeded" confirmation modal.
+ * Set by the frontend pre-check before submitting an entity update
+ * that would push a Goal pocket over its target.
  */
 export interface GoalExceededState<T extends FinancialEntity> {
   pocketId: string;
@@ -228,19 +228,6 @@ export interface EntityConfig<T extends FinancialEntity> {
 
   /** Whether this entity supports pocket pre-selection from URL (?pocketId=). */
   hasPocketFilter?: boolean;
-
-  /**
-   * Income-only callback for the goal-exceeded error flow.
-   * Expense config provides a no-op that re-throws.
-   */
-  onUpdateError?: (
-    err: unknown,
-    params: {
-      entity: T;
-      formData: unknown;
-      setGoalExceeded: (ge: GoalExceededState<T> | null) => void;
-    },
-  ) => void | Promise<void>;
 
   /** Whether to show the "Ver más" load-more button in Gestión tab. */
   showLoadMore?: boolean;

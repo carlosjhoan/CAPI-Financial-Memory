@@ -25,7 +25,7 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
     if (entity.allocations) {
       income.allocations = entity.allocations.map((alloc) => ({
         pocketId: alloc.pocketId,
-        pocketName: alloc.pocket?.name ?? "Sin bolsillo",
+        pocketName: alloc.pocket?.name ?? "Bolsillo eliminado",
         amount: Number(alloc.amount),
       }));
     }
@@ -66,6 +66,7 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
   async findAll(userId: string): Promise<Income[]> {
     const entities = await this.incomeRepository.find({
       where: { userId },
+      order: { date: "DESC", createdAt: "DESC" },
       relations: ["allocations", "allocations.pocket"],
     });
     return entities.map((entity) => this.toDomain(entity));
@@ -80,7 +81,7 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
     if (userId) where.userId = userId;
     const [entities, total] = await this.incomeRepository.findAndCount({
       where,
-      order: { date: "DESC" },
+      order: { date: "DESC", createdAt: "DESC" },
       skip,
       take: limit,
       relations: ["allocations", "allocations.pocket"],
@@ -115,7 +116,8 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
       .leftJoinAndSelect("allocations.pocket", "pocket")
       .where("income.date >= :startDate", { startDate })
       .andWhere("income.date <= :endDate", { endDate })
-      .orderBy("income.date", "DESC");
+      .orderBy("income.date", "DESC")
+      .addOrderBy("income.createdAt", "DESC");
     if (userId) {
       query.andWhere("income.userId = :userId", { userId });
     }
@@ -136,7 +138,8 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
       .leftJoinAndSelect("allocations.pocket", "pocket")
       .where("income.date >= :startDate", { startDate })
       .andWhere("income.date <= :endDate", { endDate })
-      .orderBy("income.date", "DESC");
+      .orderBy("income.date", "DESC")
+      .addOrderBy("income.createdAt", "DESC");
     if (userId) {
       queryBuilder.andWhere("income.userId = :userId", { userId });
     }
@@ -159,6 +162,7 @@ export class TypeOrmIncomeRepository implements IncomeRepository {
         reason: `%${reason}%`,
       })
       .orderBy("income.date", "DESC")
+      .addOrderBy("income.createdAt", "DESC")
       .getMany();
 
     return entities.map((entity) => this.toDomain(entity));

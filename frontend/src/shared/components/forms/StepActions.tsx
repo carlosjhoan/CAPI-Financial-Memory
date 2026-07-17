@@ -48,8 +48,8 @@ const StepActions: React.FC<StepActionsProps> = ({
       )}
 
       <button
-        type={isLastStep ? 'submit' : 'button'}
-        onClick={isLastStep ? undefined : onContinue}
+        type="button"
+        onClick={onContinue}
         disabled={buttonDisabled}
         className={cn(
           'flex h-11 w-11 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40',

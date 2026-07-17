@@ -5,6 +5,7 @@ import FloatingActionButton from '../../FloatingActionButton';
 import FloatingFilterToggle from '../../FloatingFilterToggle';
 import GlassCard from '../../GlassCard';
 import KebabPopover from '../../KebabPopover';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import {
   formatCurrency,
   formatCreatedAtDateLabel,
@@ -80,13 +81,12 @@ function GestionTab<T extends FinancialEntity>({
     }
   }, [gestionItems]);
 
-  // Reset accumulation on filter change
-  // ponytail: debouncedFilters omitted — gestionItems (sectionProps.items) already
-  // changes when filters update, making the extra dependency redundant.
+  // Reset accumulation on filter change only
   useEffect(() => {
     justLoadedMoreRef.current = false;
     setAccumulatedItems(gestionItems);
-  }, [filterType, gestionItems]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterType]);
 
   const monthGroups = useMemo(() => {
     const groups = new Map<string, T[]>();
@@ -198,7 +198,11 @@ function GestionTab<T extends FinancialEntity>({
                 {/* Month items */}
                 {!isCollapsed && (
                   <div className="mt-3 space-y-2">
-                    {items.map((item) => (
+                    {items.map((item) => {
+                      const hasDeletedPocket =
+                        !item.allocations?.length ||
+                        item.allocations.some((a) => a.pocketId == null);
+                      return (
                       <GlassCard
                         key={item.id}
                         accentColor={config.colors.accentRGB}
@@ -300,26 +304,40 @@ function GestionTab<T extends FinancialEntity>({
                               {formatTime(item.createdAt)}
                             </span>
                           </div>
-                          {/* Kebab */}
-                          <KebabPopover
-                            actions={[
-                              {
-                                label: 'Editar',
-                                onClick: () =>
-                                  onEdit(item),
-                              },
-                              {
-                                label: 'Eliminar',
-                                danger: true,
-                                onClick: () => {
-                                  onDelete(item);
+                          {/* Kebab o candado según el estado del registro */}
+                          {hasDeletedPocket ? (
+                            <span
+                              className="p-1.5 rounded-lg text-secondary-300 dark:text-secondary-600 cursor-default"
+                              title="Registro histórico vinculado a un bolsillo eliminado"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                              </svg>
+                            </span>
+                          ) : (
+                            <KebabPopover
+                              actions={[
+                                {
+                                  label: 'Editar',
+                                  icon: <PencilIcon className="w-4 h-4" />,
+                                  onClick: () =>
+                                    onEdit(item),
                                 },
-                              },
-                            ]}
-                          />
+                                {
+                                  label: 'Eliminar',
+                                  icon: <TrashIcon className="w-4 h-4" />,
+                                  danger: true,
+                                  onClick: () => {
+                                    onDelete(item);
+                                  },
+                                },
+                              ]}
+                            />
+                          )}
                         </div>
                       </GlassCard>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
