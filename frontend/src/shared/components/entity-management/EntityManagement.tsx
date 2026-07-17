@@ -213,7 +213,7 @@ function EntityManagement<T extends FinancialEntity>({
       await updateMutation.mutateAsync({ id: itemToEdit.id, data: data as UpdateEntityDto });
       setItemToEdit(null);
     },
-    [itemToEdit, updateMutation, config, pockets],
+    [itemToEdit, updateMutation, pockets],
   );
 
   const handleExtendGoal = useCallback(async () => {
