@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from "@nestjs/common";
+import * as Sentry from "@sentry/nestjs";
 import { Request, Response } from "express";
 
 @Catch()
@@ -56,6 +57,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       `${request.method} ${request.url} — ${status} ${error}`,
       exception instanceof Error ? exception.stack : undefined,
     );
+
+    if (status >= 500 && process.env.SENTRY_DSN) {
+      Sentry.captureException(exception, {
+        tags: { status: String(status), method: request.method, url: request.url },
+      });
+    }
 
     response.status(status).json({
       statusCode: status,

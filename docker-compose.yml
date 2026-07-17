@@ -1,6 +1,7 @@
 version: "3.8"
 
 services:
+  # ── PFM Stack ──
   postgres:
     image: postgres:15
     container_name: pfm-postgres
@@ -21,8 +22,80 @@ services:
     networks:
       - pfm-net
 
+  # ── GlitchTip Stack (error tracking) ──
+  glitchtip-postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: glitchtip
+      POSTGRES_PASSWORD: glitchtip
+      POSTGRES_DB: glitchtip
+    ports:
+      - "5433:5432"
+    volumes:
+      - glitchtip_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glitchtip"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - pfm-net
+
+  glitchtip-redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - pfm-net
+
+  glitchtip-web:
+    image: glitchtip/glitchtip:v4.0
+    ports:
+      - "8000:8000"
+    depends_on:
+      glitchtip-postgres:
+        condition: service_healthy
+      glitchtip-redis:
+        condition: service_healthy
+    environment:
+      PORT: 8000
+      DATABASE_URL: postgres://glitchtip:glitchtip@glitchtip-postgres:5432/glitchtip
+      REDIS_URL: redis://glitchtip-redis:6379
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:-change-me-to-a-random-secret}
+    volumes:
+      - glitchtip_uploads:/uploads
+    restart: unless-stopped
+    networks:
+      - pfm-net
+
+  glitchtip-worker:
+    image: glitchtip/glitchtip:v4.0
+    command: ./bin/run-celery.sh
+    depends_on:
+      glitchtip-postgres:
+        condition: service_healthy
+      glitchtip-redis:
+        condition: service_healthy
+    environment:
+      PORT: 8000
+      DATABASE_URL: postgres://glitchtip:glitchtip@glitchtip-postgres:5432/glitchtip
+      REDIS_URL: redis://glitchtip-redis:6379
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:-change-me-to-a-random-secret}
+    restart: unless-stopped
+    networks:
+      - pfm-net
+
 volumes:
   postgres_data:
+  glitchtip_postgres:
+  glitchtip_uploads:
 
 networks:
   pfm-net:
