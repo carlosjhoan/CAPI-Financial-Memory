@@ -359,9 +359,11 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
                 }
                 {...register('targetPocketId')}
               />
-              <p className="text-center text-xs text-secondary-400 dark:text-secondary-500 -mt-2 select-none">
-                Elige el bolsillo que recibe el dinero
-              </p>
+              {!watchedTargetId && (
+                <p className="text-left text-xs text-secondary-400 dark:text-secondary-500 -mt-2 select-none">
+                  Elige el bolsillo que recibe el dinero
+                </p>
+              )}
             </>
           )}
 
