@@ -59,6 +59,12 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
     onClose();
   };
 
+  const handleClose = () => {
+    reset();
+    setCurrentStep(0);
+    onClose();
+  };
+
   // ── Schema (sin date — se manda la actual al submit) ──
   const transferSchema = useMemo(() => z.object({
     targetPocketId: z.string().min(1, 'El bolsillo destino es requerido'),
@@ -293,7 +299,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
   // FORM VIEW
   // ═══════════════════════════════════════════
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Transferir a otro bolsillo">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Transferir a otro bolsillo">
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
         {/* ═══ Step indicator ═══ */}
         <FormStepIndicator
