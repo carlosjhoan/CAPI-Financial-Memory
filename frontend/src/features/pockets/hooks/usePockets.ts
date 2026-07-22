@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { pocketsService } from '../../../core/api';
-import type { CreatePocketDto, UpdatePocketDto, Pocket, TransferDto, DistributionItem } from '../types/pocket.types';
+import type { CreatePocketDto, UpdatePocketDto, Pocket, TransferDto, UpdateTransferDto, DistributionItem } from '../types/pocket.types';
 import { useGlobalToast } from '../../../core/hooks/useGlobalToast';
 
 export const pocketKeys = {
@@ -46,6 +46,23 @@ export function useTransfer() {
   });
 }
 
+
+export function useUpdateTransfer() {
+  const queryClient = useQueryClient();
+  const { success, error: showError } = useGlobalToast();
+
+  return useMutation({
+    mutationFn: ({ transferId, data }: { transferId: string; data: UpdateTransferDto }) =>
+      pocketsService.updateTransfer(transferId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: pocketKeys.all });
+      success('Transferencia actualizada', 'La transferencia ha sido actualizada correctamente');
+    },
+    onError: (err: Error) => {
+      showError('Error al actualizar', err.message || 'No se pudo actualizar la transferencia');
+    },
+  });
+}
 
 export function useDeleteWithTransfer() {
   const queryClient = useQueryClient();

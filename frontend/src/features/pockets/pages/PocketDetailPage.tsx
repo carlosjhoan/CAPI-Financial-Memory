@@ -37,6 +37,12 @@ const PocketDetailPage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [editTransferData, setEditTransferData] = useState<{
+    id: string;
+    targetPocketId: string;
+    amount: number;
+    reason: string;
+  } | null>(null);
   // Primer visita en la sesión: animación + KPIs ocultos; repetidas: sin animación + KPIs visibles
   const isFirstView = !animatedPockets.has(pocket?.id || '');
   const [animate] = useState(() => isFirstView && !(isFetching && !isLoading));
@@ -128,6 +134,23 @@ const PocketDetailPage: React.FC = () => {
     if (!pocket) return { image: '', status: '', message: '', glowColor: '', glowColorDark: '' };
     return getPocketMood(pocket);
   }, [pocket]);
+
+  const handleEditTransfer = (item: HistoryItem) => {
+    if (item.sourcePocketId && item.targetPocketId) {
+      setEditTransferData({
+        id: item.id,
+        targetPocketId: item.targetPocketId,
+        amount: item.amount,
+        reason: item.reason || '',
+      });
+      setIsTransferModalOpen(true);
+    }
+  };
+
+  const handleTransferClose = () => {
+    setEditTransferData(null);
+    setIsTransferModalOpen(false);
+  };
 
   const handleUpdate = async (data: PocketFormData) => {
     if (!pocket) return;
@@ -462,6 +485,7 @@ const PocketDetailPage: React.FC = () => {
           fetchNextPage={() => historyQuery.fetchNextPage()}
           hasNextPage={!!historyQuery.hasNextPage}
           isFetchingNextPage={!!historyQuery.isFetchingNextPage}
+          onEditTransfer={handleEditTransfer}
         />
       </div>
 
@@ -491,8 +515,9 @@ const PocketDetailPage: React.FC = () => {
 
       <TransferModal
         isOpen={isTransferModalOpen}
-        onClose={() => setIsTransferModalOpen(false)}
+        onClose={handleTransferClose}
         sourcePocketId={id || ''}
+        editTransfer={editTransferData}
       />
     </div>
     </>

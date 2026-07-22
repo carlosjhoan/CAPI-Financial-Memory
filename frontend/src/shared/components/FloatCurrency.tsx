@@ -14,6 +14,7 @@ export interface FloatCurrencyProps extends Omit<React.InputHTMLAttributes<HTMLI
   decimals?: number;
   emitOnChange?: boolean;
   accent?: FormAccent;
+  glass?: boolean;
 }
 
 const FloatCurrency = React.forwardRef<HTMLInputElement, FloatCurrencyProps>(
@@ -29,6 +30,7 @@ const FloatCurrency = React.forwardRef<HTMLInputElement, FloatCurrencyProps>(
       fullWidth = false,
       decimals = 2,
       emitOnChange = false,
+      glass = false,
       id,
       disabled,
       onFocus,
@@ -186,6 +188,7 @@ const FloatCurrency = React.forwardRef<HTMLInputElement, FloatCurrencyProps>(
         <div
           className={cn(
             'relative rounded-lg border transition-all duration-200',
+            glass && 'bg-white/50 backdrop-blur-lg shadow-sm dark:bg-secondary-800/50',
             error
               ? 'border-red-300 focus-within:border-red-500 dark:border-red-600'
               : `border-secondary-300 dark:border-secondary-600 ${accentCls.border}`,

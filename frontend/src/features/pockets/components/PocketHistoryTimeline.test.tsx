@@ -15,6 +15,7 @@ function createItem(index: number, overrides: Partial<HistoryItem> = {}): Histor
     amount: 1000 * index,
     date: '2026-06-15',
     createdAt: `2026-06-15T${String(10 + index).padStart(2, '0')}:00:00Z`,
+    reason: 'Ingreso',
   };
   return { ...base, ...overrides };
 }
@@ -77,10 +78,10 @@ describe('PocketHistoryTimeline', () => {
 
   it('filter tab "Ingresos" shows only income/deposit items', () => {
     const items = [
-      createItem(1, { type: 'income', amount: 5000 }),
-      createItem(2, { type: 'expense', amount: 2000 }),
-      createItem(3, { type: 'income', amount: 3000 }),
-      createItem(4, { type: 'transfer', amount: 1000, direction: 'incoming' }),
+      createItem(1, { type: 'income', amount: 5000, reason: 'Ingreso' }),
+      createItem(2, { type: 'expense', amount: 2000, reason: 'Gasto' }),
+      createItem(3, { type: 'income', amount: 3000, reason: 'Ingreso' }),
+      createItem(4, { type: 'transfer', amount: 1000, direction: 'incoming', reason: 'Transferencia' }),
     ];
     renderTimeline({ history: items });
 
@@ -95,8 +96,8 @@ describe('PocketHistoryTimeline', () => {
 
   it('filter tab "Gastos" shows only expense/outgoing items', () => {
     const items = [
-      createItem(1, { type: 'income', amount: 5000 }),
-      createItem(2, { type: 'expense', amount: 2000 }),
+      createItem(1, { type: 'income', amount: 5000, reason: 'Ingreso' }),
+      createItem(2, { type: 'expense', amount: 2000, reason: 'Gasto' }),
     ];
     renderTimeline({ history: items });
 
@@ -143,7 +144,7 @@ describe('PocketHistoryTimeline', () => {
   it('renders transfer items with ArrowsRightLeftIcon', () => {
     const { container } = render(
       <PocketHistoryTimeline
-        history={[createItem(1, { type: 'transfer', direction: 'incoming', amount: 5000 })]}
+        history={[createItem(1, { type: 'transfer', direction: 'incoming', amount: 5000, reason: 'Transferencia' })]}
         pocketNameMap={new Map()}
         fetchNextPage={vi.fn()}
         hasNextPage={false}
