@@ -293,20 +293,8 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
   // FORM VIEW
   // ═══════════════════════════════════════════
   return (
-    <Modal isOpen={isOpen} onClose={onClose} showCloseButton={false}>
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5 relative">
-        {/* ═══ Close button (top-right) ═══ */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute -top-1 right-0 flex h-8 w-8 items-center justify-center rounded-full text-secondary-400 hover:text-secondary-600 dark:text-secondary-500 dark:hover:text-secondary-300 hover:bg-secondary-100 dark:hover:bg-secondary-700 hover:scale-110 hover:rotate-90 transition-all duration-300 z-10"
-          aria-label="Cerrar"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
+    <Modal isOpen={isOpen} onClose={onClose} title="Transferir a otro bolsillo">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
         {/* ═══ Step indicator ═══ */}
         <FormStepIndicator
           currentStep={currentStep}
