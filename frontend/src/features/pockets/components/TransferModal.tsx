@@ -30,7 +30,7 @@ interface TransferResult {
 
 const STEPS = [
   { label: 'Destino', fields: ['targetPocketId'] as const },
-  { label: 'Monto', fields: ['amount', 'reason'] as const },
+  { label: 'Monto a transferir', fields: ['amount', 'reason'] as const },
 ];
 
 const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, onClose }) => {
@@ -105,7 +105,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
     return pockets
       .filter((p) => p.id !== sourcePocketId)
       .map((p) => ({
-        label: `${p.name}  —  ${formatCurrency(p.accumulatedAmount)}`,
+        label: p.name,
         value: p.id,
       }));
   }, [pockets, sourcePocketId]);
@@ -361,15 +361,10 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
                 helperText={
                   targetPocket
                     ? `Saldo actual del destino: ${formatCurrency(targetPocket.accumulatedAmount)}`
-                    : undefined
+                    : 'Elige el bolsillo que recibe el dinero'
                 }
                 {...register('targetPocketId')}
               />
-              {!watchedTargetId && (
-                <p className="text-left text-xs text-secondary-400 dark:text-secondary-500 -mt-2 select-none">
-                  Elige el bolsillo que recibe el dinero
-                </p>
-              )}
             </>
           )}
 
@@ -403,7 +398,13 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
           totalSteps={STEPS.length}
           onBack={handleGoBack}
           onContinue={handleContinue}
-          canContinue={currentStep === 0 ? !!watchedTargetId : true}
+          canContinue={
+            currentStep === 0
+              ? !!watchedTargetId
+              : currentStep === 1
+                ? watchedAmount > 0 && watchedReason.length >= 3
+                : true
+          }
           disabled={isPending}
           checkClassName="text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20"
           submitLabel="Transferir"
