@@ -9,6 +9,7 @@ export interface FloatInputProps extends Omit<React.InputHTMLAttributes<HTMLInpu
   fullWidth?: boolean;
   leftIcon?: React.ReactNode;
   accent?: FormAccent;
+  minLength?: number;
 }
 
 const FloatInput = React.forwardRef<HTMLInputElement, FloatInputProps>(
@@ -26,6 +27,7 @@ const FloatInput = React.forwardRef<HTMLInputElement, FloatInputProps>(
       onFocus,
       onBlur,
       maxLength,
+      minLength,
       ...props
     },
     ref,
@@ -147,7 +149,9 @@ const FloatInput = React.forwardRef<HTMLInputElement, FloatInputProps>(
                 'flex-shrink-0 text-xs',
                 String(value ?? '').length > maxLength
                   ? 'text-red-500'
-                  : 'text-secondary-400 dark:text-secondary-500',
+                  : (minLength !== undefined && String(value ?? '').length > 0 && String(value ?? '').length < minLength)
+                    ? 'text-red-500'
+                    : 'text-secondary-400 dark:text-secondary-500',
               )}
             >
               {String(value ?? '').length}/{maxLength}

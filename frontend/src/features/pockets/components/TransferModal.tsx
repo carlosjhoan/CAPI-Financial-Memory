@@ -72,7 +72,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
       .number({ required_error: 'El monto es requerido' })
       .positive('El monto debe ser positivo')
       .max(maxAmount, `El monto no puede exceder ${formatCurrency(maxAmount)}`),
-    reason: z.string().min(3, 'El motivo debe tener al menos 3 caracteres'),
+    reason: z.string().trim().min(10, 'El motivo debe tener al menos 10 caracteres').max(50, 'El motivo no puede superar 50 caracteres'),
   }), [maxAmount]);
 
   type TransferFormData = z.infer<typeof transferSchema>;
@@ -92,6 +92,8 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
       amount: 0,
       reason: '',
     },
+    mode: 'onChange',
+    delayError: 2000,
   });
 
   const watchedAmount = watch('amount');
@@ -386,6 +388,9 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
                 error={errors.reason?.message}
                 value={watchedReason}
                 fullWidth
+                helperText="Escribe el motivo por el cual transfieres"
+                maxLength={50}
+                minLength={10}
                 {...register('reason')}
               />
             </>
@@ -402,7 +407,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
             currentStep === 0
               ? !!watchedTargetId
               : currentStep === 1
-                ? watchedAmount > 0 && watchedReason.length >= 3
+                ? watchedAmount > 0 && watchedReason.length >= 10
                 : true
           }
           disabled={isPending}
