@@ -303,9 +303,17 @@ export class TypeOrmPocketRepository implements PocketRepository {
       relations: ["expense"],
     });
 
-    return allocations.map((allocation) =>
-      this.expenseToDomain(allocation.expense),
-    );
+    return allocations.map((a) => {
+      const expense = new Expense(
+        Number(a.amount),
+        a.expense.reason,
+        a.expense.date,
+        a.expense.id,
+        a.expense.userId,
+      );
+      expense.createdAt = a.expense.createdAt;
+      return expense;
+    });
   }
 
   async findIncomesByPocketId(pocketId: string): Promise<Income[]> {
