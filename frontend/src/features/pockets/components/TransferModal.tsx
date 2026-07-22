@@ -294,7 +294,19 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
   // ═══════════════════════════════════════════
   return (
     <Modal isOpen={isOpen} onClose={onClose} showCloseButton={false}>
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5 relative">
+        {/* ═══ Close button (top-right) ═══ */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute -top-1 right-0 flex h-8 w-8 items-center justify-center rounded-full text-secondary-400 hover:text-secondary-600 dark:text-secondary-500 dark:hover:text-secondary-300 hover:bg-secondary-100 dark:hover:bg-secondary-700 hover:scale-110 hover:rotate-90 transition-all duration-300 z-10"
+          aria-label="Cerrar"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         {/* ═══ Step indicator ═══ */}
         <FormStepIndicator
           currentStep={currentStep}
@@ -345,19 +357,24 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
         {/* ═══ Step content ═══ */}
         <div className="space-y-4">
           {currentStep === 0 && (
-            <FloatSelect
-              label="Bolsillo Destino"
-              accent="pocket"
-              options={targetOptions}
-              error={errors.targetPocketId?.message}
-              value={watchedTargetId}
-              helperText={
-                targetPocket
-                  ? `Saldo actual del destino: ${formatCurrency(targetPocket.accumulatedAmount)}`
-                  : undefined
-              }
-              {...register('targetPocketId')}
-            />
+            <>
+              <FloatSelect
+                label="Bolsillo Destino"
+                accent="pocket"
+                options={targetOptions}
+                error={errors.targetPocketId?.message}
+                value={watchedTargetId}
+                helperText={
+                  targetPocket
+                    ? `Saldo actual del destino: ${formatCurrency(targetPocket.accumulatedAmount)}`
+                    : undefined
+                }
+                {...register('targetPocketId')}
+              />
+              <p className="text-center text-xs text-secondary-400 dark:text-secondary-500 -mt-2 select-none">
+                Elige el bolsillo que recibe el dinero
+              </p>
+            </>
           )}
 
           {currentStep === 1 && (
@@ -390,7 +407,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
           totalSteps={STEPS.length}
           onBack={handleGoBack}
           onContinue={handleContinue}
-          canContinue={true}
+          canContinue={currentStep === 0 ? !!watchedTargetId : true}
           disabled={isPending}
           checkClassName="text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20"
           submitLabel="Transferir"
