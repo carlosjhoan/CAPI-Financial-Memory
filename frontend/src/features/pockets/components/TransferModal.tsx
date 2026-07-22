@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowsRightLeftIcon } from '@heroicons/react/24/solid';
-import { usePockets, useTransfer } from '../hooks/usePockets';
+import { usePockets, useTransfer, useUpdateTransfer } from '../hooks/usePockets';
+import type { Pocket, TransferDto, UpdateTransferDto } from '../types/pocket.types';
 import Modal from '../../../shared/components/Modal';
 import FloatSelect from '../../../shared/components/FloatSelect';
 import FloatCurrency from '../../../shared/components/FloatCurrency';
@@ -16,6 +17,12 @@ interface TransferModalProps {
   sourcePocketId: string;
   isOpen: boolean;
   onClose: () => void;
+  editTransfer?: {
+    id: string;
+    targetPocketId: string;
+    amount: number;
+    reason: string;
+  } | null;
 }
 
 interface TransferResult {
@@ -28,16 +35,27 @@ interface TransferResult {
   amount: number;
 }
 
-const STEPS = [
+const STEPS_CREATE = [
   { label: 'Destino', fields: ['targetPocketId'] as const },
   { label: 'Monto a transferir', fields: ['amount', 'reason'] as const },
 ];
 
-const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, onClose }) => {
+const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, onClose, editTransfer }) => {
+  const isEditMode = !!editTransfer;
   const { data: pockets } = usePockets();
-  const { mutate: transfer, isPending } = useTransfer();
+  const { mutate: transfer, isPending: isTransferPending } = useTransfer();
+  const { mutate: updateTransfer, isPending: isUpdatePending } = useUpdateTransfer();
+  const isPending = isTransferPending || isUpdatePending;
+
   const sourcePocket = pockets?.find((p) => p.id === sourcePocketId);
-  const maxAmount = sourcePocket?.accumulatedAmount || 0;
+  const maxAmount = useMemo(() => {
+    if (!sourcePocket) return 0;
+    // In edit mode: accumulated already has old transfer deducted, reverse it
+    if (isEditMode && editTransfer) {
+      return sourcePocket.accumulatedAmount + editTransfer.amount;
+    }
+    return sourcePocket.accumulatedAmount || 0;
+  }, [sourcePocket, isEditMode, editTransfer]);
 
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -65,15 +83,27 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
     onClose();
   };
 
-  // ── Schema (sin date — se manda la actual al submit) ──
-  const transferSchema = useMemo(() => z.object({
-    targetPocketId: z.string().min(1, 'El bolsillo destino es requerido'),
-    amount: z
-      .number({ required_error: 'El monto es requerido' })
-      .positive('El monto debe ser positivo')
-      .max(maxAmount, `El monto no puede exceder ${formatCurrency(maxAmount)}`),
-    reason: z.string().trim().min(10, 'El motivo debe tener al menos 10 caracteres').max(50, 'El motivo no puede superar 50 caracteres'),
-  }), [maxAmount]);
+  // ── Schema ──
+  const transferSchema = useMemo(() => {
+    if (isEditMode) {
+      return z.object({
+        targetPocketId: z.string().min(1),
+        amount: z
+          .number({ required_error: 'El monto es requerido' })
+          .min(0, 'El monto no puede ser negativo')
+          .max(maxAmount, `El monto no puede exceder ${formatCurrency(maxAmount)}`),
+        reason: z.string().trim().min(10, 'El motivo debe tener al menos 10 caracteres').max(50, 'El motivo no puede superar 50 caracteres'),
+      });
+    }
+    return z.object({
+      targetPocketId: z.string().min(1, 'El bolsillo destino es requerido'),
+      amount: z
+        .number({ required_error: 'El monto es requerido' })
+        .min(0, 'El monto no puede ser negativo')
+        .max(maxAmount, `El monto no puede exceder ${formatCurrency(maxAmount)}`),
+      reason: z.string().trim().min(10, 'El motivo debe tener al menos 10 caracteres').max(50, 'El motivo no puede superar 50 caracteres'),
+    });
+  }, [maxAmount, isEditMode]);
 
   type TransferFormData = z.infer<typeof transferSchema>;
 
@@ -87,35 +117,55 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
     reset,
   } = useForm({
     resolver: zodResolver(transferSchema),
-    defaultValues: {
-      targetPocketId: '',
-      amount: 0,
-      reason: '',
-    },
+    defaultValues: useMemo(() => ({
+      targetPocketId: editTransfer?.targetPocketId || '',
+      amount: editTransfer?.amount || 0,
+      reason: editTransfer?.reason || '',
+    }), [editTransfer?.targetPocketId, editTransfer?.amount, editTransfer?.reason]),
     mode: 'onChange',
     delayError: 2000,
   });
+
+  // Reset form when editTransfer changes (modal re-opens for a different transfer)
+  useEffect(() => {
+    if (isOpen) {
+      reset({
+        targetPocketId: editTransfer?.targetPocketId || '',
+        amount: editTransfer?.amount || 0,
+        reason: editTransfer?.reason || '',
+      });
+      setCurrentStep(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, editTransfer?.targetPocketId, editTransfer?.amount, editTransfer?.reason]);
+
+  const [goalOverflow, setGoalOverflow] = useState<{
+    targetPocket: Pocket;
+    wouldBeAccumulated: number;
+    pendingData: TransferDto | { transferId: string; data: UpdateTransferDto };
+    isEdit: boolean;
+  } | null>(null);
 
   const watchedAmount = watch('amount');
   const watchedTargetId = watch('targetPocketId');
   const watchedReason = watch('reason');
 
-  const targetPocket = pockets?.find((p) => p.id === watchedTargetId);
+  const targetPocket = pockets?.find((p) => p.id === (editTransfer?.targetPocketId || watchedTargetId));
 
   const targetOptions = useMemo(() => {
-    if (!pockets) return [];
+    if (!pockets || isEditMode) return [];
     return pockets
       .filter((p) => p.id !== sourcePocketId)
       .map((p) => ({
         label: p.name,
         value: p.id,
       }));
-  }, [pockets, sourcePocketId]);
+  }, [pockets, sourcePocketId, isEditMode]);
 
-  const isLastStep = currentStep === STEPS.length - 1;
+  const isLastStep = currentStep === STEPS_CREATE.length - 1;
 
   const validateStep = async (): Promise<boolean> => {
-    const stepFields = STEPS[currentStep].fields;
+    const stepFields = STEPS_CREATE[currentStep].fields;
     return trigger(stepFields as unknown as ('targetPocketId' | 'amount' | 'reason')[]);
   };
 
@@ -133,29 +183,147 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
     setCurrentStep((s) => s - 1);
   };
 
-  // ── Submit → capture result → show success ──
+  // ── Submit ──
   const handleFormSubmit = (data: TransferFormData) => {
-    const targetAtSubmit = pockets?.find((p) => p.id === data.targetPocketId);
-    if (!sourcePocket || !targetAtSubmit) return;
+    if (!sourcePocket) return;
 
-    transfer(
-      { ...data, sourcePocketId, date: new Date().toISOString().split('T')[0] },
-      {
+    if (isEditMode && editTransfer) {
+      const targetAtSubmit = pockets?.find((p) => p.id === editTransfer.targetPocketId);
+      if (!targetAtSubmit) return;
+
+      // Goal pre-check: new accumulated = current - oldAmount + newAmount
+      // targetPocket.accumulatedAmount includes the old transfer
+      const wouldBeAccumulated = targetAtSubmit.accumulatedAmount - editTransfer.amount + data.amount;
+      if (targetAtSubmit.type === 'goal' && targetAtSubmit.goal > 0 && wouldBeAccumulated > targetAtSubmit.goal) {
+        setGoalOverflow({
+          targetPocket: targetAtSubmit,
+          wouldBeAccumulated,
+          pendingData: {
+            transferId: editTransfer.id,
+            data: { amount: data.amount, reason: data.reason },
+          },
+          isEdit: true,
+        });
+        return;
+      }
+
+      // No overflow → update directly
+      updateTransfer(
+        { transferId: editTransfer.id, data: { amount: data.amount, reason: data.reason } },
+        {
+          onSuccess: () => {
+            setTransferResult({
+              sourceName: sourcePocket.name,
+              sourceBefore: sourcePocket.accumulatedAmount,
+              sourceAfter: sourcePocket.accumulatedAmount - (data.amount - editTransfer.amount),
+              targetName: targetAtSubmit.name,
+              targetBefore: targetAtSubmit.accumulatedAmount,
+              targetAfter: targetAtSubmit.accumulatedAmount - editTransfer.amount + data.amount,
+              amount: data.amount,
+            });
+            reset();
+            setCurrentStep(0);
+          },
+        },
+      );
+      return;
+    }
+
+    // ── Create mode ──
+    const targetAtSubmit = pockets?.find((p) => p.id === data.targetPocketId);
+    if (!targetAtSubmit) return;
+
+    const wouldBeAccumulated = targetAtSubmit.accumulatedAmount + data.amount;
+    if (targetAtSubmit.type === 'goal' && targetAtSubmit.goal > 0 && wouldBeAccumulated > targetAtSubmit.goal) {
+      const transferData: TransferDto = {
+        ...data,
+        sourcePocketId,
+        date: new Date().toISOString().split('T')[0],
+      };
+      setGoalOverflow({
+        targetPocket: targetAtSubmit,
+        wouldBeAccumulated,
+        pendingData: transferData,
+        isEdit: false,
+      });
+      return;
+    }
+
+    const transferData: TransferDto = {
+      ...data,
+      sourcePocketId,
+      date: new Date().toISOString().split('T')[0],
+    };
+    transfer(transferData, {
+      onSuccess: () => {
+        setTransferResult({
+          sourceName: sourcePocket.name,
+          sourceBefore: sourcePocket.accumulatedAmount,
+          sourceAfter: sourcePocket.accumulatedAmount - data.amount,
+          targetName: targetAtSubmit.name,
+          targetBefore: targetAtSubmit.accumulatedAmount,
+          targetAfter: targetAtSubmit.accumulatedAmount + data.amount,
+          amount: data.amount,
+        });
+        reset();
+        setCurrentStep(0);
+      },
+    });
+  };
+
+  const handleExtendGoal = () => {
+    if (!goalOverflow) return;
+    const newGoal = Math.max(
+      goalOverflow.targetPocket.goal,
+      Math.ceil(goalOverflow.wouldBeAccumulated),
+    );
+
+    if (goalOverflow.isEdit) {
+      const pd = goalOverflow.pendingData as { transferId: string; data: UpdateTransferDto };
+      setGoalOverflow(null);
+      const targetAtSubmit = pockets?.find((p) => p.id === editTransfer!.targetPocketId);
+      updateTransfer(
+        { transferId: pd.transferId, data: { ...pd.data, newGoal } },
+        {
+          onSuccess: () => {
+            setTransferResult({
+              sourceName: sourcePocket?.name || '',
+              sourceBefore: sourcePocket?.accumulatedAmount || 0,
+              sourceAfter: (sourcePocket?.accumulatedAmount || 0) - (pd.data.amount - editTransfer!.amount),
+              targetName: targetAtSubmit?.name || '',
+              targetBefore: targetAtSubmit?.accumulatedAmount || 0,
+              targetAfter: (targetAtSubmit?.accumulatedAmount || 0) - editTransfer!.amount + pd.data.amount,
+              amount: pd.data.amount,
+            });
+            reset();
+            setCurrentStep(0);
+          },
+        },
+      );
+    } else {
+      const pd = goalOverflow.pendingData as TransferDto;
+      setGoalOverflow(null);
+      const targetAtSubmit = pockets?.find((p) => p.id === pd.targetPocketId);
+      transfer({ ...pd, newGoal }, {
         onSuccess: () => {
           setTransferResult({
-            sourceName: sourcePocket.name,
-            sourceBefore: sourcePocket.accumulatedAmount,
-            sourceAfter: sourcePocket.accumulatedAmount - data.amount,
-            targetName: targetAtSubmit.name,
-            targetBefore: targetAtSubmit.accumulatedAmount,
-            targetAfter: targetAtSubmit.accumulatedAmount + data.amount,
-            amount: data.amount,
+            sourceName: sourcePocket?.name || '',
+            sourceBefore: sourcePocket?.accumulatedAmount || 0,
+            sourceAfter: (sourcePocket?.accumulatedAmount || 0) - pd.amount,
+            targetName: targetAtSubmit?.name || '',
+            targetBefore: targetAtSubmit?.accumulatedAmount || 0,
+            targetAfter: (targetAtSubmit?.accumulatedAmount || 0) + pd.amount,
+            amount: pd.amount,
           });
           reset();
           setCurrentStep(0);
         },
-      },
-    );
+      });
+    }
+  };
+
+  const handleDismissGoalOverflow = () => {
+    setGoalOverflow(null);
   };
 
   // ═══════════════════════════════════════════
@@ -180,7 +348,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
-                Transferido
+                {isEditMode ? 'Actualizado' : 'Transferido'}
               </span>
             </div>
           )}
@@ -298,65 +466,241 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
   }
 
   // ═══════════════════════════════════════════
-  // FORM VIEW
+  // EDIT MODE — single form, no steps
   // ═══════════════════════════════════════════
-  return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Transferir a otro bolsillo">
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
-        {/* ═══ Step indicator ═══ */}
-        <FormStepIndicator
-          currentStep={currentStep}
-          totalSteps={STEPS.length}
-          currentLabel={STEPS[currentStep].label}
-          barColor="bg-purple-500"
-        />
-
-        {/* ═══ De ↔️ Para Header ═══ */}
-        <div className="flex items-center gap-3 pt-2 pb-1 select-none">
-          <div className="flex-1 text-right">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">
-              De
-            </div>
-            <div className="text-sm font-bold text-secondary-900 dark:text-white">
-              {sourcePocket?.name || '—'}
-            </div>
-            <div className="text-[11px] text-secondary-500 dark:text-secondary-400">
-              {formatCurrency(maxAmount)}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/40 flex-shrink-0">
-            <ArrowsRightLeftIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-          </div>
-
-          <div className="flex-1 text-left">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">
-              Para
-            </div>
-            {targetPocket ? (
-              <>
+  if (isEditMode) {
+    return (
+      <>
+        <Modal isOpen={isOpen} onClose={handleClose} title="Editar transferencia" glass glassBackdrop>
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
+            {/* De ↔️ Para Header (both read-only) */}
+            <div className="flex items-center gap-3 pt-2 pb-1 select-none">
+              <div className="flex-1 text-right">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">
+                  De
+                </div>
                 <div className="text-sm font-bold text-secondary-900 dark:text-white">
-                  {targetPocket.name}
+                  {sourcePocket?.name || '—'}
                 </div>
                 <div className="text-[11px] text-secondary-500 dark:text-secondary-400">
-                  {formatCurrency(targetPocket.accumulatedAmount)}
+                  {sourcePocket ? formatCurrency(sourcePocket.accumulatedAmount) : ''}
                 </div>
-              </>
-            ) : (
-              <div className="text-sm text-secondary-400 dark:text-secondary-500 italic">
-                Seleccionar destino
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* ═══ Step content ═══ */}
-        <div className="space-y-4">
-          {currentStep === 0 && (
-            <>
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/40 flex-shrink-0">
+                <ArrowsRightLeftIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+
+              <div className="flex-1 text-left">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">
+                  Para
+                </div>
+                {targetPocket ? (
+                  <>
+                    <div className="text-sm font-bold text-secondary-900 dark:text-white">
+                      {targetPocket.name}
+                    </div>
+                    <div className="text-[11px] text-secondary-500 dark:text-secondary-400">
+                      {formatCurrency(targetPocket.accumulatedAmount)}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-secondary-400 dark:text-secondary-500 italic">
+                    {editTransfer?.targetPocketId ? 'Cargando...' : 'Seleccionar destino'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Amount + Reason */}
+            <div className="space-y-4">
+              <FloatCurrency
+                label="Monto"
+                accent="pocket"
+                glass
+                currency="COP"
+                value={watchedAmount}
+                onChange={(val) => setValue('amount', val, { shouldValidate: true })}
+                error={errors.amount?.message}
+                helperText={`Disponible: ${formatCurrency(maxAmount)}`}
+                fullWidth
+                emitOnChange
+              />
+              <FloatInput
+                label="Motivo"
+                accent="pocket"
+                glass
+                error={errors.reason?.message}
+                value={watchedReason}
+                fullWidth
+                helperText="Editá el motivo de la transferencia"
+                maxLength={50}
+                minLength={10}
+                {...register('reason')}
+              />
+            </div>
+
+            {/* Submit button */}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-4 py-2 text-sm font-medium rounded-full border border-secondary-300 dark:border-secondary-600 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-50 dark:hover:bg-secondary-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isPending || watchedAmount <= 0 || !watchedReason?.trim()}
+                className="px-4 py-1.5 rounded-full text-sm font-semibold
+                  bg-gradient-to-r from-purple-500/10 to-indigo-500/10
+                  dark:from-purple-500/20 dark:to-indigo-500/20
+                  border border-purple-300/30 dark:border-purple-400/30
+                  text-purple-600 dark:text-purple-300
+                  hover:from-purple-500/20 hover:to-indigo-500/20
+                  hover:border-purple-300/60 dark:hover:border-purple-400/60
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all duration-300"
+              >
+                {isPending ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+
+        {/* Goal overflow dialog */}
+        {goalOverflow && (
+          <Modal
+            isOpen={!!goalOverflow}
+            onClose={handleDismissGoalOverflow}
+            title="Meta de ahorro superada"
+            description={`La transferencia supera la meta actual de "${goalOverflow.targetPocket.name}".`}
+            size="sm"
+            glass
+            glassBackdrop
+          >
+            <div className="space-y-4">
+              <div className="rounded-lg bg-secondary-50 dark:bg-secondary-800/50 p-3 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-secondary-500 dark:text-secondary-400">Meta actual</span>
+                  <span className="font-medium text-secondary-900 dark:text-white">
+                    {formatCurrency(goalOverflow.targetPocket.goal)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-secondary-500 dark:text-secondary-400">Nuevo acumulado</span>
+                  <span className="font-medium text-purple-600 dark:text-purple-400">
+                    {formatCurrency(goalOverflow.wouldBeAccumulated)}
+                  </span>
+                </div>
+                <div className="border-t border-secondary-200 dark:border-secondary-700 pt-2 flex justify-between font-semibold">
+                  <span className="text-secondary-900 dark:text-white">Nueva meta sugerida</span>
+                  <span className="text-purple-600 dark:text-purple-400">
+                    {formatCurrency(
+                      Math.max(
+                        goalOverflow.targetPocket.goal,
+                        Math.ceil(goalOverflow.wouldBeAccumulated),
+                      ),
+                    )}
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-secondary-500 dark:text-secondary-400 text-center">
+                ¿Querés extender la meta para reflejar el nuevo acumulado?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleDismissGoalOverflow}
+                  className="flex-1 px-4 py-2 text-sm font-medium rounded-full border border-secondary-300 dark:border-secondary-600 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-50 dark:hover:bg-secondary-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExtendGoal}
+                  disabled={isPending}
+                  className="flex-1 px-4 py-2 rounded-full text-sm font-semibold
+                    bg-gradient-to-r from-emerald-500/10 to-green-500/10
+                    dark:from-emerald-500/20 dark:to-green-500/20
+                    border border-emerald-300/30 dark:border-emerald-400/30
+                    text-emerald-600 dark:text-emerald-300
+                    hover:from-emerald-500/20 hover:to-green-500/20
+                    hover:border-emerald-300/60 dark:hover:border-emerald-400/60
+                    disabled:opacity-40 disabled:cursor-not-allowed
+                    transition-all duration-300"
+                >
+                  Extender meta
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
+      </>
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  // CREATE MODE (existing behavior)
+  // ═══════════════════════════════════════════
+  return (
+    <>
+      <Modal isOpen={isOpen} onClose={handleClose} title="Transferir a otro bolsillo" glass glassBackdrop>
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
+          {/* ═══ Step indicator ═══ */}
+          <FormStepIndicator
+            currentStep={currentStep}
+            totalSteps={STEPS_CREATE.length}
+            currentLabel={STEPS_CREATE[currentStep].label}
+            barColor="bg-purple-500"
+          />
+
+          {/* ═══ De ↔️ Para Header ═══ */}
+          <div className="flex items-center gap-3 pt-2 pb-1 select-none">
+            <div className="flex-1 text-right">
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">
+                De
+              </div>
+              <div className="text-sm font-bold text-secondary-900 dark:text-white">
+                {sourcePocket?.name || '—'}
+              </div>
+              <div className="text-[11px] text-secondary-500 dark:text-secondary-400">
+                {formatCurrency(maxAmount)}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/40 flex-shrink-0">
+              <ArrowsRightLeftIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            </div>
+
+            <div className="flex-1 text-left">
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-0.5">
+                Para
+              </div>
+              {targetPocket ? (
+                <>
+                  <div className="text-sm font-bold text-secondary-900 dark:text-white">
+                    {targetPocket.name}
+                  </div>
+                  <div className="text-[11px] text-secondary-500 dark:text-secondary-400">
+                    {formatCurrency(targetPocket.accumulatedAmount)}
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-secondary-400 dark:text-secondary-500 italic">
+                  Seleccionar destino
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ═══ Step content ═══ */}
+          <div className="space-y-4">
+            {currentStep === 0 && (
               <FloatSelect
                 label="Bolsillo Destino"
                 accent="pocket"
+                glass
                 options={targetOptions}
                 error={errors.targetPocketId?.message}
                 value={watchedTargetId}
@@ -367,24 +711,26 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
                 }
                 {...register('targetPocketId')}
               />
-            </>
-          )}
+            )}
 
-          {currentStep === 1 && (
-            <>
+            {currentStep === 1 && (
+              <>
               <FloatCurrency
                 label="Monto"
                 accent="pocket"
+                glass
                 currency="COP"
                 value={watchedAmount}
                 onChange={(val) => setValue('amount', val, { shouldValidate: true })}
                 error={errors.amount?.message}
                 helperText={`Disponible para transferir: ${formatCurrency(maxAmount)}`}
                 fullWidth
+                emitOnChange
               />
               <FloatInput
                 label="Motivo"
                 accent="pocket"
+                glass
                 error={errors.reason?.message}
                 value={watchedReason}
                 fullWidth
@@ -393,29 +739,99 @@ const TransferModal: React.FC<TransferModalProps> = ({ sourcePocketId, isOpen, o
                 minLength={10}
                 {...register('reason')}
               />
-            </>
-          )}
-        </div>
+              </>
+            )}
+          </div>
 
-        {/* ═══ Step actions ═══ */}
-        <StepActions
-          currentStep={currentStep}
-          totalSteps={STEPS.length}
-          onBack={handleGoBack}
-          onContinue={handleContinue}
-          canContinue={
-            currentStep === 0
-              ? !!watchedTargetId
-              : currentStep === 1
-                ? watchedAmount > 0 && watchedReason.length >= 10
-                : true
-          }
-          disabled={isPending}
-          checkClassName="text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-          submitLabel="Transferir"
-        />
-      </form>
-    </Modal>
+          {/* ═══ Step actions ═══ */}
+          <StepActions
+            currentStep={currentStep}
+            totalSteps={STEPS_CREATE.length}
+            onBack={handleGoBack}
+            onContinue={handleContinue}
+            canContinue={
+              currentStep === 0
+                ? !!watchedTargetId
+                : currentStep === 1
+                  ? watchedAmount > 0 && watchedReason.length >= 10
+                  : true
+            }
+            disabled={isPending}
+            checkClassName="text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+            submitLabel="Transferir"
+          />
+        </form>
+      </Modal>
+
+      {/* Goal overflow dialog */}
+      {goalOverflow && (
+        <Modal
+          isOpen={!!goalOverflow}
+          onClose={handleDismissGoalOverflow}
+          title="Meta de ahorro superada"
+          description={`La transferencia supera la meta actual de "${goalOverflow.targetPocket.name}".`}
+          size="sm"
+          glass
+          glassBackdrop
+        >
+          <div className="space-y-4">
+            <div className="rounded-lg bg-secondary-50 dark:bg-secondary-800/50 p-3 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-secondary-500 dark:text-secondary-400">Meta actual</span>
+                <span className="font-medium text-secondary-900 dark:text-white">
+                  {formatCurrency(goalOverflow.targetPocket.goal)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-secondary-500 dark:text-secondary-400">Nuevo acumulado</span>
+                <span className="font-medium text-purple-600 dark:text-purple-400">
+                  {formatCurrency(goalOverflow.wouldBeAccumulated)}
+                </span>
+              </div>
+              <div className="border-t border-secondary-200 dark:border-secondary-700 pt-2 flex justify-between font-semibold">
+                <span className="text-secondary-900 dark:text-white">Nueva meta sugerida</span>
+                <span className="text-purple-600 dark:text-purple-400">
+                  {formatCurrency(
+                    Math.max(
+                      goalOverflow.targetPocket.goal,
+                      Math.ceil(goalOverflow.wouldBeAccumulated),
+                    ),
+                  )}
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-secondary-500 dark:text-secondary-400 text-center">
+              ¿Querés extender la meta para reflejar el nuevo acumulado?
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleDismissGoalOverflow}
+                className="flex-1 px-4 py-2 text-sm font-medium rounded-full border border-secondary-300 dark:border-secondary-600 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-50 dark:hover:bg-secondary-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleExtendGoal}
+                disabled={isPending}
+                className="flex-1 px-4 py-2 rounded-full text-sm font-semibold
+                  bg-gradient-to-r from-emerald-500/10 to-green-500/10
+                  dark:from-emerald-500/20 dark:to-green-500/20
+                  border border-emerald-300/30 dark:border-emerald-400/30
+                  text-emerald-600 dark:text-emerald-300
+                  hover:from-emerald-500/20 hover:to-green-500/20
+                  hover:border-emerald-300/60 dark:hover:border-emerald-400/60
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all duration-300"
+              >
+                Extender meta
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </>
   );
 };
 

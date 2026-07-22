@@ -393,6 +393,14 @@ export class TypeOrmPocketRepository implements PocketRepository {
     return entities.map((e) => this.transferToDomain(e));
   }
 
+  async findTransferById(id: string): Promise<PocketTransfer | null> {
+    const entity = await this.pocketTransferRepository.findOne({
+      where: { id },
+    });
+    if (!entity) return null;
+    return this.transferToDomain(entity);
+  }
+
   async findHistoryByPocketId(
     pocketId: string,
     options: { page: number; limit: number },

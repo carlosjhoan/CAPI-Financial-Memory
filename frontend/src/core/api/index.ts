@@ -10,7 +10,7 @@ import type {
   OverallSummary as ExpenseOverallSummary,
 } from '../../features/expenses/types/expense.types';
 import type { Loan, CreateLoanDto, UpdateLoanDto, LoanFilters, LoanOverallSummary, LoanPerformance, MonthlySummary as LoanMonthlySummary, YearlySummary as LoanYearlySummary } from '../../features/loans/types/loan.types';
-import type { Pocket, CreatePocketDto, UpdatePocketDto, PocketsSummary, TransferDto, DistributionItem, DeleteWithTransferDto } from '../../features/pockets/types/pocket.types';
+import type { Pocket, CreatePocketDto, UpdatePocketDto, PocketsSummary, TransferDto, UpdateTransferDto, DistributionItem, DeleteWithTransferDto } from '../../features/pockets/types/pocket.types';
 
 // ==========================================
 // AUTH SERVICE (special case - no ApiResponse wrapper)
@@ -373,6 +373,10 @@ export const pocketsApiCustom = {
     return customRequest<void, TransferDto>('post', '/pockets/transfer', data);
   },
 
+  updateTransfer: async (transferId: string, data: UpdateTransferDto): Promise<void> => {
+    return customRequest<void, UpdateTransferDto>('put', `/pockets/transfers/${transferId}`, data);
+  },
+
   deleteWithTransfer: async (
     pocketId: string,
     distributions: DistributionItem[],
@@ -407,6 +411,7 @@ export const pocketsService = {
   delete: pocketsApi.delete,
   getSummary: pocketsApiCustom.getSummary,
   transfer: pocketsApiCustom.transfer,
+  updateTransfer: pocketsApiCustom.updateTransfer,
   getHistory: pocketsApiCustom.getHistory,
   deleteWithTransfer: pocketsApiCustom.deleteWithTransfer,
 };

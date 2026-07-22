@@ -4,6 +4,13 @@ export interface TransferDto {
   amount: number;
   reason: string;
   date: string;
+  newGoal?: number;
+}
+
+export interface UpdateTransferDto {
+  amount: number;
+  reason: string;
+  newGoal?: number;
 }
 
 // NUEVO: TransferMovement con direction

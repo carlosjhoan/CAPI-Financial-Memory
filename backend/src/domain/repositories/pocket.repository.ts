@@ -17,6 +17,7 @@ export interface PocketRepository {
   findExpensesByPocketId(pocketId: string): Promise<Expense[]>;
   saveTransfer(transfer: PocketTransfer): Promise<PocketTransfer>;
   findTransfersByPocketId(pocketId: string): Promise<PocketTransfer[]>;
+  findTransferById(id: string): Promise<PocketTransfer | null>;
   findHistoryByPocketId(
     pocketId: string,
     options: { page: number; limit: number },

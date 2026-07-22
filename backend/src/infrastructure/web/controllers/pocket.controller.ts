@@ -34,12 +34,14 @@ import { GetPocketsSummaryUseCase } from "../../../application/pocket/get-pocket
 import { UpdatePocketUseCase } from "../../../application/pocket/update-pocket.use-case";
 import { DeletePocketUseCase } from "../../../application/pocket/delete-pocket.use-case";
 import { TransferBetweenPocketsUseCase } from "../../../application/pocket/transfer-between-pockets.use-case";
+import { UpdateTransferUseCase } from "../../../application/pocket/update-transfer.use-case";
 import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-with-transfer.use-case";
 import { RecalculateAccumulatedUseCase } from "../../../application/pocket/recalculate-accumulated.use-case";
 import { PocketService } from "../../../domain/services/pocket.service";
 import { CreatePocketDto } from "../dto/create-pocket.dto";
 import { UpdatePocketDto } from "../dto/update-pocket.dto";
 import { CreateTransferDto } from "../dto/create-transfer.dto";
+import { UpdateTransferDto } from "../dto/update-transfer.dto";
 import { DeleteWithTransferDto } from "../dto/delete-with-transfer.dto";
 import { ApiResponse as ApiResponseDto } from "../../../shared/dtos/api-response.dto";
 import { ErrorResponse } from "../../../shared/dtos/error-response.dto";
@@ -57,6 +59,7 @@ export class PocketController {
     private readonly updatePocketUseCase: UpdatePocketUseCase,
     private readonly deletePocketUseCase: DeletePocketUseCase,
     private readonly transferBetweenPocketsUseCase: TransferBetweenPocketsUseCase,
+    private readonly updateTransferUseCase: UpdateTransferUseCase,
     private readonly deleteWithTransferUseCase: DeleteWithTransferUseCase,
     private readonly recalculateAccumulatedUseCase: RecalculateAccumulatedUseCase,
     private readonly pocketService: PocketService,
@@ -489,6 +492,82 @@ export class PocketController {
         message: msg,
         timestamp: new Date().toISOString(),
       });
+    }
+  }
+
+  @Put("transfers/:id")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Editar una transferencia",
+    description:
+      "Actualiza el monto y/o motivo de una transferencia existente. " +
+      "El bolsillo destino no se puede cambiar. " +
+      "Si el nuevo monto es mayor, se valida que el origen tenga fondos suficientes " +
+      "y que el destino no supere su meta (o se extiende con newGoal). " +
+      "La operación es atómica (transaccional).",
+  })
+  @ApiParam({
+    name: "id",
+    description: "ID de la transferencia a editar",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  })
+  @ApiBody({ type: UpdateTransferDto })
+  @ApiOkResponse({
+    description: "Transferencia actualizada exitosamente",
+    type: ApiResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description:
+      "Datos inválidos, transferencia no encontrada, fondos insuficientes o meta excedida",
+    type: ErrorResponse,
+  })
+  @ApiNotFoundResponse({
+    description: "Transferencia no encontrada",
+    type: ErrorResponse,
+  })
+  async updateTransfer(
+    @Req() req: RequestWithUser,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTransferDto,
+  ): Promise<ApiResponseDto<any> | ErrorResponse> {
+    try {
+      const result = await this.updateTransferUseCase.execute(
+        req.user.id,
+        id,
+        {
+          amount: dto.amount,
+          reason: dto.reason,
+          newGoal: dto.newGoal,
+        },
+      );
+
+      return {
+        statusCode: HttpStatus.OK,
+        data: result,
+        message: "Transfer updated successfully",
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      const msg = error.message || "";
+      if (msg.startsWith("TRANSFER_EXCEEDS_GOAL")) {
+        return new ErrorResponse(
+          HttpStatus.BAD_REQUEST,
+          "Bad Request",
+          msg,
+        );
+      }
+      if (msg.includes("not found")) {
+        return new ErrorResponse(
+          HttpStatus.NOT_FOUND,
+          "Not Found",
+          msg,
+        );
+      }
+      return new ErrorResponse(
+        HttpStatus.BAD_REQUEST,
+        "Bad Request",
+        msg,
+      );
     }
   }
 

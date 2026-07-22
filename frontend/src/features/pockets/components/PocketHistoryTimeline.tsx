@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
-import { formatCurrency } from '../../../core/utils/format';
+import { ArrowDownIcon, ArrowUpIcon, ArrowsRightLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { formatCurrency, formatTime } from '../../../core/utils/format';
+import GlassCard from '../../../shared/components/GlassCard';
+import KebabPopover from '../../../shared/components/KebabPopover';
 
 export type HistoryItem = {
   id: string;
@@ -25,6 +27,8 @@ interface PocketHistoryTimelineProps {
   fetchNextPage: () => void;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
+  onEditTransfer?: (item: HistoryItem) => void;
+  onDeleteTransfer?: (item: HistoryItem) => void;
 }
 
 const MONTHS_SPANISH = [
@@ -37,61 +41,44 @@ function getMonthYearKey(dateStr: string): string {
   return `${MONTHS_SPANISH[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function getLabel(type: string): string {
-  const labels: Record<string, string> = {
-    income: 'Ingreso',
-    deposit: 'Depósito',
-    expense: 'Gasto',
-    transfer: 'Transferencia',
+const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-  };
-  return labels[type] || 'Movimiento';
+function getDayNumber(dateStr: string): string {
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? '' : d.getDate().toString();
 }
 
-function getMovementColor(item: HistoryItem): string {
+function getMonthName(dateStr: string): string {
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? '' : MONTH_NAMES[d.getMonth()];
+}
+
+function isToday(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return false;
+  const t = new Date();
+  return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate();
+}
+
+function isYesterday(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return false;
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  return d.getFullYear() === y.getFullYear() && d.getMonth() === y.getMonth() && d.getDate() === y.getDate();
+}
+
+function getAccentColor(): string {
+  return '168,85,247'; // purple — consistent with pocket section
+}
+
+function getAmountColor(item: HistoryItem): string {
   if (item.type === 'transfer') {
     return item.direction === 'incoming' ? 'text-green-500' : 'text-red-500';
   }
-  if (item.type === 'deposit' || item.type === 'income') return 'text-green-500';
-  return 'text-red-500';
-}
-
-function getMovementSign(item: HistoryItem): string {
-  if (item.type === 'transfer') {
-    return item.direction === 'incoming' ? '+' : '-';
-  }
-  if (item.type === 'deposit' || item.type === 'income') return '+';
-  return '-';
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear()
-    && a.getMonth() === b.getMonth()
-    && a.getDate() === b.getDate();
-}
-
-function isYesterday(date: Date): boolean {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return isSameDay(date, yesterday);
-}
-
-function formatDateLabel(dateStr: string): string {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  const today = new Date();
-  if (isSameDay(d, today)) return 'HOY';
-  if (isYesterday(d)) return 'AYER';
-  const day = d.getDate().toString().padStart(2, '0');
-  const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-  return `${day} ${month}`;
-}
-
-function formatTime(dateStr: string | undefined | null): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
+  if (item.type === 'deposit' || item.type === 'income') return 'text-green-600';
+  return 'text-red-600';
 }
 
 function matchesFilter(item: HistoryItem, filter: FilterType): boolean {
@@ -102,53 +89,152 @@ function matchesFilter(item: HistoryItem, filter: FilterType): boolean {
   return true;
 }
 
-const HistoryRow: React.FC<{ item: HistoryItem; pocketNameMap: Map<string, string> }> = ({
-  item,
-  pocketNameMap,
-}) => {
-  const color = getMovementColor(item);
+function getDirectionalText(item: HistoryItem, pocketNameMap: Map<string, string>): string {
+  if (item.type !== 'transfer') return '';
+  const sourceLabel = item.sourcePocketId
+    ? (pocketNameMap.get(item.sourcePocketId) || item.sourcePocketId.slice(0, 8))
+    : (item.sourcePocketName ? `Bolsillo eliminado: ${item.sourcePocketName}` : 'Bolsillo eliminado');
+  const targetLabel = item.targetPocketId
+    ? (pocketNameMap.get(item.targetPocketId) || item.targetPocketId.slice(0, 8))
+    : (item.targetPocketName ? `Bolsillo eliminado: ${item.targetPocketName}` : 'Bolsillo eliminado');
+  return item.direction === 'incoming'
+    ? `De ${sourceLabel}`
+    : `Hacia ${targetLabel}`;
+}
+
+// ── Individual card row ──
+const HistoryRow: React.FC<{
+  item: HistoryItem;
+  pocketNameMap: Map<string, string>;
+  layout?: 'recent' | 'monthly';
+  onEditTransfer?: (item: HistoryItem) => void;
+  onDeleteTransfer?: (item: HistoryItem) => void;
+}> = ({ item, pocketNameMap, layout = 'monthly', onEditTransfer, onDeleteTransfer }) => {
+  const accentColor = getAccentColor();
+  const amountColor = getAmountColor(item);
+
+  // GestionTab-style kebab only for outgoing transfers
+  const showKebab = item.type === 'transfer' && item.direction === 'outgoing';
+
+  const icon = item.type === 'transfer' ? (
+    <ArrowsRightLeftIcon className={`w-4 h-4 ${amountColor}`} />
+  ) : (
+    item.type === 'deposit' || item.type === 'income' ? (
+      <ArrowUpIcon className={`w-4 h-4 ${amountColor}`} />
+    ) : (
+      <ArrowDownIcon className={`w-4 h-4 ${amountColor}`} />
+    )
+  );
+
+  const sign = item.type === 'transfer'
+    ? (item.direction === 'incoming' ? '+' : '-')
+    : (item.type === 'deposit' || item.type === 'income' ? '+' : '-');
+
   return (
-    <div className="flex items-start justify-between text-sm py-2">
-      <div className="flex items-start gap-3">
-        <span
-          className={`mt-0.5 ${color} flex-shrink-0 flex items-center justify-center`}
-        >
-          {item.type === 'transfer' ? (
-            <ArrowsRightLeftIcon className="w-4 h-4" />
-          ) : (
-            <span className="font-bold text-base leading-none">
-              {item.type === 'deposit' || item.type === 'income' ? '↑' : '↓'}
-            </span>
-          )}
-        </span>
-        <div>
-          <span className={`font-bold ${color}`}>{getLabel(item.type)}</span>
-          <div className="text-xs text-secondary-400 dark:text-secondary-500 mt-0.5">
-            {formatDateLabel(item.date)}{item.createdAt ? ` · ${formatTime(item.createdAt)}` : ''}
+    <GlassCard accentColor={accentColor}>
+      <div className="flex items-center gap-3">
+        {/* Icon + Date column — icon left of date in flex-row */}
+        <div className="flex flex-row items-center justify-center min-w-[48px] min-h-[52px] gap-1">
+          {icon}
+          <div className="flex flex-col items-center">
+            {layout === 'recent' ? (
+              <>
+                {isToday(item.date) ? (
+                  <>
+                    <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 leading-tight uppercase">HOY</span>
+                    <span className="text-lg font-bold text-secondary-900 dark:text-white leading-none mt-0.5">{getDayNumber(item.date)}</span>
+                    <span className="text-[10px] font-medium text-secondary-500 dark:text-secondary-400 leading-tight mt-0.5">{getMonthName(item.date)}</span>
+                  </>
+                ) : isYesterday(item.date) ? (
+                  <>
+                    <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 leading-tight uppercase">AYER</span>
+                    <span className="text-lg font-bold text-secondary-900 dark:text-white leading-none mt-0.5">{getDayNumber(item.date)}</span>
+                    <span className="text-[10px] font-medium text-secondary-500 dark:text-secondary-400 leading-tight mt-0.5">{getMonthName(item.date)}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-lg font-bold text-secondary-900 dark:text-white leading-none">{getDayNumber(item.date)}</span>
+                    <span className="text-[10px] font-medium text-secondary-500 dark:text-secondary-400 leading-tight mt-0.5">{getMonthName(item.date)}</span>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="text-lg font-bold text-secondary-900 dark:text-white leading-none">
+                  {getDayNumber(item.date)}
+                </span>
+                <span className="text-[10px] font-medium text-secondary-500 dark:text-secondary-400 leading-tight">
+                  {getMonthName(item.date)}
+                </span>
+              </>
+            )}
           </div>
-          <p className="text-xs text-secondary-600 dark:text-secondary-300 mt-1.5">
-            {item.type === 'transfer' && item.direction === 'incoming'
-              ? `Procedente de ${item.sourcePocketId ? (pocketNameMap.get(item.sourcePocketId) || item.sourcePocketId.slice(0, 8)) : (item.sourcePocketName ? `Bolsillo eliminado: ${item.sourcePocketName}` : 'Bolsillo eliminado')}`
-              : item.type === 'transfer' && item.direction === 'outgoing'
-                ? `Hacia ${item.targetPocketId ? (pocketNameMap.get(item.targetPocketId) || item.targetPocketId.slice(0, 8)) : (item.targetPocketName ? `Bolsillo eliminado: ${item.targetPocketName}` : 'Bolsillo eliminado')}`
-                : item.reason || ''}
+        </div>
+
+        {/* Separator */}
+        <div className="w-px h-10 bg-secondary-200 dark:bg-secondary-700" />
+
+        {/* Content — reason + directional info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-secondary-900 dark:text-white truncate">
+            {item.reason || (item.type === 'transfer' ? 'Transferencia sin motivo' : '')}
           </p>
+          {item.type === 'transfer' && (
+            <p className="text-xs text-secondary-400 dark:text-secondary-500 truncate mt-0.5">
+              {getDirectionalText(item, pocketNameMap)}
+            </p>
+          )}
+        </div>
+
+        {/* Amount + createdAt + kebab */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-col items-end">
+            <span className={`text-sm font-semibold ${amountColor}`}>
+              {sign}
+              {formatCurrency(item.amount)}
+            </span>
+            <span className="text-[10px] text-secondary-400 dark:text-secondary-500 leading-none mt-0.5 flex items-center gap-1 whitespace-nowrap">
+              <svg className="w-2.5 h-2.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {formatTime(item.createdAt)}
+            </span>
+          </div>
+
+          {showKebab ? (
+            <KebabPopover
+              actions={[
+                {
+                  label: 'Editar',
+                  icon: <PencilIcon className="w-4 h-4" />,
+                  onClick: () => onEditTransfer?.(item),
+                },
+                {
+                  label: 'Eliminar',
+                  icon: <TrashIcon className="w-4 h-4" />,
+                  danger: true,
+                  onClick: () => onDeleteTransfer?.(item),
+                },
+              ]}
+            />
+          ) : (
+            <div className="w-[28px]" /> /* ponytail: reserve space for kebab alignment */
+          )}
         </div>
       </div>
-      <span className={`font-bold text-sm text-right tabular-nums ${color}`}>
-        {getMovementSign(item)}
-        {formatCurrency(item.amount)}
-      </span>
-    </div>
+    </GlassCard>
   );
 };
 
+// ── Main timeline component ──
 const PocketHistoryTimeline: React.FC<PocketHistoryTimelineProps> = ({
   history,
   pocketNameMap,
   fetchNextPage,
   hasNextPage,
   isFetchingNextPage,
+  onEditTransfer,
+  onDeleteTransfer,
 }) => {
   const [filter, setFilter] = useState<FilterType>('all');
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
@@ -181,7 +267,6 @@ const PocketHistoryTimeline: React.FC<PocketHistoryTimelineProps> = ({
   }, [olderItems]);
 
   const VISIBLE_MONTHS = 6;
-
   const [showAllMonths, setShowAllMonths] = useState(false);
 
   const isEmpty = filteredHistory.length === 0;
@@ -218,14 +303,21 @@ const PocketHistoryTimeline: React.FC<PocketHistoryTimelineProps> = ({
           No hay movimientos
         </p>
       ) : (
-        <>
+        <div className="space-y-1">
           {/* Recent items (first 5) */}
-          <div className="text-[11px] font-semibold uppercase tracking-widest text-secondary-400 dark:text-secondary-500 py-2 border-b border-secondary-100 dark:border-secondary-700/50">
+          <div className="text-[11px] font-semibold uppercase tracking-widest text-secondary-400 dark:text-secondary-500 py-2 border-b border-secondary-100 dark:border-secondary-700/50 sticky top-0 bg-white/80 dark:bg-secondary-900/80 backdrop-blur-sm z-10">
             RECIENTES
           </div>
-          <div>
+          <div className="space-y-2">
             {recentItems.map((item) => (
-              <HistoryRow key={item.id} item={item} pocketNameMap={pocketNameMap} />
+              <HistoryRow
+                key={item.id}
+                item={item}
+                layout="recent"
+                pocketNameMap={pocketNameMap}
+                onEditTransfer={onEditTransfer}
+                onDeleteTransfer={onDeleteTransfer}
+              />
             ))}
           </div>
 
@@ -272,7 +364,7 @@ const PocketHistoryTimeline: React.FC<PocketHistoryTimelineProps> = ({
                     )}
                     {totalTransfers > 0 && (
                       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-[10px] font-semibold text-blue-700 dark:text-blue-400 not-uppercase tracking-normal leading-none">
-                        ↔{formatCurrency(totalTransfers)}
+                        <ArrowsRightLeftIcon className="w-3 h-3" />{formatCurrency(totalTransfers)}
                       </span>
                     )}
                     <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-[10px] font-semibold text-purple-700 dark:text-purple-400 not-uppercase tracking-normal leading-none">
@@ -284,9 +376,15 @@ const PocketHistoryTimeline: React.FC<PocketHistoryTimelineProps> = ({
                   className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
                   style={{ maxHeight: expandedMonths.has(monthYear) ? '2000px' : '0' }}
                 >
-                  <div className="mt-1">
+                  <div className="mt-2 space-y-2">
                     {items.map((item) => (
-                      <HistoryRow key={item.id} item={item} pocketNameMap={pocketNameMap} />
+                      <HistoryRow
+                        key={item.id}
+                        item={item}
+                        pocketNameMap={pocketNameMap}
+                        onEditTransfer={onEditTransfer}
+                        onDeleteTransfer={onDeleteTransfer}
+                      />
                     ))}
                   </div>
                 </div>
@@ -318,7 +416,7 @@ const PocketHistoryTimeline: React.FC<PocketHistoryTimelineProps> = ({
               </button>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

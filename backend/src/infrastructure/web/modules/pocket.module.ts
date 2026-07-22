@@ -15,6 +15,7 @@ import { GetPocketsSummaryUseCase } from "../../../application/pocket/get-pocket
 import { UpdatePocketUseCase } from "../../../application/pocket/update-pocket.use-case";
 import { DeletePocketUseCase } from "../../../application/pocket/delete-pocket.use-case";
 import { TransferBetweenPocketsUseCase } from "../../../application/pocket/transfer-between-pockets.use-case";
+import { UpdateTransferUseCase } from "../../../application/pocket/update-transfer.use-case";
 import { DeleteWithTransferUseCase } from "../../../application/pocket/delete-with-transfer.use-case";
 import { RecalculateAccumulatedUseCase } from "../../../application/pocket/recalculate-accumulated.use-case";
 @Module({
@@ -88,6 +89,16 @@ import { RecalculateAccumulatedUseCase } from "../../../application/pocket/recal
         return new RecalculateAccumulatedUseCase(pocketRepository);
       },
       inject: ["PocketRepository"],
+    },
+    {
+      provide: UpdateTransferUseCase,
+      useFactory: (
+        pocketRepository: TypeOrmPocketRepository,
+        dataSource: DataSource,
+      ) => {
+        return new UpdateTransferUseCase(pocketRepository, dataSource);
+      },
+      inject: ["PocketRepository", DataSource],
     },
     {
       provide: DeleteWithTransferUseCase,
