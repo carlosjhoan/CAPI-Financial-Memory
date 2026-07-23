@@ -13,7 +13,7 @@ export interface PocketCardProps {
 
 const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => {
   const navigate = useNavigate();
-  const { lastDate, withdrawalCount, transferOutCount, transferTotal } = useMemo(() => {
+  const { lastDate, withdrawalCount, transferOutCount, transferTotal, sortedMovements } = useMemo(() => {
     const incomes = pocket.incomes || [];
     const expenses = pocket.expenses || [];
     const transfers = pocket.transfers || [];
@@ -30,12 +30,21 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
 
     const day = dateObj.getDate().toString().padStart(2, '0');
     const month = monthNamesShort[dateObj.getMonth()].toUpperCase();
+
+    // Movimientos combinados para la gráfica: incomes (+), expenses (-), transfers_in (+), transfers_out (-)
+    const movements: { amount: number; date: string }[] = [
+      ...incomes.map(i => ({ amount: i.amount, date: i.date })),
+      ...expenses.map(e => ({ amount: -e.amount, date: e.date })),
+      ...transfers.filter(t => t.direction === 'incoming').map(t => ({ amount: t.amount, date: t.date })),
+      ...transfers.filter(t => t.direction === 'outgoing').map(t => ({ amount: -t.amount, date: t.date })),
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     return {
       lastDate: `${day} ${month}`,
       withdrawalCount: expenses.length,
       transferOutCount: outgoingTransfers.length,
       transferTotal: transfers.length,
+      sortedMovements: movements,
     };
   }, [pocket.incomes, pocket.expenses, pocket.transfers, pocket.createdAt]);
 
@@ -109,7 +118,7 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
         )}
       </div>
 
-      <div className="p-4 pt-3 pb-0 flex-1 flex flex-col justify-between">
+      <div className="p-4 pt-8 pb-0 flex-1 flex flex-col justify-between">
           {/* Block 1 - arriba: amount, name, deposit count */}
           <div className="flex flex-col items-center">
             {/* Monto */}
@@ -176,10 +185,10 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
               </div>
             )}
             {/* MiniLineChart for deposit type with data */}
-            {!isGoal && (pocket.accumulatedAmount > 0 || (pocket.incomes && pocket.incomes.length > 0)) && (
+            {!isGoal && (pocket.accumulatedAmount > 0 || sortedMovements.length > 0) && (
               <div>
                 <MiniLineChart
-                  transactions={pocket.incomes ?? []}
+                  transactions={sortedMovements}
                   createdAt={pocket.createdAt}
                   currentAccumulated={pocket.accumulatedAmount}
                 />
@@ -187,7 +196,7 @@ const PocketCard: React.FC<PocketCardProps> = ({ pocket, onEdit, onDelete }) => 
             )}
 
             {/* Empty state for deposit type without data */}
-            {!isGoal && pocket.accumulatedAmount === 0 && (!pocket.incomes || pocket.incomes.length === 0) && (
+            {!isGoal && pocket.accumulatedAmount === 0 && sortedMovements.length === 0 && (
               <div>
                 <div className="text-center text-xs text-secondary-400 py-4">
                   Bolsillo vacío

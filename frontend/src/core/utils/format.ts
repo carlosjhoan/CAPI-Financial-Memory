@@ -161,7 +161,7 @@ export function formatTime(isoStr: string | undefined | null): string {
   return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-function localDateStr(date: Date = new Date()): string {
+export function localDateStr(date: Date = new Date()): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
