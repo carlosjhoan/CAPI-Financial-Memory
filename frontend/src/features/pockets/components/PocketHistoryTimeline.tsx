@@ -141,13 +141,13 @@ const HistoryRow: React.FC<{
               <>
                 {isToday(item.date) ? (
                   <>
-                    <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 leading-tight uppercase">HOY</span>
+                    <span className="text-[10px] font-bold text-secondary-500 dark:text-secondary-400 leading-tight uppercase">HOY</span>
                     <span className="text-lg font-bold text-secondary-900 dark:text-white leading-none mt-0.5">{getDayNumber(item.date)}</span>
                     <span className="text-[10px] font-medium text-secondary-500 dark:text-secondary-400 leading-tight mt-0.5">{getMonthName(item.date)}</span>
                   </>
                 ) : isYesterday(item.date) ? (
                   <>
-                    <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 leading-tight uppercase">AYER</span>
+                    <span className="text-[10px] font-bold text-secondary-500 dark:text-secondary-400 leading-tight uppercase">AYER</span>
                     <span className="text-lg font-bold text-secondary-900 dark:text-white leading-none mt-0.5">{getDayNumber(item.date)}</span>
                     <span className="text-[10px] font-medium text-secondary-500 dark:text-secondary-400 leading-tight mt-0.5">{getMonthName(item.date)}</span>
                   </>

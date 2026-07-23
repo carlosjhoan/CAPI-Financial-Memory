@@ -177,6 +177,42 @@ export class TypeOrmPocketRepository implements PocketRepository {
         p.incomes = incomesByPocket.get(p.id) ?? [];
       });
 
+      // ── Gastos ──────────────────────────────────────────────────────
+      const lastExpenseRows = await this.pocketRepository.query(
+        `
+        SELECT e.id, ea.amount, e.reason, e.date, e."createdAt", e."userId", ea."pocketId"
+        FROM expenses e
+        JOIN expense_allocations ea ON ea."expenseId" = e.id
+        WHERE ea."pocketId"::text = ANY($1)
+        ORDER BY e.date DESC
+      `,
+        [pocketIds],
+      );
+
+      const expensesByPocket = new Map<string, Expense[]>();
+      lastExpenseRows.forEach((row: any) => {
+        const pid = row.pocketId;
+        if (!expensesByPocket.has(pid)) {
+          expensesByPocket.set(pid, []);
+        }
+        const arr = expensesByPocket.get(pid)!;
+        if (arr.length < 7) {
+          const expense = new Expense(
+            Number(row.amount),
+            row.reason,
+            row.date,
+            row.id,
+            row.userId,
+          );
+          expense.createdAt = row.createdAt;
+          arr.push(expense);
+        }
+      });
+
+      pockets.forEach((p) => {
+        p.expenses = expensesByPocket.get(p.id) ?? [];
+      });
+
       // ── Transferencias ──────────────────────────────────────────────
       const allTransfers = await this.pocketTransferRepository
         .createQueryBuilder("transfer")
@@ -213,7 +249,7 @@ export class TypeOrmPocketRepository implements PocketRepository {
       });
 
       pockets.forEach((p) => {
-        (p as any).transfers = transfersByPocket.get(p.id) ?? [];
+        p.transfers = transfersByPocket.get(p.id) ?? [];
       });
     }
 

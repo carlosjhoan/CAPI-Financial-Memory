@@ -9,9 +9,9 @@ import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import {
   formatCurrency,
   formatCreatedAtDateLabel,
-  formatDayLabel,
   formatTime,
   getMonthYearKey,
+  localDateStr,
 } from '../../../../core/utils/format';
 
 // ==========================================
@@ -208,11 +208,38 @@ function GestionTab<T extends FinancialEntity>({
                         accentColor={config.colors.accentRGB}
                       >
                         <div className="flex items-center gap-3">
-                          {/* Day */}
+                          {/* Day — HOY/AYER + day number or just day */}
                           <div className="flex flex-col items-center min-w-[40px]">
-                            <span className="text-lg font-bold text-secondary-900 dark:text-white leading-none">
-                              {formatDayLabel(item.date)}
-                            </span>
+                            {(() => {
+                              const datePart = item.date;
+                              const today = localDateStr();
+                              const yesterdayDate = new Date();
+                              yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+                              const yesterday = localDateStr(yesterdayDate);
+                              const dayNum = item.date.split('-')[2];
+
+                              if (datePart === today) {
+                                return (
+                                  <>
+                                    <span className="text-[10px] font-bold text-secondary-500 dark:text-secondary-400 leading-tight uppercase">HOY</span>
+                                    <span className="text-lg font-bold text-secondary-900 dark:text-white leading-none mt-0.5">{dayNum}</span>
+                                  </>
+                                );
+                              }
+                              if (datePart === yesterday) {
+                                return (
+                                  <>
+                                    <span className="text-[10px] font-bold text-secondary-500 dark:text-secondary-400 leading-tight uppercase">AYER</span>
+                                    <span className="text-lg font-bold text-secondary-900 dark:text-white leading-none mt-0.5">{dayNum}</span>
+                                  </>
+                                );
+                              }
+                              return (
+                                <span className="text-lg font-bold text-secondary-900 dark:text-white leading-none">
+                                  {dayNum}
+                                </span>
+                              );
+                            })()}
                           </div>
                           {/* Separator */}
                           <div className="w-px h-10 bg-secondary-200 dark:bg-secondary-700" />
@@ -268,7 +295,7 @@ function GestionTab<T extends FinancialEntity>({
                               {config.amountSign}
                               {formatCurrency(item.amount)}
                             </span>
-                            <span className="text-[10px] text-secondary-400 dark:text-secondary-500 leading-none mt-0.5 flex items-center gap-1">
+                            <span className="text-[10px] text-secondary-400 dark:text-secondary-500 leading-none mt-0.5 flex items-center gap-1 whitespace-nowrap">
                               <svg
                                 className="w-2.5 h-2.5 shrink-0"
                                 fill="none"
@@ -282,26 +309,7 @@ function GestionTab<T extends FinancialEntity>({
                                   d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
                                 />
                               </svg>
-                              {formatCreatedAtDateLabel(
-                                item.createdAt,
-                              )}
-                              <span className="text-secondary-300 dark:text-secondary-600">
-                                ·
-                              </span>
-                              <svg
-                                className="w-2.5 h-2.5 shrink-0"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                strokeWidth={1.5}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                              </svg>
-                              {formatTime(item.createdAt)}
+                              {formatCreatedAtDateLabel(item.createdAt) + ', ' + formatTime(item.createdAt)}
                             </span>
                           </div>
                           {/* Kebab o candado según el estado del registro */}

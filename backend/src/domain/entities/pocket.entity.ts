@@ -1,5 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Income } from "./income.entity";
+import { Expense } from "./expense.entity";
+import { PocketTransfer } from "./pocket-transfer.entity";
 
 export class Pocket {
   @ApiProperty({ description: "ID único del bolsillo (UUID)" })
@@ -44,6 +46,18 @@ export class Pocket {
     type: [Income],
   })
   incomes?: Income[];
+
+  @ApiProperty({
+    description: "Gastos asociados al bolsillo",
+    type: [Expense],
+  })
+  expenses?: Expense[];
+
+  @ApiProperty({
+    description: "Transferencias asociadas al bolsillo",
+    type: [PocketTransfer],
+  })
+  transfers?: PocketTransfer[];
 
   constructor(
     name: string,
