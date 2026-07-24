@@ -20,6 +20,7 @@ import type { AvailableMonth } from '../utils/timeline';
 export interface FinancialEntity {
   id: string;
   amount: number;
+  netAmount?: number;
   reason: string;
   date: string;
   createdAt: string;

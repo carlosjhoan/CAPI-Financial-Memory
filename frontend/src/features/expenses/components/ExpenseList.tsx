@@ -78,7 +78,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({
           {expense.reason}
         </p>
         <span className="text-sm font-semibold text-red-500 dark:text-red-400 shrink-0">
-          -{formatCurrency(expense.amount)}
+          -{formatCurrency(expense.netAmount ?? expense.amount)}
         </span>
       </div>
     ),
@@ -88,16 +88,16 @@ const ExpenseList: React.FC<ExpenseListProps> = ({
       return `${expense.allocations[0].pocketName} y ${expense.allocations.length - 1} más`;
     },
     getDate: (e: Expense) => e.date,
-    getStatusDot: () => 'bg-orange-500',
+    getStatusDot: () => 'bg-red-500',
     renderFocusCard: (expense: Expense) => (
       <>
-        <div className="h-0.5 bg-orange-500/30" />
+        <div className="h-0.5 bg-red-500/30" />
         <div className="p-4 space-y-2">
           <p className="text-base font-semibold text-secondary-900 dark:text-white">
             {expense.reason}
           </p>
-          <p className="text-2xl font-bold text-red-500 dark:text-red-400">
-            -{formatCurrency(expense.amount)}
+          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+            -{formatCurrency(expense.netAmount ?? expense.amount)}
           </p>
           <p className="text-sm text-secondary-400 dark:text-secondary-500">
             {expense.date}

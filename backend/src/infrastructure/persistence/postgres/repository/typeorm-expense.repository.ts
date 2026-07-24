@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { Expense } from "../../../../domain/entities/expense.entity";
 import { ExpenseRepository } from "../../../../domain/repositories/expense.repository";
 import { ExpenseEntity } from "../entities/expense.entity";
@@ -12,7 +12,7 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
     private readonly expenseRepository: Repository<ExpenseEntity>,
   ) {}
 
-  private toDomain(entity: ExpenseEntity): Expense {
+  private toDomain(entity: ExpenseEntity, adjustments: ExpenseEntity[] = []): Expense {
     const expense = new Expense(
       Number(entity.amount),
       entity.reason,
@@ -21,6 +21,8 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
     );
 
     expense.createdAt = entity.createdAt;
+    expense.isAdjustment = entity.isAdjustment;
+    expense.adjustedRecordId = entity.adjustedRecordId;
 
     if (entity.allocations) {
       expense.allocations = entity.allocations.map((alloc) => ({
@@ -30,12 +32,44 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
       }));
     }
 
+    expense.adjustments = adjustments.map((adj) => {
+      const adjExpense = new Expense(
+        Number(adj.amount),
+        adj.reason,
+        adj.date,
+        adj.id,
+      );
+      adjExpense.isAdjustment = true;
+      adjExpense.adjustedRecordId = adj.adjustedRecordId;
+      adjExpense.createdAt = adj.createdAt;
+      return adjExpense;
+    });
+
+    const adjustmentsSum = expense.adjustments.reduce(
+      (sum, adj) => sum + adj.amount,
+      0,
+    );
+    expense.netAmount = Number(entity.amount) + adjustmentsSum;
+
     return expense;
+  }
+
+  private async loadAdjustmentsMap(ids: string[]): Promise<Map<string, ExpenseEntity[]>> {
+    if (ids.length === 0) return new Map();
+    const adjustments = await this.expenseRepository.find({
+      where: { adjustedRecordId: In(ids) },
+    });
+    const map = new Map<string, ExpenseEntity[]>();
+    for (const adj of adjustments) {
+      const key = adj.adjustedRecordId!;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(adj);
+    }
+    return map;
   }
 
   private toEntity(domain: Expense): ExpenseEntity {
     const entity = new ExpenseEntity();
-    // Solo asignar el ID si existe (para updates), si es undefined TypeORM generará uno nuevo
     if (domain.id) {
       entity.id = domain.id;
     }
@@ -60,15 +94,21 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
       where,
       relations: ["allocations", "allocations.pocket"],
     });
-    return entity ? this.toDomain(entity) : null;
+    if (!entity) return null;
+    const adjustments = await this.expenseRepository.find({
+      where: { adjustedRecordId: id },
+    });
+    return this.toDomain(entity, adjustments);
   }
 
   async findAll(userId: string): Promise<Expense[]> {
     const entities = await this.expenseRepository.find({
-      where: { userId },
+      where: { userId, isAdjustment: false },
       relations: ["allocations", "allocations.pocket"],
     });
-    return entities.map((entity) => this.toDomain(entity));
+    const ids = entities.map((e) => e.id);
+    const adjMap = await this.loadAdjustmentsMap(ids);
+    return entities.map((entity) => this.toDomain(entity, adjMap.get(entity.id) || []));
   }
 
   async findAllPaginated(
@@ -76,7 +116,7 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
     limit: number,
     userId?: string,
   ): Promise<{ data: Expense[]; total: number }> {
-    const where: any = {};
+    const where: any = { isAdjustment: false };
     if (userId) where.userId = userId;
     const [entities, total] = await this.expenseRepository.findAndCount({
       where,
@@ -86,8 +126,11 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
       relations: ["allocations", "allocations.pocket"],
     });
 
+    const ids = entities.map((e) => e.id);
+    const adjMap = await this.loadAdjustmentsMap(ids);
+
     return {
-      data: entities.map((entity) => this.toDomain(entity)),
+      data: entities.map((entity) => this.toDomain(entity, adjMap.get(entity.id) || [])),
       total,
     };
   }
@@ -101,14 +144,17 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
       .createQueryBuilder("expense")
       .leftJoinAndSelect("expense.allocations", "allocations")
       .leftJoinAndSelect("allocations.pocket", "pocket")
-      .where("expense.date >= :startDate", { startDate })
+      .where("expense.isAdjustment = :isAdj", { isAdj: false })
+      .andWhere("expense.date >= :startDate", { startDate })
       .andWhere("expense.date <= :endDate", { endDate })
       .orderBy("expense.date", "DESC");
     if (userId) {
       query.andWhere("expense.userId = :userId", { userId });
     }
     const entities = await query.getMany();
-    return entities.map((entity) => this.toDomain(entity));
+    const ids = entities.map((e) => e.id);
+    const adjMap = await this.loadAdjustmentsMap(ids);
+    return entities.map((entity) => this.toDomain(entity, adjMap.get(entity.id) || []));
   }
 
   async findByDateRangePaginated(
@@ -122,7 +168,8 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
       .createQueryBuilder("expense")
       .leftJoinAndSelect("expense.allocations", "allocations")
       .leftJoinAndSelect("allocations.pocket", "pocket")
-      .where("expense.date >= :startDate", { startDate })
+      .where("expense.isAdjustment = :isAdj", { isAdj: false })
+      .andWhere("expense.date >= :startDate", { startDate })
       .andWhere("expense.date <= :endDate", { endDate })
       .orderBy("expense.date", "DESC");
     if (userId) {
@@ -134,8 +181,11 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
       .take(limit)
       .getManyAndCount();
 
+    const ids = entities.map((e) => e.id);
+    const adjMap = await this.loadAdjustmentsMap(ids);
+
     return {
-      data: entities.map((entity) => this.toDomain(entity)),
+      data: entities.map((entity) => this.toDomain(entity, adjMap.get(entity.id) || [])),
       total,
     };
   }
@@ -173,9 +223,8 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
     count: number;
     averageAmount: number;
   }> {
-    // Use UTC to avoid timezone issues with date boundaries
     const startDate = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
-    const endDate = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)); // Last day of month
+    const endDate = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
 
     const query = this.expenseRepository
       .createQueryBuilder("expense")
@@ -206,11 +255,9 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
     count: number;
     monthlyBreakdown: Record<string, number>;
   }> {
-    // Use UTC to avoid timezone issues with date boundaries
     const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
-    // Obtener total y conteo anual
     const totalQuery = this.expenseRepository
       .createQueryBuilder("expense")
       .select("SUM(expense.amount)", "totalAmount")
@@ -222,7 +269,6 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
     }
     const totalResult = await totalQuery.getRawOne();
 
-    // Obtener desglose mensual
     const monthlyQuery = this.expenseRepository
       .createQueryBuilder("expense")
       .select("EXTRACT(MONTH FROM expense.date)", "month")
@@ -238,28 +284,16 @@ export class TypeOrmExpenseRepository implements ExpenseRepository {
 
     const monthlyBreakdown: Record<string, number> = {};
     const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
 
-    // Inicializar todos los meses con 0
     monthNames.forEach((month) => {
       monthlyBreakdown[month] = 0;
     });
 
-    // Asignar valores reales
     monthlyResults.forEach((result) => {
-      const monthIndex = parseInt(result.month) - 1; // Los meses en SQL son 1-indexed
+      const monthIndex = parseInt(result.month) - 1;
       if (monthIndex >= 0 && monthIndex < 12) {
         monthlyBreakdown[monthNames[monthIndex]] = parseFloat(result.amount);
       }

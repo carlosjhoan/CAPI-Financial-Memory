@@ -51,7 +51,7 @@ export const expenseEntityConfig: EntityConfig<Expense> = {
     sectionName: 'Gastos',
     fabLabel: 'Nuevo Gasto',
     createTitle: 'Nuevo Gasto',
-    editTitle: 'Editar Gasto',
+    editTitle: 'Ajustar Gasto',
     emptyMessage: 'No hay gastos',
     emptyActionLabel: 'Crear Primer Gasto',
     entitySingular: 'gasto',

@@ -11,7 +11,22 @@ export interface Income {
   date: string;
   createdAt: string;
   updatedAt: string;
+  isAdjustment?: boolean;
+  adjustedRecordId?: string | null;
+  netAmount?: number;
+  adjustments?: IncomeAdjustment[];
   allocations?: { pocketId: string; pocketName: string; amount: number }[];
+}
+
+export interface IncomeAdjustment {
+  id: string;
+  type: 'income' | 'expense';
+  amount: number;
+  adjustedRecordId: string;
+  isAdjustment: true;
+  reason: string;
+  date: string;
+  allocations?: { pocketId: string | null; amount: number }[];
 }
 
 export interface Allocation {

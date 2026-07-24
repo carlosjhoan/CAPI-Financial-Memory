@@ -10,6 +10,7 @@ import {
   HttpStatus,
   Query,
   BadRequestException,
+  ForbiddenException,
   UseGuards,
   Req,
   ParseUUIDPipe,
@@ -32,16 +33,19 @@ import { GetExpensesByDateRangePaginatedUseCase } from "../../../application/exp
 import { GetExpenseByIdUseCase } from "../../../application/expense/get-expense-by-id.use-case";
 import { UpdateExpenseUseCase } from "../../../application/expense/update-expense.use-case";
 import { DeleteExpenseUseCase } from "../../../application/expense/delete-expense.use-case";
+import { CreateExpenseAdjustmentUseCase } from "../../../application/expense/create-expense-adjustment.use-case";
 import { GetExpensesSummaryUseCase } from "../../../application/expense/get-expenses-summary.use-case";
 import { GetMonthlySummaryUseCase } from "../../../application/expense/get-monthly-summary.use-case";
 import { GetYearlySummaryUseCase } from "../../../application/expense/get-yearly-summary.use-case";
 import { CreateExpenseDto } from "../dto/create-expense.dto";
 import { UpdateExpenseDto } from "../dto/update-expense.dto";
+import { CreateExpenseAdjustmentDto } from "../dto/create-expense-adjustment.dto";
 import { ApiResponse as ApiResponseDto } from "../../../shared/dtos/api-response.dto";
 import { ErrorResponse } from "../../../shared/dtos/error-response.dto";
 import { ExpenseQueryDto } from "../dto/expense-query.dto";
 import { JwtAuthGuard } from "../../../application/auth/guards/jwt-auth.guard";
 import { RequestWithUser } from "../../../application/auth/types";
+import { ExpenseService } from "../../../domain/services/expense.service";
 
 @ApiTags("expenses")
 @UseGuards(JwtAuthGuard)
@@ -54,9 +58,11 @@ export class ExpenseController {
     private readonly getExpenseByIdUseCase: GetExpenseByIdUseCase,
     private readonly updateExpenseUseCase: UpdateExpenseUseCase,
     private readonly deleteExpenseUseCase: DeleteExpenseUseCase,
+    private readonly createExpenseAdjustmentUseCase: CreateExpenseAdjustmentUseCase,
     private readonly getExpensesSummaryUseCase: GetExpensesSummaryUseCase,
     private readonly getMonthlySummaryUseCase: GetMonthlySummaryUseCase,
     private readonly getYearlySummaryUseCase: GetYearlySummaryUseCase,
+    private readonly expenseService: ExpenseService,
   ) {}
 
   @Post()
@@ -351,6 +357,12 @@ export class ExpenseController {
     @Body() updateExpenseDto: UpdateExpenseDto,
   ): Promise<ApiResponseDto<any> | ErrorResponse> {
     try {
+      // 403 guard: adjustments are immutable
+      const existing = await this.expenseService.getExpenseById(req.user.id, id);
+      if (existing.isAdjustment) {
+        throw new ForbiddenException("Adjustment records are immutable");
+      }
+
       const updateData: any = {};
       if (updateExpenseDto.amount !== undefined)
         updateData.amount = updateExpenseDto.amount;
@@ -378,10 +390,57 @@ export class ExpenseController {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
+      if (error instanceof ForbiddenException) throw error;
       return new ErrorResponse(
         HttpStatus.BAD_REQUEST,
         "Bad Request",
         error.message,
+      );
+    }
+  }
+
+  @Post(":id/adjustments")
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: "Crear un ajuste sobre un gasto",
+    description: "Crea un registro de ajuste (income o expense) según la dirección del delta.",
+  })
+  @ApiParam({ name: "id", description: "ID del gasto original" })
+  @ApiBody({ type: CreateExpenseAdjustmentDto })
+  @ApiCreatedResponse({ description: "Ajuste creado exitosamente" })
+  @ApiNotFoundResponse({ description: "Gasto no encontrado" })
+  @ApiBadRequestResponse({ description: "Datos inválidos" })
+  async createAdjustment(
+    @Req() req: RequestWithUser,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: CreateExpenseAdjustmentDto,
+  ): Promise<ApiResponseDto<any> | ErrorResponse> {
+    try {
+      const original = await this.expenseService.getExpenseById(req.user.id, id);
+      if (original.isAdjustment) {
+        throw new ForbiddenException("Cannot adjust an adjustment record");
+      }
+
+      const adjustment = await this.createExpenseAdjustmentUseCase.execute(
+        req.user.id,
+        id,
+        dto,
+      );
+
+      return {
+        statusCode: HttpStatus.CREATED,
+        data: adjustment,
+        message: "Expense adjustment created successfully",
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      return new ErrorResponse(
+        HttpStatus.BAD_REQUEST,
+        "Bad Request",
+        error instanceof Error ? error.message : "Failed to create adjustment",
       );
     }
   }
@@ -408,6 +467,10 @@ export class ExpenseController {
     @Req() req: RequestWithUser,
     @Param("id", ParseUUIDPipe) id: string,
   ): Promise<void> {
+    const existing = await this.expenseService.getExpenseById(req.user.id, id);
+    if (existing.isAdjustment) {
+      throw new ForbiddenException("Adjustment records are immutable");
+    }
     await this.deleteExpenseUseCase.execute(req.user.id, id);
   }
 

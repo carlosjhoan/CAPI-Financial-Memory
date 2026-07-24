@@ -72,6 +72,10 @@ export const incomesApi = createApiService<Income, CreateIncomeDto, UpdateIncome
 
 // Custom methods para Incomes (no CRUD genérico)
 export const incomesApiCustom = {
+  createAdjustment: async (id: string, data: { amount: number; reason: string; date?: string }): Promise<any> => {
+    return customRequest<any, typeof data>('post', `/incomes/${id}/adjustments`, data);
+  },
+
   getMonthlySummary: async (year?: number, month?: number): Promise<MonthlySummary> => {
     const params = new URLSearchParams();
     if (year) params.append('year', String(year));
@@ -117,6 +121,7 @@ export const incomesService = {
   create: incomesApi.create,
   update: incomesApi.update,
   delete: incomesApi.delete,
+  createAdjustment: incomesApiCustom.createAdjustment,
   getMonthlySummary: incomesApiCustom.getMonthlySummary,
   getYearlySummary: incomesApiCustom.getYearlySummary,
   getOverallSummary: incomesApiCustom.getOverallSummary,
@@ -218,6 +223,10 @@ export const expensesApi = createApiService<Expense, CreateExpenseDto, UpdateExp
 
 // Custom methods para Expenses (no CRUD genérico)
 export const expensesApiCustom = {
+  createAdjustment: async (id: string, data: { amount: number; reason: string; date?: string }): Promise<any> => {
+    return customRequest<any, typeof data>('post', `/expenses/${id}/adjustments`, data);
+  },
+
   getMonthlySummary: async (year?: number, month?: number): Promise<ExpenseMonthlySummary> => {
     const params = new URLSearchParams();
     if (year) params.append('year', String(year));
@@ -263,6 +272,7 @@ export const expensesService = {
   create: expensesApi.create,
   update: expensesApi.update,
   delete: expensesApi.delete,
+  createAdjustment: expensesApiCustom.createAdjustment,
   getMonthlySummary: expensesApiCustom.getMonthlySummary,
   getYearlySummary: expensesApiCustom.getYearlySummary,
   getOverallSummary: expensesApiCustom.getOverallSummary,

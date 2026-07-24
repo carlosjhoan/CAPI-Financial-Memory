@@ -4,14 +4,18 @@ import { DataSource } from "typeorm";
 import { IncomeController } from "../controllers/income.controller";
 import { IncomeService } from "../../../domain/services/income.service";
 import { TypeOrmIncomeRepository } from "../../persistence/postgres/repository/typeorm-income.repository";
+import { TypeOrmExpenseRepository } from "../../persistence/postgres/repository/typeorm-expense.repository";
 import { IncomeEntity } from "../../persistence/postgres/entities/income.entity";
 import { IncomeAllocationEntity } from "../../persistence/postgres/entities/income-allocation.entity";
+import { ExpenseEntity } from "../../persistence/postgres/entities/expense.entity";
+import { ExpenseAllocationEntity } from "../../persistence/postgres/entities/expense-allocation.entity";
 import { CreateIncomeUseCase } from "../../../application/income/create-income.use-case";
 import { RegisterIncomePaymentUseCase } from "../../../application/income/register-income-payment.use-case";
 import { GetAllIncomesUseCase } from "../../../application/income/get-all-incomes.use-case";
 import { GetAllIncomesPaginatedUseCase } from "../../../application/income/get-all-incomes-paginated.use-case";
 import { GetIncomeByIdUseCase } from "../../../application/income/get-income-by-id.use-case";
 import { UpdateIncomeUseCase } from "../../../application/income/update-income.use-case";
+import { CreateIncomeAdjustmentUseCase } from "../../../application/income/create-income-adjustment.use-case";
 import { DeleteIncomeUseCase } from "../../../application/income/delete-income.use-case";
 import { GetIncomesSummaryUseCase } from "../../../application/income/get-incomes-summary.use-case";
 import { GetMonthlySummaryUseCase } from "../../../application/income/get-monthly-summary.use-case";
@@ -22,7 +26,7 @@ import { PocketModule } from "./pocket.module";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([IncomeEntity, IncomeAllocationEntity]),
+    TypeOrmModule.forFeature([IncomeEntity, IncomeAllocationEntity, ExpenseEntity, ExpenseAllocationEntity]),
     PocketModule,
   ],
   controllers: [IncomeController],
@@ -31,6 +35,10 @@ import { PocketModule } from "./pocket.module";
     {
       provide: "IncomeRepository",
       useClass: TypeOrmIncomeRepository,
+    },
+    {
+      provide: "ExpenseRepository",
+      useClass: TypeOrmExpenseRepository,
     },
     {
       provide: CreateIncomeUseCase,
@@ -84,6 +92,21 @@ import { PocketModule } from "./pocket.module";
         );
       },
       inject: [IncomeService, "PocketRepository", DataSource],
+    },
+    {
+      provide: CreateIncomeAdjustmentUseCase,
+      useFactory: (
+        incomeRepository: any,
+        pocketRepository: any,
+        dataSource: DataSource,
+      ) => {
+        return new CreateIncomeAdjustmentUseCase(
+          incomeRepository,
+          pocketRepository,
+          dataSource,
+        );
+      },
+      inject: ["IncomeRepository", "PocketRepository", DataSource],
     },
     {
       provide: DeleteIncomeUseCase,

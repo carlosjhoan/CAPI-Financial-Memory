@@ -1,10 +1,4 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  OneToMany,
-} from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany } from "typeorm";
 import { IncomeAllocationEntity } from "./income-allocation.entity";
 
 @Entity("incomes")
@@ -26,6 +20,12 @@ export class IncomeEntity {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ default: false })
+  isAdjustment: boolean;
+
+  @Column({ type: "uuid", nullable: true })
+  adjustedRecordId: string | null;
 
   @OneToMany(() => IncomeAllocationEntity, (allocation) => allocation.income)
   allocations: IncomeAllocationEntity[];
