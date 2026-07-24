@@ -18,6 +18,20 @@ import {
 // TYPES
 // ==========================================
 
+/**
+ * Para items ajustados, devuelve el createdAt del ajuste más reciente.
+ * Para items sin ajustes, devuelve el createdAt original.
+ */
+function getDisplayCreatedAt(item: FinancialEntity): string {
+  if (item.netAmount == null || item.netAmount === item.amount) return item.createdAt;
+  const adjustments = (item as any).adjustments as { createdAt?: string }[] | undefined;
+  if (!adjustments?.length) return item.createdAt;
+  return adjustments.reduce(
+    (latest, adj) => (adj.createdAt && adj.createdAt > latest ? adj.createdAt : latest),
+    item.createdAt,
+  );
+}
+
 interface GestionTabProps<T extends FinancialEntity> {
   config: EntityConfig<T>;
   sectionProps: SectionReturn<T>;
@@ -152,7 +166,7 @@ function GestionTab<T extends FinancialEntity>({
         <div className="space-y-6">
           {monthGroups.map(([monthYear, items]) => {
             const groupTotal = items.reduce(
-              (sum, i) => sum + i.amount,
+              (sum, i) => sum + (i.netAmount ?? i.amount),
               0,
             );
             const isCollapsed =
@@ -199,6 +213,8 @@ function GestionTab<T extends FinancialEntity>({
                 {!isCollapsed && (
                   <div className="mt-3 space-y-2">
                     {items.map((item) => {
+                      const displayCreatedAt = getDisplayCreatedAt(item);
+                      const isAdjusted = item.netAmount != null && item.netAmount !== item.amount;
                       const hasDeletedPocket =
                         !item.allocations?.length ||
                         item.allocations.some((a) => a.pocketId == null);
@@ -293,24 +309,16 @@ function GestionTab<T extends FinancialEntity>({
                               className={`text-sm font-semibold ${config.colors.amountText}`}
                             >
                               {config.amountSign}
-                              {formatCurrency(item.amount)}
+                              {formatCurrency(item.netAmount ?? item.amount)}
                             </span>
-                            <span className="text-[10px] text-secondary-400 dark:text-secondary-500 leading-none mt-0.5 flex items-center gap-1 whitespace-nowrap">
-                              <svg
-                                className="w-2.5 h-2.5 shrink-0"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                strokeWidth={1.5}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
-                                />
-                              </svg>
-                              {formatCreatedAtDateLabel(item.createdAt) + ', ' + formatTime(item.createdAt)}
+                            <span className="text-[10px] text-secondary-400 dark:text-secondary-500 leading-none mt-0.5 whitespace-nowrap">
+                              creado {formatCreatedAtDateLabel(item.createdAt)} {formatTime(item.createdAt)}
                             </span>
+                            {isAdjusted && (
+                              <span className="text-[9px] text-secondary-400 dark:text-secondary-500 leading-none mt-0.5 whitespace-nowrap">
+                                Ajustado {formatCreatedAtDateLabel(displayCreatedAt)} {formatTime(displayCreatedAt)}
+                              </span>
+                            )}
                           </div>
                           {/* Kebab o candado según el estado del registro */}
                           {hasDeletedPocket ? (
@@ -326,7 +334,7 @@ function GestionTab<T extends FinancialEntity>({
                             <KebabPopover
                               actions={[
                                 {
-                                  label: 'Editar',
+                                  label: 'Ajustar',
                                   icon: <PencilIcon className="w-4 h-4" />,
                                   onClick: () =>
                                     onEdit(item),

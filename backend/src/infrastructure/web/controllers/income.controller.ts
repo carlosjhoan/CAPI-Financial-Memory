@@ -13,6 +13,8 @@ import {
   UseGuards,
   Req,
   ParseUUIDPipe,
+  ForbiddenException,
+  NotFoundException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -31,6 +33,7 @@ import { GetIncomeByIdUseCase } from "../../../application/income/get-income-by-
 import { UpdateIncomeUseCase } from "../../../application/income/update-income.use-case";
 import { DeleteIncomeUseCase } from "../../../application/income/delete-income.use-case";
 import { RegisterIncomePaymentUseCase } from "../../../application/income/register-income-payment.use-case";
+import { CreateIncomeAdjustmentUseCase } from "../../../application/income/create-income-adjustment.use-case";
 import { GetIncomesSummaryUseCase } from "../../../application/income/get-incomes-summary.use-case";
 import { GetMonthlySummaryUseCase } from "../../../application/income/get-monthly-summary.use-case";
 import { GetYearlySummaryUseCase } from "../../../application/income/get-yearly-summary.use-case";
@@ -39,12 +42,14 @@ import { GetIncomesByDateRangePaginatedUseCase } from "../../../application/inco
 import { GetIncomesByDateRangeUseCase } from "../../../application/income/get-incomes-by-date-range.use-case";
 import { CreateIncomeDto } from "../dto/create-income.dto";
 import { UpdateIncomeDto } from "../dto/update-income.dto";
+import { CreateIncomeAdjustmentDto } from "../dto/create-income-adjustment.dto";
 import { RegisterIncomePaymentDto } from "../dto/register-income-payment.dto";
 import { ApiResponse as ApiResponseDto } from "../../../shared/dtos/api-response.dto";
 import { ErrorResponse } from "../../../shared/dtos/error-response.dto";
 import { IncomeQueryDto } from "../dto/income-query.dto";
 import { JwtAuthGuard } from "../../../application/auth/guards/jwt-auth.guard";
 import { RequestWithUser } from "../../../application/auth/types";
+import { IncomeService } from "../../../domain/services/income.service";
 
 @ApiTags("incomes")
 @UseGuards(JwtAuthGuard)
@@ -59,9 +64,11 @@ export class IncomeController {
     private readonly updateIncomeUseCase: UpdateIncomeUseCase,
     private readonly deleteIncomeUseCase: DeleteIncomeUseCase,
     private readonly registerIncomePaymentUseCase: RegisterIncomePaymentUseCase,
+    private readonly createIncomeAdjustmentUseCase: CreateIncomeAdjustmentUseCase,
     private readonly getIncomesSummaryUseCase: GetIncomesSummaryUseCase,
     private readonly getMonthlySummaryUseCase: GetMonthlySummaryUseCase,
     private readonly getYearlySummaryUseCase: GetYearlySummaryUseCase,
+    private readonly incomeService: IncomeService,
   ) {}
 
   @Post()
@@ -350,6 +357,12 @@ export class IncomeController {
     @Body() updateIncomeDto: UpdateIncomeDto,
   ): Promise<ApiResponseDto<any> | ErrorResponse> {
     try {
+      // 403 guard: adjustments are immutable
+      const existing = await this.incomeService.getIncomeById(req.user.id, id);
+      if (existing.isAdjustment) {
+        throw new ForbiddenException("Adjustment records are immutable");
+      }
+
       const updateData: any = {};
       if (updateIncomeDto.amount !== undefined)
         updateData.amount = updateIncomeDto.amount;
@@ -379,6 +392,7 @@ export class IncomeController {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
+      if (error instanceof ForbiddenException) throw error;
       throw new BadRequestException(error.message);
     }
   }
@@ -434,6 +448,52 @@ export class IncomeController {
     }
   }
 
+  @Post(":id/adjustments")
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: "Crear un ajuste sobre un ingreso",
+    description: "Crea un registro de ajuste (income o expense) según la dirección del delta. Reemplaza el PUT para ediciones.",
+  })
+  @ApiParam({ name: "id", description: "ID del ingreso original" })
+  @ApiBody({ type: CreateIncomeAdjustmentDto })
+  @ApiCreatedResponse({ description: "Ajuste creado exitosamente" })
+  @ApiNotFoundResponse({ description: "Ingreso no encontrado" })
+  @ApiBadRequestResponse({ description: "Datos inválidos" })
+  async createAdjustment(
+    @Req() req: RequestWithUser,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: CreateIncomeAdjustmentDto,
+  ): Promise<ApiResponseDto<any> | ErrorResponse> {
+    try {
+      const original = await this.incomeService.getIncomeById(req.user.id, id);
+      if (original.isAdjustment) {
+        throw new ForbiddenException("Cannot adjust an adjustment record");
+      }
+
+      const adjustment = await this.createIncomeAdjustmentUseCase.execute(
+        req.user.id,
+        id,
+        dto,
+      );
+
+      return {
+        statusCode: HttpStatus.CREATED,
+        data: adjustment,
+        message: "Income adjustment created successfully",
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      if (error instanceof ForbiddenException || error instanceof NotFoundException) {
+        throw error;
+      }
+      return new ErrorResponse(
+        HttpStatus.BAD_REQUEST,
+        "Bad Request",
+        error instanceof Error ? error.message : "Failed to create adjustment",
+      );
+    }
+  }
+
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
@@ -456,6 +516,10 @@ export class IncomeController {
     @Req() req: RequestWithUser,
     @Param("id", ParseUUIDPipe) id: string,
   ): Promise<void> {
+    const existing = await this.incomeService.getIncomeById(req.user.id, id);
+    if (existing.isAdjustment) {
+      throw new ForbiddenException("Adjustment records are immutable");
+    }
     await this.deleteIncomeUseCase.execute(req.user.id, id);
   }
 

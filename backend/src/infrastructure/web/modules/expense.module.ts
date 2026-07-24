@@ -4,13 +4,17 @@ import { DataSource } from "typeorm";
 import { ExpenseController } from "../controllers/expense.controller";
 import { ExpenseService } from "../../../domain/services/expense.service";
 import { TypeOrmExpenseRepository } from "../../persistence/postgres/repository/typeorm-expense.repository";
+import { TypeOrmIncomeRepository } from "../../persistence/postgres/repository/typeorm-income.repository";
 import { ExpenseEntity } from "../../persistence/postgres/entities/expense.entity";
+import { IncomeEntity } from "../../persistence/postgres/entities/income.entity";
+import { IncomeAllocationEntity } from "../../persistence/postgres/entities/income-allocation.entity";
 import { CreateExpenseUseCase } from "../../../application/expense/create-expense.use-case";
 import { RegisterExpensePaymentUseCase } from "../../../application/expense/register-expense-payment.use-case";
 import { GetAllExpensesPaginatedUseCase } from "../../../application/expense/get-all-expenses-paginated.use-case";
 import { GetExpensesByDateRangePaginatedUseCase } from "../../../application/expense/get-expenses-by-date-range-paginated.use-case";
 import { GetExpenseByIdUseCase } from "../../../application/expense/get-expense-by-id.use-case";
 import { UpdateExpenseUseCase } from "../../../application/expense/update-expense.use-case";
+import { CreateExpenseAdjustmentUseCase } from "../../../application/expense/create-expense-adjustment.use-case";
 import { DeleteExpenseUseCase } from "../../../application/expense/delete-expense.use-case";
 import { GetExpensesSummaryUseCase } from "../../../application/expense/get-expenses-summary.use-case";
 import { GetMonthlySummaryUseCase } from "../../../application/expense/get-monthly-summary.use-case";
@@ -19,12 +23,16 @@ import { PocketRepository } from "../../../domain/repositories/pocket.repository
 import { PocketModule } from "./pocket.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ExpenseEntity]), PocketModule],
+  imports: [TypeOrmModule.forFeature([ExpenseEntity, IncomeEntity, IncomeAllocationEntity]), PocketModule],
   controllers: [ExpenseController],
   providers: [
     {
       provide: "ExpenseRepository",
       useClass: TypeOrmExpenseRepository,
+    },
+    {
+      provide: "IncomeRepository",
+      useClass: TypeOrmIncomeRepository,
     },
     {
       provide: CreateExpenseUseCase,
@@ -83,6 +91,21 @@ import { PocketModule } from "./pocket.module";
         );
       },
       inject: [ExpenseService, DataSource, "PocketRepository"],
+    },
+    {
+      provide: CreateExpenseAdjustmentUseCase,
+      useFactory: (
+        expenseRepository: any,
+        pocketRepository: any,
+        dataSource: DataSource,
+      ) => {
+        return new CreateExpenseAdjustmentUseCase(
+          expenseRepository,
+          pocketRepository,
+          dataSource,
+        );
+      },
+      inject: ["ExpenseRepository", "PocketRepository", DataSource],
     },
     {
       provide: DeleteExpenseUseCase,

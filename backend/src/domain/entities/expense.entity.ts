@@ -37,6 +37,30 @@ export class Expense {
   })
   createdAt: Date;
 
+  @ApiProperty({
+    description: "Indica si este registro es un ajuste de otro",
+    example: false,
+  })
+  isAdjustment: boolean = false;
+
+  @ApiProperty({
+    description: "ID del registro original al que ajusta (solo si isAdjustment=true)",
+    example: null,
+  })
+  adjustedRecordId: string | null = null;
+
+  @ApiProperty({
+    description: "Lista de ajustes aplicados a este registro",
+    type: [Expense],
+  })
+  adjustments: Expense[] = [];
+
+  @ApiProperty({
+    description: "Monto neto (original + suma de ajustes)",
+    example: 150.75,
+  })
+  netAmount: number;
+
   allocations?: ExpenseAllocationInfo[];
 
   constructor(
@@ -52,6 +76,7 @@ export class Expense {
     this.reason = reason;
     this.date = date;
     this.createdAt = new Date();
+    this.netAmount = amount;
   }
 
   update(amount: number, reason: string, date: Date): void {

@@ -55,7 +55,7 @@ export const incomeEntityConfig: EntityConfig<Income> = {
     sectionName: 'Ingresos',
     fabLabel: 'Nuevo Ingreso',
     createTitle: 'Nuevo Ingreso',
-    editTitle: 'Editar Ingreso',
+    editTitle: 'Ajustar Ingreso',
     emptyMessage: 'No hay ingresos',
     emptyActionLabel: 'Crear Primer Ingreso',
     entitySingular: 'ingreso',

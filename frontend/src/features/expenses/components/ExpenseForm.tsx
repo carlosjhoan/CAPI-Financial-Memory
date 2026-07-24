@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Expense } from '../types/expense.types';
 import { useExpenseForm, type ExpenseFormData } from '../hooks/useExpenseForm';
 import { usePockets } from '../../pockets/hooks/usePockets';
+import { expensesService } from '../../../core/api';
 import { formatCurrency } from '../../../core/utils/format';
 import { useDebounce } from '../../../core/hooks/useDebounce';
 import {
@@ -31,9 +33,11 @@ const STEPS = [
 const ExpenseForm: React.FC<ExpenseFormProps> = ({
   expense,
   onSubmit,
+  onCancel,
   isLoading = false,
   initialPocketId,
 }) => {
+  const queryClient = useQueryClient();
   const isEditMode = !!expense;
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -52,7 +56,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
     expense
       ? {
           amount: expense.amount,
-          reason: expense.reason,
+          reason: '',
           date: expense.date,
         }
       : undefined,
@@ -144,6 +148,26 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
     setCurrentStep((s) => s + 1);
   };
 
+  // ─── Adjustment mode (edit) ───
+  const handleAdjustment = async () => {
+    if (!expense) return;
+    const newAmount = watch('amount');
+    const newReason = watch('reason');
+    if (!newAmount || newAmount <= 0) return;
+    if (!newReason || newReason.trim().length < 20) {
+      trigger('reason');
+      return;
+    }
+
+    await expensesService.createAdjustment(expense.id, {
+      amount: newAmount,
+      reason: newReason,
+    });
+    queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    queryClient.invalidateQueries({ queryKey: ['pockets'] });
+    onCancel?.();
+  };
+
   const handleFormSubmit = async (data: ExpenseFormData) => {
     await onSubmit(data);
   };
@@ -160,6 +184,116 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
     !insufficientTotal;
 
   const canContinue = !isLoading && !isSubmitting && !insufficientTotal;
+
+  // ─── Adjustment mode (edit) — simplified form ───
+  if (isEditMode) {
+    const currentAmount = expense!.amount;
+    const newAmount = watch('amount') || 0;
+    const delta = -(newAmount - currentAmount); // invertido: gasto mayor → ajuste negativo
+    const deltaSign = delta >= 0 ? '+' : '';
+
+    return (
+      <form onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}>
+        <div className="space-y-6">
+          <style>{`@keyframes fadeSlide{from{opacity:.3;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}`}</style>
+          {/* Current → Delta → Adjusted */}
+          <div className="rounded-lg bg-secondary-50 dark:bg-secondary-800/50 p-4">
+            <div className="grid grid-cols-3 gap-4 text-center items-center">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-secondary-500 dark:text-secondary-400 mb-1">
+                  Valor actual
+                </p>
+                <p className="text-lg font-bold text-secondary-900 dark:text-white">
+                  -{formatCurrency(currentAmount)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-secondary-500 dark:text-secondary-400 mb-1">
+                  AJUSTE
+                </p>
+                <div className="flex items-center justify-center gap-1">
+                  {delta > 0 ? (
+                    <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+                    </svg>
+                  ) : delta < 0 ? (
+                    <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 13.5L12 21m0 0l7.5-7.5M12 21V3" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  )}
+                  <span key={delta} style={{ animation: 'fadeSlide 200ms ease-out' }} className={`text-base font-bold ${delta > 0 ? 'text-green-500' : delta < 0 ? 'text-red-500' : 'text-secondary-500'}`}>
+                    {formatCurrency(Math.abs(delta))}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-secondary-500 dark:text-secondary-400 mb-1">
+                  Valor ajustado
+                </p>
+                <p key={newAmount} style={{ animation: 'fadeSlide 200ms ease-out' }} className="text-lg font-bold text-red-500 dark:text-red-400">
+                  -{formatCurrency(newAmount)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <FormFloatCurrency
+            name="amount"
+            control={control}
+            label="Nuevo monto"
+            fullWidth
+            required
+            accent="expense"
+            glass
+            emitOnChange
+          />
+
+          <FormFloatInput
+            name="reason"
+            control={control}
+            label="Motivo del ajuste"
+            helperText="Explicá por qué ajustas este gasto"
+            fullWidth
+            required
+            disabled={isLoading || isSubmitting}
+            accent="expense"
+            maxLength={100}
+            glass
+          />
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 px-4 py-2 text-sm font-medium rounded-full border border-secondary-300 dark:border-secondary-600 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-50 dark:hover:bg-secondary-800 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleAdjustment}
+            disabled={isLoading || isSubmitting}
+            className="flex-1 px-4 py-2 rounded-full text-sm font-semibold
+              bg-gradient-to-r from-red-500/10 to-rose-500/10
+              dark:from-red-500/20 dark:to-rose-500/20
+              border border-red-300/30 dark:border-red-400/30
+              text-red-600 dark:text-red-300
+              hover:from-red-500/20 hover:to-rose-500/20
+              hover:border-red-300/60 dark:hover:border-red-400/60
+              disabled:opacity-40 disabled:cursor-not-allowed
+              transition-all duration-300"
+          >
+            Ajustar Gasto
+          </button>
+        </div>
+      </form>
+    );
+  }
 
   return (
     <form onKeyDown={(e) => {

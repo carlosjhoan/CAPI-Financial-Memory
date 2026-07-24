@@ -78,7 +78,7 @@ const IncomeList: React.FC<IncomeListProps> = ({
           {income.reason}
         </p>
         <span className="text-sm font-semibold text-green-600 dark:text-green-400 shrink-0">
-          +{formatCurrency(income.amount)}
+          +{formatCurrency(income.netAmount ?? income.amount)}
         </span>
       </div>
     ),
@@ -97,7 +97,7 @@ const IncomeList: React.FC<IncomeListProps> = ({
             {income.reason}
           </p>
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-            +{formatCurrency(income.amount)}
+            +{formatCurrency(income.netAmount ?? income.amount)}
           </p>
           <p className="text-sm text-secondary-400 dark:text-secondary-500">
             {income.date}

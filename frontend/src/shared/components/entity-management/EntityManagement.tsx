@@ -440,6 +440,8 @@ function EntityManagement<T extends FinancialEntity>({
         onClose={closeEdit}
         title={config.labels.editTitle}
         size="lg"
+        glass
+        glassBackdrop
         preventCloseOnBackdrop
       >
         {itemToEdit && (
@@ -525,7 +527,7 @@ function EntityManagement<T extends FinancialEntity>({
               <button
                 type="button"
                 onClick={() => setGoalExceeded(null)}
-                className="flex-1 px-4 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-600 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-50 dark:hover:bg-secondary-800 transition-colors"
+                className="flex-1 px-4 py-2 text-sm font-medium rounded-full border border-secondary-300 dark:border-secondary-600 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-50 dark:hover:bg-secondary-800 transition-colors"
               >
                 Cancelar
               </button>
@@ -533,7 +535,15 @@ function EntityManagement<T extends FinancialEntity>({
                 type="button"
                 onClick={handleExtendGoal}
                 disabled={updateMutation.isPending}
-                className="flex-1 px-4 py-2 text-sm font-medium rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 transition-colors"
+                className="flex-1 px-4 py-2 rounded-full text-sm font-semibold
+                  bg-gradient-to-r from-green-500/10 to-emerald-500/10
+                  dark:from-green-500/20 dark:to-emerald-500/20
+                  border border-green-300/30 dark:border-green-400/30
+                  text-green-600 dark:text-green-300
+                  hover:from-green-500/20 hover:to-emerald-500/20
+                  hover:border-green-300/60 dark:hover:border-green-400/60
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all duration-300"
               >
                 Extender meta
               </button>
@@ -563,7 +573,7 @@ function EntityManagement<T extends FinancialEntity>({
               <button
                 type="button"
                 onClick={handleGoalUnreachedCancel}
-                className="flex-1 px-4 py-2 text-sm font-medium rounded-lg border border-secondary-300 dark:border-secondary-600 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-50 dark:hover:bg-secondary-800 transition-colors"
+                className="flex-1 px-4 py-2 text-sm font-medium rounded-full border border-secondary-300 dark:border-secondary-600 text-secondary-700 dark:text-secondary-300 hover:bg-secondary-50 dark:hover:bg-secondary-800 transition-colors"
               >
                 Cancelar
               </button>
@@ -571,7 +581,15 @@ function EntityManagement<T extends FinancialEntity>({
                 type="button"
                 onClick={handleGoalUnreachedConfirm}
                 disabled={updateMutation.isPending}
-                className="flex-1 px-4 py-2 text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                className="flex-1 px-4 py-2 rounded-full text-sm font-semibold
+                  bg-gradient-to-r from-amber-500/10 to-orange-500/10
+                  dark:from-amber-500/20 dark:to-orange-500/20
+                  border border-amber-300/30 dark:border-amber-400/30
+                  text-amber-600 dark:text-amber-300
+                  hover:from-amber-500/20 hover:to-orange-500/20
+                  hover:border-amber-300/60 dark:hover:border-amber-400/60
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all duration-300"
               >
                 Continuar
               </button>
